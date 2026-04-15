@@ -9,7 +9,11 @@ export function Footer() {
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
         <div className="space-y-4">
           <Link to="/" className="inline-block mb-4">
-            <img src={logoZahra} alt="Zahrá Brazil" className="h-12 object-contain rounded-sm" />
+            <img
+              src={logoZahra}
+              alt="Zahrá Brazil"
+              className="h-[53px] w-[53px] object-cover rounded-full"
+            />
           </Link>
           <p className="text-sm opacity-80 leading-relaxed max-w-xs">
             A essência do estilo minimalista. Peças autorais desenhadas no Brasil com materiais
