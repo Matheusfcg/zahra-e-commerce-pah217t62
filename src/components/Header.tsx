@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Search, ShoppingBag, Menu, X, User } from 'lucide-react'
+import { Search, ShoppingBag, Menu, X, User, Phone, Mail, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
 import logoZahra from '../assets/logozahra-e51d5.png'
@@ -36,10 +43,10 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen(true)}
             className="text-current hover:bg-transparent -ml-2"
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Menu className="h-6 w-6" />
           </Button>
         </div>
 
@@ -90,30 +97,133 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-background text-foreground shadow-lg md:hidden animate-fade-in-down border-t">
-          <nav className="flex flex-col p-4 gap-4 text-center uppercase tracking-wider text-sm">
-            <Link
-              to="/product/zahra-signature-tote"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 hover:text-gold"
-            >
-              Feminino
-            </Link>
-            <Link to="#" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-gold">
-              Masculino
-            </Link>
-            <Link to="#" onClick={() => setMobileMenuOpen(false)} className="py-2 hover:text-gold">
-              Acessórios
-            </Link>
-            <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-border">
-              <Search className="h-5 w-5" />
-              <User className="h-5 w-5" />
+      {/* Mobile Menu Sheet */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent
+          side="left"
+          className="w-[85vw] max-w-[400px] p-0 flex flex-col bg-background border-r"
+        >
+          <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+
+          <div className="flex flex-col h-full overflow-y-auto">
+            {/* Auth Section */}
+            <div className="border-b border-border">
+              <ProfileMenu
+                renderTrigger={(user, profile) => (
+                  <button className="flex items-center gap-4 w-full p-6 text-left hover:bg-secondary/20 transition-colors outline-none">
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                      <User className="h-6 w-6 text-foreground/70" />
+                    </div>
+                    <div className="flex flex-col">
+                      {user ? (
+                        <>
+                          <span className="font-semibold text-lg">
+                            Olá, {profile?.full_name?.split(' ')[0] || 'Usuário'}
+                          </span>
+                          <span className="text-sm text-muted-foreground">Minha Conta</span>
+                        </>
+                      ) : (
+                        <span className="font-semibold text-lg">Entre ou Cadastre-se</span>
+                      )}
+                    </div>
+                  </button>
+                )}
+              />
             </div>
-          </nav>
-        </div>
-      )}
+
+            {/* Navigation Accordion */}
+            <div className="flex-1 overflow-y-auto py-2">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="new-in" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                    New In
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Roupas
+                      </Link>
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Sapatos
+                      </Link>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="tudo" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                    Tudo
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                      <Link
+                        to="/product/zahra-signature-tote"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Feminino
+                      </Link>
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Masculino
+                      </Link>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="acessorios" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                    Acessórios
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Bolsas
+                      </Link>
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Cintos
+                      </Link>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="sale" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium text-red-600">
+                    Sale
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
+                        Até 50% OFF
+                      </Link>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="atendimento" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                    Atendimento
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col px-6 pb-4 space-y-5 text-sm text-muted-foreground mt-2">
+                      <a href="tel:08000258990" className="flex items-center gap-3">
+                        <Phone className="h-4 w-4" />
+                        0800 025 8990
+                      </a>
+                      <a href="mailto:falecom@zahra.com.br" className="flex items-center gap-3">
+                        <Mail className="h-4 w-4" />
+                        falecom@zahra.com.br
+                      </a>
+                      <a href="https://wa.me/5547991067738" className="flex items-center gap-3">
+                        <MessageCircle className="h-4 w-4" />
+                        47 99106 7738
+                      </a>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </header>
   )
 }

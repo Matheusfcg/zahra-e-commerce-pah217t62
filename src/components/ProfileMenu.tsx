@@ -25,7 +25,11 @@ interface UserProfile {
   phone: string | null
 }
 
-export function ProfileMenu() {
+interface ProfileMenuProps {
+  renderTrigger?: (user: any, profile: UserProfile | null) => React.ReactNode
+}
+
+export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   const [isOpen, setIsOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -275,7 +279,9 @@ export function ProfileMenu() {
     </div>
   )
 
-  const triggerButton = (
+  const triggerButton = renderTrigger ? (
+    renderTrigger(user, profile)
+  ) : (
     <button
       onClick={isMobile ? undefined : () => setIsOpen(!isOpen)}
       className="hover:text-gold transition-colors flex items-center justify-center p-2 -m-2 outline-none"
