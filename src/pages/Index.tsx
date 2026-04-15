@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { ShieldCheck, Leaf, Star, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getProducts, type Product } from '@/services/products'
+import featuredBagImg from '@/assets/1produto-070e2.png'
 
 const Index = () => {
   const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
@@ -60,10 +61,7 @@ const Index = () => {
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
                 <Link to={`/product/${featuredProduct.slug}`}>
                   <img
-                    src={
-                      featuredProduct.product_images?.[0]?.url ||
-                      'https://img.usecurling.com/p/800/1000?q=bag'
-                    }
+                    src={featuredBagImg}
                     alt={featuredProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
