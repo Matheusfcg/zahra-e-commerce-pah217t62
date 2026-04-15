@@ -1,9 +1,26 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { FLAGSHIP_PRODUCT } from '@/lib/mockData'
-import { ShieldCheck, Leaf, Star } from 'lucide-react'
+import { ShieldCheck, Leaf, Star, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { getProducts, type Product } from '@/services/products'
 
 const Index = () => {
+  const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getProducts()
+      .then((products) => {
+        if (products.length > 0) {
+          setFeaturedProduct(products[0])
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [])
+
   return (
     <div className="w-full">
       {/* Hero Section */}
@@ -24,7 +41,9 @@ const Index = () => {
             size="lg"
             className="bg-white text-primary hover:bg-cream hover:text-primary rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105"
           >
-            <Link to="/product/zahra-signature-tote">Descubra Mais</Link>
+            <Link to={featuredProduct ? `/product/${featuredProduct.slug}` : '#'}>
+              Descubra Mais
+            </Link>
           </Button>
         </div>
       </section>
@@ -32,33 +51,46 @@ const Index = () => {
       {/* Featured Product Showcase */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
-              <Link to={`/product/${FLAGSHIP_PRODUCT.id}`}>
-                <img
-                  src={FLAGSHIP_PRODUCT.gallery[0]}
-                  alt={FLAGSHIP_PRODUCT.name}
-                  className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              </Link>
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-            <div className="flex-1 lg:pl-12 text-center lg:text-left">
-              <h2 className="font-serif text-4xl mb-4">{FLAGSHIP_PRODUCT.name}</h2>
-              <p className="text-xl font-medium mb-6">
-                R$ {FLAGSHIP_PRODUCT.price.toFixed(2).replace('.', ',')}
-              </p>
-              <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-                {FLAGSHIP_PRODUCT.description}
-              </p>
-              <Button
-                asChild
-                size="lg"
-                className="rounded-none px-12 py-6 text-sm uppercase tracking-widest"
-              >
-                <Link to={`/product/${FLAGSHIP_PRODUCT.id}`}>Comprar Agora</Link>
-              </Button>
+          ) : featuredProduct ? (
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
+                <Link to={`/product/${featuredProduct.slug}`}>
+                  <img
+                    src={
+                      featuredProduct.product_images?.[0]?.url ||
+                      'https://img.usecurling.com/p/800/1000?q=bag'
+                    }
+                    alt={featuredProduct.name}
+                    className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </Link>
+              </div>
+              <div className="flex-1 lg:pl-12 text-center lg:text-left">
+                <h2 className="font-serif text-4xl mb-4">{featuredProduct.name}</h2>
+                <p className="text-xl font-medium mb-6">
+                  R$ {Number(featuredProduct.price).toFixed(2).replace('.', ',')}
+                </p>
+                <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
+                  {featuredProduct.description}
+                </p>
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-none px-12 py-6 text-sm uppercase tracking-widest"
+                >
+                  <Link to={`/product/${featuredProduct.slug}`}>Comprar Agora</Link>
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-20 text-muted-foreground">
+              Nenhum produto em destaque no momento.
+            </div>
+          )}
         </div>
       </section>
 

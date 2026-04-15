@@ -8,21 +8,24 @@ import Product from './pages/Product'
 import Checkout from './pages/Checkout'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
+import { AuthProvider } from './hooks/use-auth'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Index />} />
-          <Route path="/product/:id" element={<Product />} />
-          <Route path="/checkout" element={<Checkout />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/product/:id" element={<Product />} />
+            <Route path="/checkout" element={<Checkout />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </AuthProvider>
   </BrowserRouter>
 )
 
