@@ -134,9 +134,9 @@ export function Header() {
             {/* Navigation Accordion */}
             <div className="flex-1 overflow-y-auto py-2">
               <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="new-in" className="border-b-0">
+                <AccordionItem value="novidade" className="border-b-0">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
-                    New In
+                    Novidade
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
