@@ -16,13 +16,8 @@ const Index = () => {
           />
         </div>
         <div className="relative z-10 text-center text-white px-4 max-w-3xl mx-auto flex flex-col items-center animate-fade-in-up">
-          <h2 className="text-sm md:text-base uppercase tracking-[0.4em] mb-4 text-white/80">
-            Nova Coleção
-          </h2>
           <h1 className="text-5xl md:text-7xl font-serif mb-8 leading-tight">
-            A Essência do
-            <br />
-            Estilo
+            O Essencial e ser inesquecível
           </h1>
           <Button
             asChild
