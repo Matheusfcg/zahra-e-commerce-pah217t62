@@ -31,19 +31,19 @@ export function Header() {
     >
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Mobile Menu Toggle */}
-        <div className="md:hidden flex-1">
+        <div className="md:hidden flex-none">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-current hover:bg-transparent"
+            className="text-current hover:bg-transparent -ml-2"
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </div>
 
         {/* Desktop Nav - Left */}
-        <nav className="hidden md:flex flex-1 gap-8 text-sm uppercase tracking-wider font-medium">
+        <nav className="hidden md:flex flex-1 gap-8 text-sm uppercase tracking-wider font-medium items-center">
           <Link to="/product/zahra-signature-tote" className="hover:text-gold transition-colors">
             Feminino
           </Link>
@@ -55,26 +55,18 @@ export function Header() {
           </Link>
         </nav>
 
-        {/* Logo - Center */}
-        <div className="flex-shrink-0 text-center flex items-center justify-center">
-          <Link to="/" className="inline-block">
-            <img
-              src={logoZahra}
-              alt="Zahrá Brazil"
-              className="h-10 md:h-14 object-contain shadow-sm"
-            />
-          </Link>
-        </div>
-
-        {/* Icons - Right */}
-        <div className="flex-1 flex justify-end items-center gap-4 md:gap-6">
+        {/* Icons & Logo - Right */}
+        <div className="flex flex-1 justify-end items-center gap-4 md:gap-6">
           <button className="hover:text-gold transition-colors hidden sm:block">
             <Search className="h-5 w-5" />
           </button>
           <button className="hover:text-gold transition-colors hidden sm:block">
             <User className="h-5 w-5" />
           </button>
-          <button onClick={openDrawer} className="relative hover:text-gold transition-colors">
+          <button
+            onClick={openDrawer}
+            className="relative hover:text-gold transition-colors mr-2 md:mr-4"
+          >
             <ShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
@@ -82,6 +74,17 @@ export function Header() {
               </span>
             )}
           </button>
+
+          {/* Logo - Top Right */}
+          <div className="flex-shrink-0 flex items-center justify-center border-l border-current/20 pl-4 md:pl-6">
+            <Link to="/" className="inline-block">
+              <img
+                src={logoZahra}
+                alt="Zahrá Brazil"
+                className="h-6 md:h-8 object-contain opacity-90 hover:opacity-100 transition-opacity"
+              />
+            </Link>
+          </div>
         </div>
       </div>
 
