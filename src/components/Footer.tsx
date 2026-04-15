@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import logoZahra from '../assets/logozahra-e51d5.png'
 
 export function Footer() {
   return (
     <footer className="bg-background text-primary border-t py-16">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
         <div className="space-y-4">
-          <h3 className="font-serif text-2xl font-bold tracking-widest mb-6">ZAHRÁ</h3>
+          <Link to="/" className="inline-block mb-4">
+            <img src={logoZahra} alt="Zahrá Brazil" className="h-12 object-contain rounded-sm" />
+          </Link>
           <p className="text-sm opacity-80 leading-relaxed max-w-xs">
             A essência do estilo minimalista. Peças autorais desenhadas no Brasil com materiais
             premium e compromisso com a excelência.

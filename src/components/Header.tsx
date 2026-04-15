@@ -4,6 +4,7 @@ import { Search, User, ShoppingBag, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
+import logoZahra from '../assets/logozahra-e51d5.png'
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -23,7 +24,6 @@ export function Header() {
 
   const headerBg =
     isHome && !isScrolled ? 'bg-transparent text-white' : 'bg-background text-foreground shadow-sm'
-  const logoColor = isHome && !isScrolled ? 'text-white' : 'text-primary'
 
   return (
     <header
@@ -56,15 +56,13 @@ export function Header() {
         </nav>
 
         {/* Logo - Center */}
-        <div className="flex-shrink-0 text-center">
-          <Link
-            to="/"
-            className={cn('font-serif text-3xl md:text-4xl font-bold tracking-widest', logoColor)}
-          >
-            ZAHRÁ
-            <span className="block text-[10px] md:text-xs font-sans tracking-[0.3em] font-normal mt-1 opacity-80">
-              BRAZIL
-            </span>
+        <div className="flex-shrink-0 text-center flex items-center justify-center">
+          <Link to="/" className="inline-block">
+            <img
+              src={logoZahra}
+              alt="Zahrá Brazil"
+              className="h-10 md:h-14 object-contain shadow-sm"
+            />
           </Link>
         </div>
 

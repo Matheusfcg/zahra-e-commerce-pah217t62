@@ -9,7 +9,106 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      product_colors: {
+        Row: {
+          created_at: string
+          hex_value: string
+          id: string
+          image_url: string
+          name: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          hex_value: string
+          id?: string
+          image_url: string
+          name: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          hex_value?: string
+          id?: string
+          image_url?: string
+          name?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'product_colors_product_id_fkey'
+            columns: ['product_id']
+            isOneToOne: false
+            referencedRelation: 'products'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      product_images: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          product_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'product_images_product_id_fkey'
+            columns: ['product_id']
+            isOneToOne: false
+            referencedRelation: 'products'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      products: {
+        Row: {
+          composition: string | null
+          created_at: string
+          description: string | null
+          id: string
+          measurements: string | null
+          name: string
+          price: number
+          slug: string
+        }
+        Insert: {
+          composition?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          measurements?: string | null
+          name: string
+          price: number
+          slug: string
+        }
+        Update: {
+          composition?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          measurements?: string | null
+          name?: string
+          price?: number
+          slug?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -153,3 +252,55 @@ export const Constants = {
 // IMPORTANT: The TypeScript types above map UUID, TEXT, VARCHAR all to "string".
 // Use the COLUMN TYPES section below to know the real PostgreSQL type for each column.
 // Always use the correct PostgreSQL type when writing SQL migrations.
+
+// --- COLUMN TYPES (actual PostgreSQL types) ---
+// Use this to know the real database type when writing migrations.
+// "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: product_colors
+//   id: uuid (not null, default: gen_random_uuid())
+//   product_id: uuid (not null)
+//   name: text (not null)
+//   hex_value: text (not null)
+//   image_url: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: product_images
+//   id: uuid (not null, default: gen_random_uuid())
+//   product_id: uuid (not null)
+//   url: text (not null)
+//   display_order: integer (not null, default: 0)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: products
+//   id: uuid (not null, default: gen_random_uuid())
+//   slug: text (not null)
+//   name: text (not null)
+//   price: numeric (not null)
+//   description: text (nullable)
+//   composition: text (nullable)
+//   measurements: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+
+// --- CONSTRAINTS ---
+// Table: product_colors
+//   PRIMARY KEY product_colors_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY product_colors_product_id_fkey: FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+// Table: product_images
+//   PRIMARY KEY product_images_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY product_images_product_id_fkey: FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+// Table: products
+//   PRIMARY KEY products_pkey: PRIMARY KEY (id)
+//   UNIQUE products_slug_key: UNIQUE (slug)
+
+// --- ROW LEVEL SECURITY POLICIES ---
+// Table: product_colors
+//   Policy "allow_public_read_product_colors" (SELECT, PERMISSIVE) roles={public}
+//     USING: true
+// Table: product_images
+//   Policy "allow_public_read_product_images" (SELECT, PERMISSIVE) roles={public}
+//     USING: true
+// Table: products
+//   Policy "allow_public_read_products" (SELECT, PERMISSIVE) roles={public}
+//     USING: true
+
+// --- INDEXES ---
+// Table: products
+//   CREATE UNIQUE INDEX products_slug_key ON public.products USING btree (slug)
