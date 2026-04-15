@@ -81,7 +81,8 @@ export function Header() {
               <img
                 src={logoZahra}
                 alt="Zahrá Brazil"
-                className="h-6 md:h-8 object-contain opacity-90 hover:opacity-100 transition-opacity"
+                className="h-[29px] md:h-[37px] rounded-xl object-contain hover:scale-105 transition-all duration-300"
+                style={{ imageRendering: 'high-quality' }}
               />
             </Link>
           </div>
