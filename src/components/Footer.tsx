@@ -91,8 +91,4 @@ export function Footer() {
         </div>
       </div>
       <div className="container mx-auto px-4 mt-16 pt-8 border-t border-primary/10 text-center text-xs opacity-60">
-        <p>&copy; {new Date().getFullYear()} Zahrá Brazil. Todos os direitos reservados.</p>
-      </div>
-    </footer>
-  )
-}
+        <p>&copy; {new Date().getFullYear()} Zahrá Brazil. 
