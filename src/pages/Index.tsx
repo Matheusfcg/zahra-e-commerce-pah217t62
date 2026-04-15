@@ -6,14 +6,16 @@ import { getProducts, type Product } from '@/services/products'
 import featuredBagImg from '@/assets/1produto-070e2.png'
 
 const Index = () => {
+  const [products, setProducts] = useState<Product[]>([])
   const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     getProducts()
-      .then((products) => {
-        if (products.length > 0) {
-          setFeaturedProduct(products[0])
+      .then((data) => {
+        setProducts(data)
+        if (data.length > 0) {
+          setFeaturedProduct(data[0])
         }
       })
       .catch(console.error)
@@ -28,7 +30,7 @@ const Index = () => {
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-black">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://img.usecurling.com/p/1920/1080?q=high%20fashion%20elegant%20woman%20minimalist"
+            src="https://img.usecurling.com/p/1920/1080?q=high%20fashion%20elegant%20woman%20minimalist&dpr=2"
             alt="Zahrá Hero"
             className="w-full h-full object-cover opacity-70"
           />
@@ -92,6 +94,53 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Feminino Collection */}
+      {!isLoading && products.length > 1 && (
+        <section className="py-24 bg-white" id="feminino">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-serif text-4xl mb-4">Feminino</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Bolsas exclusivas com design minimalista, penduradas com elegância para inspirar o
+                seu dia a dia.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.slice(1).map((product) => (
+                <div key={product.id} className="group cursor-pointer">
+                  <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[4/5]">
+                    <Link to={`/product/${product.slug}`}>
+                      <img
+                        src={
+                          product.product_images?.[0]?.url ||
+                          'https://img.usecurling.com/p/800/1000?q=minimalist%20bag%20hanging%20door&dpr=2'
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </Link>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-serif text-xl mb-2">
+                      <Link
+                        to={`/product/${product.slug}`}
+                        className="hover:text-primary/80 transition-colors"
+                      >
+                        {product.name}
+                      </Link>
+                    </h3>
+                    <p className="font-medium text-muted-foreground">
+                      R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Brand Values */}
       <section className="py-24 bg-cream-dark/30">
         <div className="container mx-auto px-4">
@@ -131,7 +180,7 @@ const Index = () => {
       <section className="h-[60vh] relative flex items-center justify-center">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://img.usecurling.com/p/1920/800?q=abstract%20minimalist%20fabric%20texture%20burgundy"
+            src="https://img.usecurling.com/p/1920/800?q=abstract%20minimalist%20fabric%20texture%20burgundy&dpr=2"
             alt="Texture"
             className="w-full h-full object-cover opacity-90"
           />
