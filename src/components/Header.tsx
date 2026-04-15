@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react'
+import { Search, ShoppingBag, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ProfileMenu } from '@/components/ProfileMenu'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
 import logoZahra from '../assets/logozahra-e51d5.png'
@@ -60,9 +61,9 @@ export function Header() {
           <button className="hover:text-gold transition-colors hidden sm:block">
             <Search className="h-5 w-5" />
           </button>
-          <button className="hover:text-gold transition-colors hidden sm:block">
-            <User className="h-5 w-5" />
-          </button>
+          <div className="hidden sm:block">
+            <ProfileMenu />
+          </div>
           <button
             onClick={openDrawer}
             className="relative hover:text-gold transition-colors mr-2 md:mr-4"
