@@ -192,10 +192,12 @@ export function ProfileMenu() {
         <Button
           className="w-full h-12 rounded-xl text-base font-medium"
           onClick={() => {
-            setAuthTab('login')
-            setIsForgotPassword(false)
-            setAuthModalOpen(true)
             setIsOpen(false)
+            setTimeout(() => {
+              setAuthTab('login')
+              setIsForgotPassword(false)
+              setAuthModalOpen(true)
+            }, 350)
           }}
         >
           Entrar
@@ -204,10 +206,12 @@ export function ProfileMenu() {
           variant="outline"
           className="w-full h-12 rounded-xl text-base font-medium border-border"
           onClick={() => {
-            setAuthTab('register')
-            setIsForgotPassword(false)
-            setAuthModalOpen(true)
             setIsOpen(false)
+            setTimeout(() => {
+              setAuthTab('register')
+              setIsForgotPassword(false)
+              setAuthModalOpen(true)
+            }, 350)
           }}
         >
           Cadastrar
@@ -249,8 +253,10 @@ export function ProfileMenu() {
           variant="ghost"
           className="w-full justify-start font-medium h-12 text-base rounded-xl hover:bg-secondary/50"
           onClick={() => {
-            setSettingsOpen(true)
             setIsOpen(false)
+            setTimeout(() => {
+              setSettingsOpen(true)
+            }, 350)
           }}
         >
           <Settings className="mr-3 h-5 w-5 text-muted-foreground" /> Configurações
@@ -319,8 +325,8 @@ export function ProfileMenu() {
 
       {/* AUTH DIALOG */}
       <Dialog open={authModalOpen} onOpenChange={setAuthModalOpen}>
-        <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden rounded-[2rem] border-border/50 max-h-[90dvh] flex flex-col">
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-[440px] p-0 overflow-hidden rounded-[2rem] border-border/50 max-h-[90dvh] md:max-h-[85vh] flex flex-col">
+          <div className="p-6 sm:p-8 overflow-y-auto flex-1 pb-12 sm:pb-8">
             {isForgotPassword ? (
               <div className="space-y-6 animate-fade-in">
                 <DialogHeader className="mb-6">
@@ -522,8 +528,8 @@ export function ProfileMenu() {
 
       {/* SETTINGS DIALOG */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden rounded-[2rem] border-border/50 max-h-[90dvh] flex flex-col">
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px] p-0 overflow-hidden rounded-[2rem] border-border/50 max-h-[90dvh] md:max-h-[85vh] flex flex-col">
+          <div className="p-6 sm:p-8 overflow-y-auto flex-1 pb-12 sm:pb-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-semibold">Configurações</DialogTitle>
               <DialogDescription>
