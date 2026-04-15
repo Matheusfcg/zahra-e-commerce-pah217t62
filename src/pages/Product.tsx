@@ -12,6 +12,15 @@ import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
 import { Loader2 } from 'lucide-react'
 
+import img1 from '@/assets/1produto-67ee8.png'
+import img2 from '@/assets/image-048b7.png'
+
+const getImageUrl = (url: string) => {
+  if (url === '/assets/1produto-67ee8.png') return img1
+  if (url === '/assets/image-048b7.png') return img2
+  return url
+}
+
 const ProductPage = () => {
   const { id } = useParams()
   const [product, setProduct] = useState<Product | null>(null)
@@ -62,7 +71,7 @@ const ProductPage = () => {
         id: product.id,
         name: product.name,
         price: Number(product.price),
-        image: selectedColor.image_url,
+        image: getImageUrl(selectedColor.image_url),
         color: selectedColor.name,
       })
       setIsAdding(false)
@@ -82,7 +91,7 @@ const ProductPage = () => {
             {sortedImages.map((img) => (
               <div key={img.id} className="aspect-[3/4] overflow-hidden bg-muted">
                 <img
-                  src={img.url}
+                  src={getImageUrl(img.url)}
                   alt={`${product.name} detail`}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
@@ -94,7 +103,7 @@ const ProductPage = () => {
             {sortedImages.map((img) => (
               <img
                 key={img.id}
-                src={img.url}
+                src={getImageUrl(img.url)}
                 alt=""
                 className="w-full h-auto aspect-[3/4] object-cover snap-center flex-shrink-0"
               />
