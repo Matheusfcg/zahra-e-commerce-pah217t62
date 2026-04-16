@@ -38,42 +38,56 @@ export function Header() {
       className={cn('fixed top-0 left-0 right-0 z-40 transition-colors duration-300', headerBg)}
     >
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Mobile Menu Toggle */}
-        <div className="md:hidden flex-none">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(true)}
-            className="text-current hover:bg-transparent -ml-2"
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
+        {/* Left Section (Mobile: Menu, Desktop: Nav) */}
+        <div className="flex-1 flex items-center justify-start">
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(true)}
+              className="text-current hover:bg-transparent -ml-2"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
+          <nav className="hidden md:flex gap-8 text-sm uppercase tracking-wider font-medium items-center">
+            <Link to="/product/zahra-signature-tote" className="hover:text-gold transition-colors">
+              Feminino
+            </Link>
+            <Link to="#" className="hover:text-gold transition-colors">
+              Masculino
+            </Link>
+            <Link to="#" className="hover:text-gold transition-colors">
+              Acessórios
+            </Link>
+          </nav>
         </div>
 
-        {/* Desktop Nav - Left */}
-        <nav className="hidden md:flex flex-1 gap-8 text-sm uppercase tracking-wider font-medium items-center">
-          <Link to="/product/zahra-signature-tote" className="hover:text-gold transition-colors">
-            Feminino
+        {/* Center Section (Mobile: Logo, Desktop: hidden) */}
+        <div className="flex-1 flex justify-center md:hidden">
+          <Link to="/" className="inline-block">
+            <img
+              src={logoZahra}
+              alt="Zahrá Brazil"
+              className="h-[29px] rounded-xl object-contain"
+              style={{ imageRendering: 'high-quality' }}
+            />
           </Link>
-          <Link to="#" className="hover:text-gold transition-colors">
-            Masculino
-          </Link>
-          <Link to="#" className="hover:text-gold transition-colors">
-            Acessórios
-          </Link>
-        </nav>
+        </div>
 
-        {/* Icons & Logo - Right */}
-        <div className="flex flex-1 justify-end items-center gap-4 md:gap-6">
-          <button className="hover:text-gold transition-colors hidden sm:block">
-            <Search className="h-5 w-5" />
+        {/* Right Section (Mobile: Search+Bag, Desktop: Search+Profile+Bag+Logo) */}
+        <div className="flex-1 flex justify-end items-center gap-4 md:gap-6">
+          <button className="hover:text-gold transition-colors">
+            <Search className="h-5 w-5 md:h-5 md:w-5" />
           </button>
-          <div className="hidden sm:block">
+
+          <div className="hidden md:block">
             <ProfileMenu />
           </div>
+
           <button
             onClick={openDrawer}
-            className="relative hover:text-gold transition-colors mr-2 md:mr-4"
+            className="relative hover:text-gold transition-colors md:mr-4"
           >
             <ShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
@@ -83,13 +97,13 @@ export function Header() {
             )}
           </button>
 
-          {/* Logo - Top Right */}
-          <div className="flex-shrink-0 flex items-center justify-center border-l border-current/20 pl-4 md:pl-6">
+          {/* Desktop Logo */}
+          <div className="hidden md:flex flex-shrink-0 items-center justify-center border-l border-current/20 pl-4 md:pl-6">
             <Link to="/" className="inline-block">
               <img
                 src={logoZahra}
                 alt="Zahrá Brazil"
-                className="h-[29px] md:h-[37px] rounded-xl object-contain hover:scale-105 transition-all duration-300"
+                className="h-[37px] rounded-xl object-contain hover:scale-105 transition-all duration-300"
                 style={{ imageRendering: 'high-quality' }}
               />
             </Link>
@@ -101,29 +115,31 @@ export function Header() {
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
-          className="w-[85vw] max-w-[400px] p-0 flex flex-col bg-background border-r"
+          className="w-[85vw] max-w-[400px] p-0 flex flex-col bg-[#FAF8F5] border-r-0 text-[#3d271d]"
         >
           <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
 
           <div className="flex flex-col h-full overflow-y-auto">
             {/* Auth Section */}
-            <div className="border-b border-border">
+            <div className="bg-[#EFEAE2] px-6 py-10 relative">
               <ProfileMenu
                 renderTrigger={(user, profile) => (
-                  <button className="flex items-center gap-4 w-full p-6 text-left hover:bg-secondary/20 transition-colors outline-none">
-                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                      <User className="h-6 w-6 text-foreground/70" />
+                  <button className="flex items-center gap-5 w-full text-left outline-none mt-2">
+                    <div className="w-14 h-14 rounded-full bg-[#C2A878] flex items-center justify-center flex-shrink-0 text-[#4A3320]">
+                      <User className="h-7 w-7" />
                     </div>
                     <div className="flex flex-col">
                       {user ? (
                         <>
-                          <span className="font-semibold text-lg">
+                          <span className="font-serif text-xl sm:text-2xl text-[#3d271d]">
                             Olá, {profile?.full_name?.split(' ')[0] || 'Usuário'}
                           </span>
-                          <span className="text-sm text-muted-foreground">Minha Conta</span>
+                          <span className="text-sm text-[#3d271d]/70 font-medium">Minha Conta</span>
                         </>
                       ) : (
-                        <span className="font-semibold text-lg">Entre ou Cadastre-se</span>
+                        <span className="font-serif text-xl sm:text-2xl text-[#3B2314]">
+                          Entre ou Cadastre-se
+                        </span>
                       )}
                     </div>
                   </button>
@@ -135,11 +151,11 @@ export function Header() {
             <div className="flex-1 overflow-y-auto py-2">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="novidade" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
                     Novidade
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
                       <Link to="#" onClick={() => setMobileMenuOpen(false)}>
                         Roupas
                       </Link>
@@ -151,11 +167,11 @@ export function Header() {
                 </AccordionItem>
 
                 <AccordionItem value="tudo" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
                     Tudo
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
                       <Link
                         to="/product/zahra-signature-tote"
                         onClick={() => setMobileMenuOpen(false)}
@@ -170,11 +186,11 @@ export function Header() {
                 </AccordionItem>
 
                 <AccordionItem value="acessorios" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
                     Acessórios
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
                       <Link to="#" onClick={() => setMobileMenuOpen(false)}>
                         Bolsas
                       </Link>
@@ -186,11 +202,11 @@ export function Header() {
                 </AccordionItem>
 
                 <AccordionItem value="sale" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium text-red-600">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#D94F4F] font-normal">
                     Sale
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground">
+                    <div className="flex flex-col px-6 pb-2 space-y-4 text-[#D94F4F]/80 font-medium">
                       <Link to="#" onClick={() => setMobileMenuOpen(false)}>
                         Até 50% OFF
                       </Link>
@@ -199,20 +215,29 @@ export function Header() {
                 </AccordionItem>
 
                 <AccordionItem value="atendimento" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-base font-medium">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
                     Atendimento
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="flex flex-col px-6 pb-4 space-y-5 text-sm text-muted-foreground mt-2">
-                      <a href="tel:08000258990" className="flex items-center gap-3">
+                    <div className="flex flex-col px-6 pb-4 space-y-5 text-sm text-muted-foreground font-medium mt-2">
+                      <a
+                        href="tel:08000258990"
+                        className="flex items-center gap-3 hover:text-foreground"
+                      >
                         <Phone className="h-4 w-4" />
                         0800 025 8990
                       </a>
-                      <a href="mailto:falecom@zahra.com.br" className="flex items-center gap-3">
+                      <a
+                        href="mailto:falecom@zahra.com.br"
+                        className="flex items-center gap-3 hover:text-foreground"
+                      >
                         <Mail className="h-4 w-4" />
                         falecom@zahra.com.br
                       </a>
-                      <a href="https://wa.me/5547991067738" className="flex items-center gap-3">
+                      <a
+                        href="https://wa.me/5547991067738"
+                        className="flex items-center gap-3 hover:text-foreground"
+                      >
                         <MessageCircle className="h-4 w-4" />
                         47 99106 7738
                       </a>
