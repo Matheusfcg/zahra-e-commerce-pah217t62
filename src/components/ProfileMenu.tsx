@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { User as UserIcon, LogOut, ShoppingBag, Heart, Settings, KeyRound } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
-import { useIsMobile } from '@/hooks/use-mobile'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import {
   Dialog,
@@ -36,10 +35,8 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
   const [isForgotPassword, setIsForgotPassword] = useState(false)
 
-  const isMobile = useIsMobile()
   const { user, signIn, signUp, signOut, resetPassword, updatePassword } = useAuth()
   const { toast } = useToast()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
@@ -82,17 +79,6 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
       setEditDoc(data.document_number || '')
       setEditPhone(data.phone || '')
     }
-  }
-
-  const handleMouseEnter = () => {
-    if (isMobile) return
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    setIsOpen(true)
-  }
-
-  const handleMouseLeave = () => {
-    if (isMobile) return
-    timeoutRef.current = setTimeout(() => setIsOpen(false), 400)
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -282,10 +268,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   const triggerButton = renderTrigger ? (
     renderTrigger(user, profile)
   ) : (
-    <button
-      onClick={isMobile ? undefined : () => setIsOpen(!isOpen)}
-      className="hover:text-gold transition-colors flex items-center justify-center p-2 -m-2 outline-none"
-    >
+    <button className="hover:text-gold transition-colors flex items-center justify-center p-2 -m-2 outline-none">
       {user ? (
         <Avatar className="h-6 w-6 border border-current">
           <AvatarFallback className="text-[10px] bg-secondary/80 text-foreground">
@@ -300,34 +283,18 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
   return (
     <>
-      {isMobile ? (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild>{triggerButton}</SheetTrigger>
-          <SheetContent
-            side="right"
-            className="w-[85vw] sm:w-[400px] p-6 pt-16 border-l rounded-l-3xl"
-          >
-            <SheetHeader className="hidden">
-              <SheetTitle>Menu</SheetTitle>
-            </SheetHeader>
-            {user ? renderAuthMenu() : renderUnauthMenu()}
-          </SheetContent>
-        </Sheet>
-      ) : (
-        <div
-          className="relative group"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>{triggerButton}</SheetTrigger>
+        <SheetContent
+          side="right"
+          className="w-[85vw] sm:w-[400px] p-6 pt-16 border-l rounded-l-3xl"
         >
-          {triggerButton}
-          {isOpen && (
-            <div className="absolute right-0 top-full mt-4 w-[340px] bg-background text-foreground shadow-2xl border border-border/50 rounded-[2rem] p-6 z-50 animate-fade-in-up origin-top-right">
-              <div className="absolute -top-2 right-6 w-4 h-4 bg-background border-t border-l border-border/50 transform rotate-45"></div>
-              {user ? renderAuthMenu() : renderUnauthMenu()}
-            </div>
-          )}
-        </div>
-      )}
+          <SheetHeader className="hidden">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          {user ? renderAuthMenu() : renderUnauthMenu()}
+        </SheetContent>
+      </Sheet>
 
       {/* AUTH DIALOG */}
       <Dialog open={authModalOpen} onOpenChange={setAuthModalOpen}>

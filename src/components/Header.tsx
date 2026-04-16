@@ -38,76 +38,47 @@ export function Header() {
       className={cn('fixed top-0 left-0 right-0 z-40 transition-colors duration-300', headerBg)}
     >
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Left Section (Mobile: Menu, Desktop: Nav) */}
+        {/* Left Section (Menu) */}
         <div className="flex-1 flex items-center justify-start">
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMobileMenuOpen(true)}
-              className="text-current hover:bg-transparent -ml-2"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          </div>
-          <nav className="hidden md:flex gap-8 text-sm uppercase tracking-wider font-medium items-center">
-            <Link to="/product/zahra-signature-tote" className="hover:text-gold transition-colors">
-              Feminino
-            </Link>
-            <Link to="#" className="hover:text-gold transition-colors">
-              Masculino
-            </Link>
-            <Link to="#" className="hover:text-gold transition-colors">
-              Acessórios
-            </Link>
-          </nav>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="text-current hover:bg-transparent -ml-2"
+          >
+            <Menu className="h-6 w-6 md:h-7 md:w-7" />
+          </Button>
         </div>
 
-        {/* Center Section (Mobile: Logo, Desktop: hidden) */}
-        <div className="flex-1 flex justify-center md:hidden">
+        {/* Center Section (Logo) */}
+        <div className="flex-1 flex justify-center">
           <Link to="/" className="inline-block">
             <img
               src={logoZahra}
               alt="Zahrá Brazil"
-              className="h-[29px] rounded-xl object-contain"
+              className="h-[29px] md:h-[37px] rounded-xl object-contain hover:scale-105 transition-all duration-300"
               style={{ imageRendering: 'high-quality' }}
             />
           </Link>
         </div>
 
-        {/* Right Section (Mobile: Search+Bag, Desktop: Search+Profile+Bag+Logo) */}
+        {/* Right Section (Search+Bag) */}
         <div className="flex-1 flex justify-end items-center gap-4 md:gap-6">
           <button className="hover:text-gold transition-colors">
-            <Search className="h-5 w-5 md:h-5 md:w-5" />
+            <Search className="h-5 w-5 md:h-6 md:w-6" />
           </button>
-
-          <div className="hidden md:block">
-            <ProfileMenu />
-          </div>
 
           <button
             onClick={openDrawer}
-            className="relative hover:text-gold transition-colors md:mr-4"
+            className="relative hover:text-gold transition-colors md:mr-0"
           >
-            <ShoppingBag className="h-5 w-5" />
+            <ShoppingBag className="h-5 w-5 md:h-6 md:w-6" />
             {totalItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-gold text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                 {totalItems}
               </span>
             )}
           </button>
-
-          {/* Desktop Logo */}
-          <div className="hidden md:flex flex-shrink-0 items-center justify-center border-l border-current/20 pl-4 md:pl-6">
-            <Link to="/" className="inline-block">
-              <img
-                src={logoZahra}
-                alt="Zahrá Brazil"
-                className="h-[37px] rounded-xl object-contain hover:scale-105 transition-all duration-300"
-                style={{ imageRendering: 'high-quality' }}
-              />
-            </Link>
-          </div>
         </div>
       </div>
 
@@ -203,7 +174,7 @@ export function Header() {
 
                 <AccordionItem value="sale" className="border-b-0">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#D94F4F] font-normal">
-                    Sale
+                    Promoção
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-2 space-y-4 text-[#D94F4F]/80 font-medium">
