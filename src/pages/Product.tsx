@@ -64,15 +64,17 @@ const ProductPage = () => {
   }
 
   const handleAddToCart = () => {
-    if (!selectedColor) return
+    if (product.product_colors && product.product_colors.length > 0 && !selectedColor) return
     setIsAdding(true)
     setTimeout(() => {
       addToCart({
         id: product.id,
         name: product.name,
         price: Number(product.price),
-        image: getImageUrl(selectedColor.image_url),
-        color: selectedColor.name,
+        image: selectedColor
+          ? getImageUrl(selectedColor.image_url)
+          : getImageUrl(sortedImages[0]?.url || ''),
+        color: selectedColor?.name || 'Padrão',
       })
       setIsAdding(false)
     }, 600) // Simulate network delay for feeling
@@ -125,32 +127,37 @@ const ProductPage = () => {
             R$ {Number(product.price).toFixed(2).replace('.', ',')}
           </p>
 
-          <div className="mb-8">
-            <div className="flex justify-between text-sm mb-3">
-              <span className="font-medium">Cor: {selectedColor?.name || 'Selecione'}</span>
+          {product.product_colors && product.product_colors.length > 0 && (
+            <div className="mb-8">
+              <div className="flex justify-between text-sm mb-3">
+                <span className="font-medium">Cor: {selectedColor?.name || 'Selecione'}</span>
+              </div>
+              <div className="flex gap-3">
+                {product.product_colors.map((color) => (
+                  <button
+                    key={color.id}
+                    onClick={() => setSelectedColor(color)}
+                    className={cn(
+                      'w-8 h-8 rounded-full border-2 transition-all',
+                      selectedColor?.id === color.id
+                        ? 'border-primary scale-110'
+                        : 'border-transparent',
+                    )}
+                    style={{ backgroundColor: color.hex_value }}
+                    aria-label={`Selecionar cor ${color.name}`}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3">
-              {product.product_colors?.map((color) => (
-                <button
-                  key={color.id}
-                  onClick={() => setSelectedColor(color)}
-                  className={cn(
-                    'w-8 h-8 rounded-full border-2 transition-all',
-                    selectedColor?.id === color.id
-                      ? 'border-primary scale-110'
-                      : 'border-transparent',
-                  )}
-                  style={{ backgroundColor: color.hex_value }}
-                  aria-label={`Selecionar cor ${color.name}`}
-                />
-              ))}
-            </div>
-          </div>
+          )}
 
           <Button
             className="w-full h-14 rounded-none text-base uppercase tracking-widest mb-12 relative overflow-hidden group"
             onClick={handleAddToCart}
-            disabled={isAdding || !selectedColor}
+            disabled={
+              isAdding ||
+              (product.product_colors && product.product_colors.length > 0 && !selectedColor)
+            }
           >
             <span className={cn('transition-opacity', isAdding ? 'opacity-0' : 'opacity-100')}>
               Adicionar à Sacola
