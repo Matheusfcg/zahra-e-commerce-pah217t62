@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
-import { Loader2, UploadCloud, X, ImageIcon, Trash2 } from 'lucide-react'
+import { Loader2, UploadCloud, X, ImageIcon, Trash2, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -21,12 +21,15 @@ export function ProductForm({
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [price, setPrice] = useState(0)
+  const [quantity, setQuantity] = useState(0)
   const [desc, setDesc] = useState('')
   const [comp, setComp] = useState('')
   const [meas, setMeas] = useState('')
 
   const [existingImages, setExistingImages] = useState<any[]>([])
   const [existingColors, setExistingColors] = useState<any[]>([])
+  const [newColors, setNewColors] = useState<{ name: string; hex_value: string }[]>([])
+  const [colorsToDelete, setColorsToDelete] = useState<string[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
 
   const [files, setFiles] = useState<File[]>([])
@@ -40,22 +43,28 @@ export function ProductForm({
       setName(product.name || '')
       setSlug(product.slug || '')
       setPrice(product.price || 0)
+      setQuantity(product.quantity || 0)
       setDesc(product.description || '')
       setComp(product.composition || '')
       setMeas(product.measurements || '')
       setExistingImages(product.product_images || [])
       setExistingColors(product.product_colors || [])
+      setNewColors([])
+      setColorsToDelete([])
       setImagesToDelete([])
       setFiles([])
     } else {
       setName('')
       setSlug('')
       setPrice(0)
+      setQuantity(0)
       setDesc('')
       setComp('')
       setMeas('')
       setExistingImages([])
       setExistingColors([])
+      setNewColors([])
+      setColorsToDelete([])
       setImagesToDelete([])
       setFiles([])
     }
@@ -87,6 +96,17 @@ export function ProductForm({
     setExistingImages((prev) => prev.filter((img) => img.id !== id))
   }
 
+  const removeExistingColor = (id: string) => {
+    setColorsToDelete((prev) => [...prev, id])
+    setExistingColors((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  const handleColorChange = (index: number, field: 'name' | 'hex_value', value: string) => {
+    const updated = [...newColors]
+    updated[index][field] = value
+    setNewColors(updated)
+  }
+
   const handleSave = async () => {
     if (!name || !slug) return toast.error('Nome e slug são obrigatórios')
     setUploading(true)
@@ -101,6 +121,7 @@ export function ProductForm({
           name,
           slug,
           price,
+          quantity,
           description: desc || null,
           composition: comp || null,
           measurements: meas || null,
@@ -118,6 +139,7 @@ export function ProductForm({
           name,
           slug,
           price,
+          quantity,
           description: desc || null,
           composition: comp || null,
           measurements: meas || null,
@@ -134,6 +156,22 @@ export function ProductForm({
 
     if (imagesToDelete.length > 0) {
       await supabase.from('product_images').delete().in('id', imagesToDelete)
+    }
+
+    if (colorsToDelete.length > 0) {
+      await supabase.from('product_colors').delete().in('id', colorsToDelete)
+    }
+
+    const validNewColors = newColors.filter((c) => c.name.trim() !== '')
+    if (validNewColors.length > 0) {
+      await supabase.from('product_colors').insert(
+        validNewColors.map((c) => ({
+          product_id: productId,
+          name: c.name,
+          hex_value: c.hex_value,
+          image_url: '',
+        })),
+      )
     }
 
     setProgress(30)
@@ -192,12 +230,14 @@ export function ProductForm({
           />
         </div>
         <div className="space-y-2">
-          <Label>Slug *</Label>
+          <Label>Quantidade *</Label>
           <Input
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            disabled={uploading || !!product}
-            placeholder="vestido-midi"
+            type="number"
+            min="0"
+            value={quantity}
+            onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+            disabled={uploading}
+            placeholder="0"
           />
         </div>
       </div>
@@ -243,22 +283,82 @@ export function ProductForm({
         </div>
       </div>
 
-      {existingColors.length > 0 && (
-        <div className="space-y-2">
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
           <Label>Cores Cadastradas</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setNewColors([...newColors, { name: '', hex_value: '#000000' }])}
+            disabled={uploading}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Cor
+          </Button>
+        </div>
+
+        {existingColors.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {existingColors.map((color) => (
-              <div key={color.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+              <div
+                key={color.id}
+                className="group relative flex items-center gap-2 rounded-md border p-2 text-sm"
+              >
                 <div
                   className="h-4 w-4 rounded-full border"
                   style={{ backgroundColor: color.hex_value }}
                 />
                 <span>{color.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeExistingColor(color.id)}
+                  disabled={uploading}
+                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white"
+                  title="Remover cor"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+
+        {newColors.length > 0 && (
+          <div className="space-y-2 rounded-md border border-dashed p-3">
+            <Label className="text-xs text-muted-foreground">Novas Cores</Label>
+            {newColors.map((color, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input
+                  value={color.name}
+                  onChange={(e) => handleColorChange(idx, 'name', e.target.value)}
+                  placeholder="Nome da Cor"
+                  className="flex-1"
+                  disabled={uploading}
+                />
+                <div className="relative h-10 w-16 overflow-hidden rounded-md border">
+                  <input
+                    type="color"
+                    value={color.hex_value}
+                    onChange={(e) => handleColorChange(idx, 'hex_value', e.target.value)}
+                    className="absolute -inset-2 h-14 w-20 cursor-pointer"
+                    disabled={uploading}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setNewColors(newColors.filter((_, i) => i !== idx))}
+                  disabled={uploading}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2 pt-2">
         <Label>Imagens do Produto</Label>
