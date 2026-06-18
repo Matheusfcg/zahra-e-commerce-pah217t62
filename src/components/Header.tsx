@@ -66,7 +66,7 @@ export function Header() {
     >
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Left Section (Menu) */}
-        <div className="flex-1 flex items-center justify-start">
+        <div className="flex-1 flex items-center justify-start gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -75,6 +75,14 @@ export function Header() {
           >
             <Menu className="h-6 w-6 md:h-7 md:w-7" />
           </Button>
+          <div className="hidden md:flex items-center">
+            <Link
+              to="/produtos"
+              className="text-xs lg:text-sm uppercase tracking-widest font-medium hover:opacity-70 transition-opacity"
+            >
+              Todas as Peças
+            </Link>
+          </div>
         </div>
 
         {/* Center Section (Logo) */}
@@ -157,6 +165,13 @@ export function Header() {
 
             {/* Navigation Accordion */}
             <div className="flex-1 overflow-y-auto py-2">
+              <Link
+                to="/produtos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 font-serif text-xl text-[#3d271d] font-normal hover:bg-[#EFEAE2] transition-colors"
+              >
+                Todas as Peças
+              </Link>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="novidade" className="border-b-0">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">

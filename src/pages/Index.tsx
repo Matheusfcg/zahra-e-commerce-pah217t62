@@ -2,56 +2,113 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Leaf, Star, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getProducts, type Product } from '@/services/products'
+import {
+  getProducts,
+  getProductBySlug,
+  getMixedCollectionProducts,
+  getTopStockProducts,
+  type Product,
+} from '@/services/products'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel'
+import Autoplay from 'embla-carousel-autoplay'
 import featuredBagImg from '@/assets/1produto-070e2.png'
 
 const Index = () => {
-  const [products, setProducts] = useState<Product[]>([])
+  const [promoProducts, setPromoProducts] = useState<Product[]>([])
+  const [mixedCollection, setMixedCollection] = useState<Product[]>([])
+  const [topStock, setTopStock] = useState<Product[]>([])
   const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    getProducts()
-      .then((data) => {
-        setProducts(data)
-        if (data.length > 0) {
-          setFeaturedProduct(data[0])
-        }
-      })
-      .catch(console.error)
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [])
+    const fetchData = async () => {
+      try {
+        const [all, featured, mixed, top] = await Promise.all([
+          getProducts(),
+          getProductBySlug('t-shirt-country').catch(() => null),
+          getMixedCollectionProducts(),
+          getTopStockProducts(),
+        ])
 
-  const promoProducts = products.filter((p) => p.is_promotion)
-  const collectionProducts = products.filter((p) => !p.is_promotion)
+        setPromoProducts(all.filter((p) => p.is_promotion))
+        setFeaturedProduct(featured || all[0])
+        setMixedCollection(mixed)
+        setTopStock(top)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-black">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://img.usecurling.com/p/1920/1080?q=high%20fashion%20elegant%20woman%20minimalist&dpr=2"
-            alt="Zahrá Hero"
-            className="w-full h-full object-cover opacity-70"
-          />
-        </div>
-        <div className="relative z-10 text-center text-white px-4 max-w-3xl mx-auto flex flex-col items-center animate-fade-in-up">
-          <h1 className="text-5xl md:text-7xl font-serif mb-8 leading-tight">
-            O Essencial e ser inesquecível
-          </h1>
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-primary hover:bg-cream hover:text-primary rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105"
+      {/* Hero Section Carousel */}
+      <section className="relative h-screen w-full bg-black overflow-hidden group">
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
+          </div>
+        ) : topStock.length > 0 ? (
+          <Carousel
+            opts={{ loop: true }}
+            plugins={[Autoplay({ delay: 5000 })]}
+            className="w-full h-full"
           >
-            <Link to={featuredProduct ? `/product/${featuredProduct.slug}` : '#'}>
-              Descubra Mais
-            </Link>
-          </Button>
-        </div>
+            <CarouselContent className="h-screen">
+              {topStock.map((product) => (
+                <CarouselItem key={product.id} className="relative h-full w-full">
+                  <div className="absolute inset-0 z-0 bg-black">
+                    <img
+                      src={
+                        product.product_images?.[0]?.url ||
+                        'https://img.usecurling.com/p/1920/1080?q=high%20fashion%20elegant%20woman%20minimalist&dpr=2'
+                      }
+                      alt={product.name}
+                      className="w-full h-full object-cover opacity-70"
+                    />
+                  </div>
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center text-white px-4 max-w-3xl mx-auto animate-fade-in-up">
+                    <h1 className="text-5xl md:text-7xl font-serif mb-4 leading-tight">
+                      O Essencial é ser inesquecível
+                    </h1>
+                    <p className="text-xl md:text-3xl mb-8 font-light tracking-wider drop-shadow-md">
+                      {product.name}
+                    </p>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="bg-white text-primary hover:bg-cream hover:text-primary rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105"
+                    >
+                      <Link to={`/product/${product.slug}`}>Descubra Mais</Link>
+                    </Button>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {topStock.length > 1 && (
+              <>
+                <CarouselPrevious className="left-4 md:left-8 bg-black/20 border-white/20 text-white hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CarouselNext className="right-4 md:right-8 bg-black/20 border-white/20 text-white hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </>
+            )}
+          </Carousel>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h1 className="text-5xl md:text-7xl font-serif text-white mb-8 leading-tight animate-fade-in-up">
+              O Essencial é ser inesquecível
+            </h1>
+          </div>
+        )}
       </section>
 
       {/* Featured Product Showcase */}
@@ -78,7 +135,8 @@ const Index = () => {
                   R$ {Number(featuredProduct.price).toFixed(2).replace('.', ',')}
                 </p>
                 <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-                  {featuredProduct.description}
+                  {featuredProduct.description ||
+                    'Uma peça essencial para um look sofisticado e inesquecível.'}
                 </p>
                 <Button
                   asChild
@@ -98,18 +156,19 @@ const Index = () => {
       </section>
 
       {/* Nossa Coleção Collection */}
-      {!isLoading && collectionProducts.length > 0 && (
+      {!isLoading && mixedCollection.length > 0 && (
         <section className="py-24 bg-white" id="colecao">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="font-serif text-4xl mb-4">Nossa Coleção</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Peças exclusivas com design minimalista, desenhadas para inspirar o seu dia a dia.
+                Seleção dinâmica de peças exclusivas, combinando o melhor do luxo acessível e da
+                alta-costura.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {collectionProducts.map((product) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {mixedCollection.map((product) => (
                 <div key={product.id} className="group cursor-pointer">
                   <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
@@ -138,6 +197,16 @@ const Index = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-16 text-center">
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-none px-8 py-6 text-sm uppercase tracking-widest border-primary text-primary hover:bg-primary hover:text-white"
+              >
+                <Link to="/produtos">Ver Todas as Peças</Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -224,26 +293,6 @@ const Index = () => {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Call to Action / Image break */}
-      <section className="h-[60vh] relative flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://img.usecurling.com/p/1920/800?q=abstract%20minimalist%20fabric%20texture%20burgundy&dpr=2"
-            alt="Texture"
-            className="w-full h-full object-cover opacity-90"
-          />
-        </div>
-        <div className="relative z-10 text-center text-white px-4">
-          <h2 className="font-serif text-3xl md:text-5xl mb-6">A Arte da Simplicidade</h2>
-          <Button
-            variant="outline"
-            className="text-white border-white hover:bg-white hover:text-primary rounded-none"
-          >
-            Conheça a Zahrá
-          </Button>
         </div>
       </section>
     </div>
