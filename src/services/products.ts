@@ -56,6 +56,22 @@ export async function getProductBySlug(slug: string) {
   return data as Product
 }
 
+export async function getProductByName(name: string) {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_colors (*),
+      product_images (*)
+    `)
+    .ilike('name', name)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data as Product | null
+}
+
 export async function getMixedCollectionProducts() {
   const { data: highest, error: errHigh } = await supabase
     .from('products')

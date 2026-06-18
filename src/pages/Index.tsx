@@ -4,7 +4,7 @@ import { ShieldCheck, Leaf, Star, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   getProducts,
-  getProductBySlug,
+  getProductByName,
   getMixedCollectionProducts,
   getTopStockProducts,
   type Product,
@@ -31,7 +31,7 @@ const Index = () => {
       try {
         const [all, featured, mixed, top] = await Promise.all([
           getProducts(),
-          getProductBySlug('t-shirt-country').catch(() => null),
+          getProductByName('T-shirt Country').catch(() => null),
           getMixedCollectionProducts(),
           getTopStockProducts(),
         ])
@@ -132,7 +132,9 @@ const Index = () => {
               <div className="flex-1 lg:pl-12 text-center lg:text-left">
                 <h2 className="font-serif text-4xl mb-4">{featuredProduct.name}</h2>
                 <p className="text-xl font-medium mb-6">
-                  R$ {Number(featuredProduct.price).toFixed(2).replace('.', ',')}
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    featuredProduct.price,
+                  )}
                 </p>
                 <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
                   {featuredProduct.description ||
@@ -192,7 +194,10 @@ const Index = () => {
                       </Link>
                     </h3>
                     <p className="font-medium text-muted-foreground">
-                      R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(product.price)}
                     </p>
                   </div>
                 </div>
@@ -251,7 +256,10 @@ const Index = () => {
                       </Link>
                     </h3>
                     <p className="font-medium text-[#D94F4F]">
-                      R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(product.price)}
                     </p>
                   </div>
                 </div>

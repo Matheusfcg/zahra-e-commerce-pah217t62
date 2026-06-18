@@ -60,7 +60,9 @@ export default function ProductsPage() {
                     </Link>
                   </h3>
                   <p className="font-medium text-muted-foreground">
-                    R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      product.price,
+                    )}
                   </p>
                 </div>
               </div>
