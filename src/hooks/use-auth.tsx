@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>
   signOut: () => Promise<{ error: any }>
   resetPassword: (email: string) => Promise<{ error: any }>
   updatePassword: (password: string) => Promise<{ error: any }>
@@ -55,31 +55,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
+
       if (error) {
         if (
           error.status === 400 ||
           error.message?.toLowerCase().includes('invalid login credentials') ||
-          error.message?.toLowerCase().includes('invalid login')
+          error.message?.toLowerCase().includes('invalid login') ||
+          error.name === 'AuthApiError'
         ) {
           return {
+            data: null,
             error: {
-              message: 'E-mail ou senha incorretos',
+              message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
               code: 'invalid_credentials',
-              status: 400,
+              status: error.status || 400,
             },
           }
         }
-        return { error: { message: error.message, status: error.status } }
+        return { data: null, error: { message: error.message, status: error.status } }
       }
-      return { error: null }
+
+      return { data, error: null }
     } catch (err: any) {
       return {
+        data: null,
         error: {
-          message: err?.message || 'Erro inesperado ao fazer login',
+          message: err?.message || 'Erro inesperado ao fazer login. Verifique sua conexão.',
           code: 'unknown_error',
         },
       }

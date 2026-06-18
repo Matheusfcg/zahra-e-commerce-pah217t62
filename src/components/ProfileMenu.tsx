@@ -101,10 +101,12 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
       if (error) {
         const isInvalidCredentials =
           error?.status === 400 ||
-          error?.message?.toLowerCase().includes('invalid login credentials')
+          error?.code === 'invalid_credentials' ||
+          error?.message?.toLowerCase().includes('invalid login credentials') ||
+          error?.message?.toLowerCase().includes('invalid login')
 
         const errorMessage = isInvalidCredentials
-          ? 'E-mail ou senha incorretos'
+          ? 'Credenciais inválidas. Verifique seu e-mail e senha.'
           : error?.message || 'Ocorreu um erro ao fazer login.'
 
         setLoginError(errorMessage)
