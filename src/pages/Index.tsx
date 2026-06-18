@@ -17,7 +17,6 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel'
 import Autoplay from 'embla-carousel-autoplay'
-import featuredBagImg from '@/assets/1produto-070e2.png'
 
 const Index = () => {
   const [promoProducts, setPromoProducts] = useState<Product[]>([])
@@ -31,7 +30,7 @@ const Index = () => {
       try {
         const [all, featured, mixed, top] = await Promise.all([
           getProducts(),
-          getProductByName('T-shirt Country').catch(() => null),
+          getProductByName('T shirt Cowntry').catch(() => null),
           getMixedCollectionProducts(),
           getTopStockProducts(),
         ])
@@ -123,7 +122,10 @@ const Index = () => {
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
                 <Link to={`/product/${featuredProduct.slug}`}>
                   <img
-                    src={featuredProduct.product_images?.[0]?.url || featuredBagImg}
+                    src={
+                      featuredProduct.product_images?.[0]?.url ||
+                      'https://img.usecurling.com/p/800/1000?q=country%20clothing&dpr=2'
+                    }
                     alt={featuredProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
