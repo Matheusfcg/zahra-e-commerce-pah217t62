@@ -34,6 +34,7 @@ export function ProductForm({
 
   const [colorInputName, setColorInputName] = useState('')
   const [colorInputHex, setColorInputHex] = useState('#000000')
+  const [showAddColor, setShowAddColor] = useState(false)
 
   const PT_COLORS: Record<string, string> = {
     amarelo: '#FFFF00',
@@ -98,6 +99,7 @@ export function ProductForm({
       setFiles([])
       setColorInputName('')
       setColorInputHex('#000000')
+      setShowAddColor(false)
     } else {
       setName('')
       setSlug('')
@@ -114,6 +116,7 @@ export function ProductForm({
       setFiles([])
       setColorInputName('')
       setColorInputHex('#000000')
+      setShowAddColor(false)
     }
   }, [product])
 
@@ -325,9 +328,25 @@ export function ProductForm({
       </div>
 
       <div className="space-y-3 pt-2">
-        <Label>Cores Cadastradas</Label>
+        <div className="flex items-center justify-between">
+          <Label>Cores Cadastradas</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddColor((prev) => !prev)}
+            disabled={uploading}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Cor
+          </Button>
+        </div>
 
-        {existingColors.length > 0 && (
+        {existingColors.length === 0 && newColors.length === 0 && !showAddColor && (
+          <div className="text-sm text-muted-foreground italic">Nenhuma cor cadastrada.</div>
+        )}
+
+        {(existingColors.length > 0 || newColors.length > 0) && (
           <div className="flex flex-wrap gap-2">
             {existingColors.map((color) => (
               <div
@@ -343,8 +362,29 @@ export function ProductForm({
                   type="button"
                   onClick={() => removeExistingColor(color.id)}
                   disabled={uploading}
-                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white"
+                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white transition-colors"
                   title="Remover cor"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {newColors.map((color, idx) => (
+              <div
+                key={`new-${idx}`}
+                className="group relative flex items-center gap-2 rounded-md border bg-muted/50 p-2 text-sm"
+              >
+                <div
+                  className="h-4 w-4 rounded-full border shadow-sm"
+                  style={{ backgroundColor: color.hex_value }}
+                />
+                <span>{color.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setNewColors(newColors.filter((_, i) => i !== idx))}
+                  disabled={uploading}
+                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white transition-colors"
+                  title="Remover nova cor"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -353,70 +393,56 @@ export function ProductForm({
           </div>
         )}
 
-        <div className="space-y-3 rounded-md border border-dashed p-3">
-          <Label className="text-xs font-semibold text-muted-foreground">Novas Cores</Label>
-
-          {newColors.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {newColors.map((color, idx) => (
-                <div
-                  key={idx}
-                  className="group relative flex items-center gap-2 rounded-md border bg-muted/50 p-2 text-sm"
-                >
-                  <div
-                    className="h-4 w-4 rounded-full border shadow-sm"
-                    style={{ backgroundColor: color.hex_value }}
-                  />
-                  <span>{color.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setNewColors(newColors.filter((_, i) => i !== idx))}
-                    disabled={uploading}
-                    className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white"
-                    title="Remover nova cor"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+        {showAddColor && (
+          <div className="space-y-3 rounded-md border border-dashed p-3 animate-fade-in-up">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold text-muted-foreground">Novas Cores</Label>
+              <button
+                type="button"
+                onClick={() => setShowAddColor(false)}
+                className="text-muted-foreground hover:text-foreground"
+                title="Fechar"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          )}
 
-          <div className="flex items-center gap-2">
-            <Input
-              value={colorInputName}
-              onChange={(e) => handleColorNameChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  handleAddColor()
-                }
-              }}
-              placeholder="Nome da Cor (ex: Amarelo)"
-              className="flex-1"
-              disabled={uploading}
-            />
-            <div className="relative h-10 w-16 overflow-hidden rounded-md border shrink-0">
-              <input
-                type="color"
-                value={colorInputHex}
-                onChange={(e) => setColorInputHex(e.target.value)}
-                className="absolute -inset-2 h-14 w-20 cursor-pointer"
+            <div className="flex items-center gap-2">
+              <Input
+                value={colorInputName}
+                onChange={(e) => handleColorNameChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddColor()
+                  }
+                }}
+                placeholder="Nome da Cor (ex: Amarelo)"
+                className="flex-1"
                 disabled={uploading}
               />
+              <div className="relative h-10 w-16 overflow-hidden rounded-md border shrink-0">
+                <input
+                  type="color"
+                  value={colorInputHex}
+                  onChange={(e) => setColorInputHex(e.target.value)}
+                  className="absolute -inset-2 h-14 w-20 cursor-pointer"
+                  disabled={uploading}
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleAddColor}
+                disabled={uploading}
+                className="shrink-0"
+                variant="secondary"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar
+              </Button>
             </div>
-            <Button
-              type="button"
-              onClick={handleAddColor}
-              disabled={uploading}
-              className="shrink-0"
-              variant="secondary"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar
-            </Button>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="space-y-2 pt-2">
