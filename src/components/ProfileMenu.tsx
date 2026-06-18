@@ -86,8 +86,21 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
     setLoading(true)
     const { error } = await signIn(email, password)
     setLoading(false)
-    if (error) toast({ title: 'Erro no login', description: error.message, variant: 'destructive' })
-    else toast({ title: 'Login realizado com sucesso!' })
+
+    if (error) {
+      const isInvalidCredentials =
+        error.code === 'invalid_credentials' ||
+        error.message?.toLowerCase().includes('invalid login credentials') ||
+        error.status === 400
+
+      toast({
+        title: 'Erro no login',
+        description: isInvalidCredentials ? 'E-mail ou senha inválidos' : error.message,
+        variant: 'destructive',
+      })
+    } else {
+      toast({ title: 'Login realizado com sucesso!' })
+    }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
