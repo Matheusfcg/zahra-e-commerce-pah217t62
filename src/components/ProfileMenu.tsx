@@ -44,6 +44,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   // Auth Forms
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [document, setDocument] = useState('')
   const [phone, setPhone] = useState('')
@@ -65,8 +66,13 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
   useEffect(() => {
     if (!authModalOpen) {
-      const t = setTimeout(() => setIsForgotPassword(false), 300)
+      const t = setTimeout(() => {
+        setIsForgotPassword(false)
+        setLoginError(null)
+      }, 300)
       return () => clearTimeout(t)
+    } else {
+      setLoginError(null)
     }
   }, [authModalOpen])
 
@@ -83,29 +89,44 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoginError(null)
     setLoading(true)
-    const { error } = await signIn(email, password)
+
+    const cleanEmail = email.trim()
+    const cleanPassword = password.trim()
+
+    const { error } = await signIn(cleanEmail, cleanPassword)
     setLoading(false)
 
     if (error) {
       const isInvalidCredentials =
-        error.code === 'invalid_credentials' ||
-        error.message?.toLowerCase().includes('invalid login credentials') ||
-        error.status === 400
+        error?.code === 'invalid_credentials' ||
+        error?.message?.toLowerCase().includes('invalid login credentials') ||
+        error?.status === 400
 
+      const errorMessage = isInvalidCredentials
+        ? 'E-mail ou senha incorretos'
+        : error.message || 'Ocorreu um erro ao fazer login.'
+
+      setLoginError(errorMessage)
       toast({
         title: 'Erro no login',
-        description: isInvalidCredentials ? 'E-mail ou senha incorretos' : error.message,
+        description: errorMessage,
         variant: 'destructive',
       })
     } else {
       toast({ title: 'Login realizado com sucesso!' })
+      setAuthModalOpen(false)
     }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password.length < 6) {
+
+    const cleanEmail = email.trim()
+    const cleanPassword = password.trim()
+
+    if (cleanPassword.length < 6) {
       toast({
         title: 'Atenção',
         description: 'A senha deve ter no mínimo 6 caracteres.',
@@ -114,10 +135,10 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
       return
     }
     setLoading(true)
-    const { error } = await signUp(email, password, {
-      full_name: name,
-      document_number: document,
-      phone,
+    const { error } = await signUp(cleanEmail, cleanPassword, {
+      full_name: name.trim(),
+      document_number: document.trim(),
+      phone: phone.trim(),
     })
     setLoading(false)
     if (error)
@@ -372,7 +393,10 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
                 <Tabs
                   value={authTab}
-                  onValueChange={(v) => setAuthTab(v as 'login' | 'register')}
+                  onValueChange={(v) => {
+                    setAuthTab(v as 'login' | 'register')
+                    setLoginError(null)
+                  }}
                   className="w-full"
                 >
                   <TabsList className="grid w-full grid-cols-2 mb-8 h-12 rounded-2xl bg-secondary/50 p-1">
@@ -392,6 +416,11 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
                   <TabsContent value="login" className="mt-0 outline-none">
                     <form onSubmit={handleLogin} className="space-y-5">
+                      {loginError && (
+                        <div className="p-3 text-sm font-medium text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-xl animate-fade-in">
+                          {loginError}
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium pl-1">Email</Label>
                         <Input

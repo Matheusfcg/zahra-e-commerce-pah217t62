@@ -55,8 +55,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
       if (error) {
+        if (
+          error.status === 400 ||
+          error.message?.toLowerCase().includes('invalid login credentials')
+        ) {
+          return {
+            error: {
+              message: 'E-mail ou senha incorretos',
+              code: 'invalid_credentials',
+              status: 400,
+            },
+          }
+        }
         return { error }
       }
       return { error: null }
