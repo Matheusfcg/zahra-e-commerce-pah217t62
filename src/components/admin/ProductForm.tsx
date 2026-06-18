@@ -1,35 +1,76 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
-import { Loader2, UploadCloud, X, ImageIcon } from 'lucide-react'
+import { Loader2, UploadCloud, X, ImageIcon, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
-export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
+export function ProductForm({
+  product,
+  onSuccess,
+  onCancel,
+}: {
+  product?: any
+  onSuccess: () => void
+  onCancel: () => void
+}) {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [price, setPrice] = useState(0)
   const [desc, setDesc] = useState('')
   const [comp, setComp] = useState('')
   const [meas, setMeas] = useState('')
+
+  const [existingImages, setExistingImages] = useState<any[]>([])
+  const [existingColors, setExistingColors] = useState<any[]>([])
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
+
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    if (product) {
+      setName(product.name || '')
+      setSlug(product.slug || '')
+      setPrice(product.price || 0)
+      setDesc(product.description || '')
+      setComp(product.composition || '')
+      setMeas(product.measurements || '')
+      setExistingImages(product.product_images || [])
+      setExistingColors(product.product_colors || [])
+      setImagesToDelete([])
+      setFiles([])
+    } else {
+      setName('')
+      setSlug('')
+      setPrice(0)
+      setDesc('')
+      setComp('')
+      setMeas('')
+      setExistingImages([])
+      setExistingColors([])
+      setImagesToDelete([])
+      setFiles([])
+    }
+  }, [product])
+
   const handleName = (v: string) => {
     setName(v)
-    setSlug(
-      v
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-        .replace(/[^\w-]+/g, ''),
-    )
+    if (!product) {
+      setSlug(
+        v
+          .toLowerCase()
+          .replace(/[\s_]+/g, '-')
+          .replace(/[^\w-]+/g, ''),
+      )
+    }
   }
 
   const handleFiles = (newFiles: FileList | null) => {
@@ -41,16 +82,9 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
     }
   }
 
-  const resetForm = () => {
-    setName('')
-    setSlug('')
-    setPrice(0)
-    setDesc('')
-    setComp('')
-    setMeas('')
-    setFiles([])
-    setProgress(0)
-    if (fileRef.current) fileRef.current.value = ''
+  const removeExistingImage = (id: string) => {
+    setImagesToDelete((prev) => [...prev, id])
+    setExistingImages((prev) => prev.filter((img) => img.id !== id))
   }
 
   const handleSave = async () => {
@@ -58,29 +92,62 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
     setUploading(true)
     setProgress(10)
 
-    const { data: newProd, error: prodErr } = await supabase
-      .from('products')
-      .insert({
-        name,
-        slug,
-        price,
-        description: desc || null,
-        composition: comp || null,
-        measurements: meas || null,
-      })
-      .select()
-      .single()
+    let productId = product?.id
 
-    if (prodErr) {
-      toast.error(`Falha: ${prodErr.message}`)
-      return setUploading(false)
+    if (product) {
+      const { error: prodErr } = await supabase
+        .from('products')
+        .update({
+          name,
+          slug,
+          price,
+          description: desc || null,
+          composition: comp || null,
+          measurements: meas || null,
+        })
+        .eq('id', product.id)
+
+      if (prodErr) {
+        toast.error(`Falha ao atualizar: ${prodErr.message}`)
+        return setUploading(false)
+      }
+    } else {
+      const { data: newProd, error: prodErr } = await supabase
+        .from('products')
+        .insert({
+          name,
+          slug,
+          price,
+          description: desc || null,
+          composition: comp || null,
+          measurements: meas || null,
+        })
+        .select()
+        .single()
+
+      if (prodErr) {
+        toast.error(`Falha ao criar: ${prodErr.message}`)
+        return setUploading(false)
+      }
+      productId = newProd.id
     }
 
+    if (imagesToDelete.length > 0) {
+      await supabase.from('product_images').delete().in('id', imagesToDelete)
+    }
+
+    setProgress(30)
+
     let [success, fail] = [0, 0]
+    let currentOrder = 0
+    if (existingImages.length > 0) {
+      currentOrder = Math.max(...existingImages.map((img) => img.display_order || 0))
+    }
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const ext = file.name.split('.').pop()
-      const fileName = `${newProd.id}-${Date.now()}-${i}.${ext}`
+      const fileName = `${productId}-${Date.now()}-${i}.${ext}`
 
       const { error: upErr } = await supabase.storage
         .from('product-images')
@@ -88,24 +155,28 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       if (upErr) fail++
       else {
         const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+        currentOrder++
         const { error: dbErr } = await supabase.from('product_images').insert({
-          product_id: newProd.id,
+          product_id: productId,
           url: urlData.publicUrl,
-          display_order: i + 1,
+          display_order: currentOrder,
         })
         if (dbErr) fail++
         else success++
       }
-      setProgress(10 + ((i + 1) / files.length) * 90)
+      setProgress(30 + ((i + 1) / files.length) * 70)
     }
 
     setUploading(false)
-    if (files.length === 0) toast.success('Produto criado sem imagens')
-    else if (success > 0) toast.success(`Criado e carregado ${success} imagem(ns)`)
-    if (fail > 0) toast.error(`${fail} imagem(ns) falharam`)
+    if (product) {
+      toast.success('Produto atualizado com sucesso!')
+    } else {
+      if (files.length === 0) toast.success('Produto criado sem imagens')
+      else if (success > 0) toast.success(`Criado e carregado ${success} imagem(ns)`)
+      if (fail > 0) toast.error(`${fail} imagem(ns) falharam`)
+    }
 
-    resetForm()
-    onCreated()
+    onSuccess()
   }
 
   return (
@@ -125,7 +196,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            disabled={uploading}
+            disabled={uploading || !!product}
             placeholder="vestido-midi"
           />
         </div>
@@ -171,8 +242,49 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
           />
         </div>
       </div>
+
+      {existingColors.length > 0 && (
+        <div className="space-y-2">
+          <Label>Cores Cadastradas</Label>
+          <div className="flex flex-wrap gap-2">
+            {existingColors.map((color) => (
+              <div key={color.id} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                <div
+                  className="h-4 w-4 rounded-full border"
+                  style={{ backgroundColor: color.hex_value }}
+                />
+                <span>{color.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2 pt-2">
-        <Label>Carregar Imagens</Label>
+        <Label>Imagens do Produto</Label>
+
+        {existingImages.length > 0 && (
+          <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {existingImages.map((img) => (
+              <div
+                key={img.id}
+                className="group relative aspect-square overflow-hidden rounded-md border"
+              >
+                <img src={img.url} alt="Produto" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(img.id)}
+                  disabled={uploading}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive/80 text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
+                  title="Remover imagem"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div
           className={cn(
             'rounded-lg border-2 border-dashed p-6 text-center transition-colors',
@@ -196,7 +308,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
         >
           <UploadCloud className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">
-            Arraste e solte imagens aqui, ou clique para selecionar
+            Arraste e solte imagens aqui, ou clique para adicionar novas
           </p>
           <p className="mt-1 text-xs text-muted-foreground">Suporta JPG, PNG, WEBP</p>
           <input
@@ -213,7 +325,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       {files.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Arquivos ({files.length})</h4>
+            <h4 className="text-sm font-medium">Novas Imagens ({files.length})</h4>
             {!uploading && (
               <Button variant="ghost" size="sm" onClick={() => setFiles([])}>
                 Limpar Tudo
@@ -245,21 +357,24 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       {uploading && (
         <div className="space-y-2 py-2">
           <div className="flex justify-between text-sm">
-            <span>Salvando produto...</span>
+            <span>Salvando alterações...</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} />
         </div>
       )}
 
-      <div className="pt-4 flex justify-end">
+      <div className="flex justify-end gap-2 pt-4">
+        <Button variant="outline" onClick={onCancel} disabled={uploading}>
+          Cancelar
+        </Button>
         <Button onClick={handleSave} disabled={uploading}>
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
             </>
           ) : (
-            'Salvar Produto & Adicionar Próximo'
+            'Salvar Alterações'
           )}
         </Button>
       </div>
