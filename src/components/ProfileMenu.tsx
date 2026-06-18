@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { User as UserIcon, LogOut, ShoppingBag, Heart, Settings, KeyRound } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
@@ -22,6 +22,7 @@ interface UserProfile {
   full_name: string | null
   document_number: string | null
   phone: string | null
+  avatar_url?: string | null
 }
 
 interface ProfileMenuProps {
@@ -54,6 +55,9 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   const [editDoc, setEditDoc] = useState('')
   const [editPhone, setEditPhone] = useState('')
   const [editPassword, setEditPassword] = useState('')
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -291,6 +295,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
           onClick={() => {
             setIsOpen(false)
             setTimeout(() => {
+              setAvatarPreviewUrl(null)
               setSettingsOpen(true)
             }, 350)
           }}
@@ -566,7 +571,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
             <form
               onSubmit={async (e) => {
                 e.preventDefault()
-                const fileInput = document.getElementById('avatar-upload-input') as HTMLInputElement
+                const fileInput = fileInputRef.current
                 const file = fileInput?.files?.[0]
                 const formEl = e.currentTarget
                 const submitButton = formEl.querySelector(
@@ -624,62 +629,30 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
             >
               <div className="flex flex-col items-center justify-center mb-2">
                 <label htmlFor="avatar-upload-input" className="cursor-pointer group relative">
-                  <div
-                    ref={(el) => {
-                      if (el && !el.dataset.loaded) {
-                        el.dataset.loaded = 'true'
-                        import('@/lib/supabase/client').then(({ supabase }) => {
-                          supabase.auth.getUser().then(({ data: { user } }) => {
-                            if (user) {
-                              supabase
-                                .from('user_profiles')
-                                .select('avatar_url')
-                                .eq('id', user.id)
-                                .single()
-                                .then(({ data }) => {
-                                  if (data?.avatar_url) {
-                                    const img = el.querySelector(
-                                      '#avatar-preview-img',
-                                    ) as HTMLImageElement
-                                    const svg = el.querySelector(
-                                      '#avatar-placeholder-icon',
-                                    ) as SVGSVGElement
-                                    if (img && svg) {
-                                      img.src = data.avatar_url
-                                      img.classList.remove('hidden')
-                                      svg.classList.add('hidden')
-                                    }
-                                  }
-                                })
-                            }
-                          })
-                        })
-                      }
-                    }}
-                    className="w-24 h-24 rounded-full overflow-hidden bg-secondary/50 border-4 border-background shadow-sm flex items-center justify-center relative"
-                  >
-                    <img
-                      id="avatar-preview-img"
-                      src=""
-                      alt="Avatar"
-                      className="w-full h-full object-cover hidden"
-                    />
-                    <svg
-                      id="avatar-placeholder-icon"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="40"
-                      height="40"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-muted-foreground"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-secondary/50 border-4 border-background shadow-sm flex items-center justify-center relative">
+                    {avatarPreviewUrl || profile?.avatar_url ? (
+                      <img
+                        src={avatarPreviewUrl || profile?.avatar_url || ''}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-muted-foreground"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    )}
                   </div>
                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <svg
@@ -700,6 +673,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
                   </div>
                 </label>
                 <input
+                  ref={fileInputRef}
                   id="avatar-upload-input"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -708,15 +682,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
                     const file = e.target.files?.[0]
                     if (file) {
                       const url = URL.createObjectURL(file)
-                      const img = document.getElementById('avatar-preview-img') as HTMLImageElement
-                      const icon = document.getElementById('avatar-placeholder-icon')
-                      if (img) {
-                        img.src = url
-                        img.classList.remove('hidden')
-                      }
-                      if (icon) {
-                        icon.classList.add('hidden')
-                      }
+                      setAvatarPreviewUrl(url)
                     }
                   }}
                 />
