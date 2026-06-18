@@ -147,16 +147,6 @@ export function Header() {
 
             {/* Navigation Accordion */}
             <div className="flex-1 overflow-y-auto py-2">
-              {isAdmin && (
-                <Link
-                  to="/admin/upload"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex flex-1 items-center justify-between px-6 py-4 font-serif text-xl text-[#3d271d] font-normal hover:no-underline"
-                >
-                  Painel Administrativo
-                </Link>
-              )}
-
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="novidade" className="border-b-0">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
@@ -219,6 +209,18 @@ export function Header() {
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+
+              {isAdmin && (
+                <div className="mt-2 border-t border-[#EFEAE2] pt-2">
+                  <Link
+                    to="/admin/upload"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-6 py-4 font-serif text-xl text-[#3d271d] font-normal hover:no-underline"
+                  >
+                    Administrador
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </SheetContent>
