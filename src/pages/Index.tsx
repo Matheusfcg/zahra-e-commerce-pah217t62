@@ -35,7 +35,7 @@ const Index = () => {
       try {
         const [all, featured, mixed, top] = await Promise.all([
           getProducts(),
-          getProductByName('T shirt Cowntry').catch(() => null),
+          getProductByName('Maxi Renda').catch(() => null),
           getMixedCollectionProducts(),
           getTopStockProducts(),
         ])
@@ -60,7 +60,7 @@ const Index = () => {
 
         setPromoProducts(uniquePromo)
 
-        // Prefer "T shirt Basica" as featured if no "T shirt Cowntry" found, or just the first product
+        // Prefer "T shirt Basica" as featured if no "Maxi Renda" found, or just the first product
         setFeaturedProduct(
           featured || all.find((p) => p.name === 'T shirt Basica') || all[0] || null,
         )
@@ -161,8 +161,7 @@ const Index = () => {
                   )}
                 </p>
                 <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-                  {featuredProduct.description ||
-                    'Uma peça essencial para um look sofisticado e inesquecível.'}
+                  {featuredProduct.description}
                 </p>
                 <Button
                   asChild
