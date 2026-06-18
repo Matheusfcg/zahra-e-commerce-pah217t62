@@ -2,7 +2,6 @@ import { Outlet } from 'react-router-dom'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { CartDrawer } from '@/components/CartDrawer'
-import { Chatbot } from '@/components/Chatbot'
 import { CartProvider } from '@/contexts/CartContext'
 
 export default function Layout() {
@@ -15,7 +14,6 @@ export default function Layout() {
         </main>
         <Footer />
         <CartDrawer />
-        <Chatbot />
       </div>
     </CartProvider>
   )
