@@ -92,31 +92,40 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
     setLoginError(null)
     setLoading(true)
 
-    const cleanEmail = email.trim()
-    const cleanPassword = password.trim()
+    try {
+      const cleanEmail = email.trim()
+      const cleanPassword = password.trim()
 
-    const { error } = await signIn(cleanEmail, cleanPassword)
-    setLoading(false)
+      const { error } = await signIn(cleanEmail, cleanPassword)
 
-    if (error) {
-      const isInvalidCredentials =
-        error?.code === 'invalid_credentials' ||
-        error?.message?.toLowerCase().includes('invalid login credentials') ||
-        error?.status === 400
+      if (error) {
+        const isInvalidCredentials =
+          error?.status === 400 ||
+          error?.message?.toLowerCase().includes('invalid login credentials')
 
-      const errorMessage = isInvalidCredentials
-        ? 'E-mail ou senha incorretos'
-        : error.message || 'Ocorreu um erro ao fazer login.'
+        const errorMessage = isInvalidCredentials
+          ? 'E-mail ou senha incorretos'
+          : error?.message || 'Ocorreu um erro ao fazer login.'
 
-      setLoginError(errorMessage)
+        setLoginError(errorMessage)
+        toast({
+          title: 'Erro no login',
+          description: errorMessage,
+          variant: 'destructive',
+        })
+      } else {
+        toast({ title: 'Login realizado com sucesso!' })
+        setAuthModalOpen(false)
+      }
+    } catch (err) {
+      setLoginError('Ocorreu um erro inesperado ao fazer login.')
       toast({
         title: 'Erro no login',
-        description: errorMessage,
+        description: 'Ocorreu um erro inesperado ao fazer login.',
         variant: 'destructive',
       })
-    } else {
-      toast({ title: 'Login realizado com sucesso!' })
-      setAuthModalOpen(false)
+    } finally {
+      setLoading(false)
     }
   }
 

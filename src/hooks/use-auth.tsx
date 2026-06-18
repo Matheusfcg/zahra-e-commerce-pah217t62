@@ -55,14 +55,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) {
         if (
           error.status === 400 ||
-          error.message?.toLowerCase().includes('invalid login credentials')
+          error.message?.toLowerCase().includes('invalid login credentials') ||
+          error.message?.toLowerCase().includes('invalid login')
         ) {
           return {
             error: {
@@ -72,11 +73,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             },
           }
         }
-        return { error }
+        return { error: { message: error.message, status: error.status } }
       }
       return { error: null }
     } catch (err: any) {
-      return { error: err }
+      return {
+        error: {
+          message: err?.message || 'Erro inesperado ao fazer login',
+          code: 'unknown_error',
+        },
+      }
     }
   }
   const signOut = async () => {
