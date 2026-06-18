@@ -12,12 +12,8 @@ import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
 import { Loader2 } from 'lucide-react'
 
-import img1 from '@/assets/1produto-67ee8.png'
-import img2 from '@/assets/image-048b7.png'
-
-const getImageUrl = (url: string) => {
-  if (url === '/assets/1produto-67ee8.png') return img1
-  if (url === '/assets/image-048b7.png') return img2
+const getImageUrl = (url: string | undefined | null) => {
+  if (!url) return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing&dpr=2'
   return url
 }
 
@@ -73,7 +69,7 @@ const ProductPage = () => {
         price: Number(product.price),
         image: selectedColor
           ? getImageUrl(selectedColor.image_url)
-          : getImageUrl(sortedImages[0]?.url || ''),
+          : getImageUrl(sortedImages[0]?.url),
         color: selectedColor?.name || 'Padrão',
       })
       setIsAdding(false)

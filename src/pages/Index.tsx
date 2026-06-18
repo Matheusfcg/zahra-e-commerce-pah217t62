@@ -9,17 +9,10 @@ import {
   getTopStockProducts,
   type Product,
 } from '@/services/products'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel'
-import Autoplay from 'embla-carousel-autoplay'
 
 const getPrimaryImageUrl = (images?: Product['product_images']) => {
-  if (!images || images.length === 0) return '/placeholder.svg'
+  if (!images || images.length === 0)
+    return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing&dpr=2'
   return [...images].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))[0].url
 }
 
@@ -27,13 +20,14 @@ const Index = () => {
   const [promoProducts, setPromoProducts] = useState<Product[]>([])
   const [mixedCollection, setMixedCollection] = useState<Product[]>([])
   const [topStock, setTopStock] = useState<Product[]>([])
-  const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
+  const [heroProduct, setHeroProduct] = useState<Product | null>(null)
+  const [showcaseProduct, setShowcaseProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [all, featured, mixed, top] = await Promise.all([
+        const [all, maxiRenda, mixed, top] = await Promise.all([
           getProducts(),
           getProductByName('Maxi Renda').catch(() => null),
           getMixedCollectionProducts(),
@@ -60,10 +54,12 @@ const Index = () => {
 
         setPromoProducts(uniquePromo)
 
-        // Prefer "T shirt Basica" as featured if no "Maxi Renda" found, or just the first product
-        setFeaturedProduct(
-          featured || all.find((p) => p.name === 'T shirt Basica') || all[0] || null,
-        )
+        // Hero product is Maxi Renda, fallback to first top stock
+        setHeroProduct(maxiRenda || uniqueTopStock[0] || all[0] || null)
+
+        // Showcase product is T-shirt Basica or fallback to next available
+        const tshirtBasica = all.find((p) => p.name.toLowerCase().includes('basica'))
+        setShowcaseProduct(tshirtBasica || uniqueTopStock[1] || all[1] || null)
 
         setMixedCollection(mixed)
         setTopStock(uniqueTopStock)
@@ -79,53 +75,47 @@ const Index = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section Carousel */}
+      {/* Hero Section */}
       <section className="relative h-screen w-full bg-black overflow-hidden group">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
-        ) : topStock.length > 0 ? (
-          <Carousel
-            opts={{ loop: true }}
-            plugins={[Autoplay({ delay: 5000 })]}
-            className="w-full h-full"
-          >
-            <CarouselContent className="h-screen">
-              {topStock.map((product) => (
-                <CarouselItem key={product.id} className="relative h-full w-full">
-                  <div className="absolute inset-0 z-0 bg-black">
-                    <img
-                      src={getPrimaryImageUrl(product.product_images)}
-                      alt={product.name}
-                      className="w-full h-full object-cover opacity-70"
-                    />
-                  </div>
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center text-white px-4 max-w-3xl mx-auto animate-fade-in-up">
-                    <h1 className="text-5xl md:text-7xl font-serif mb-4 leading-tight">
-                      O Essencial é ser inesquecível
-                    </h1>
-                    <p className="text-xl md:text-3xl mb-8 font-light tracking-wider drop-shadow-md">
-                      {product.name}
-                    </p>
-                    <Button
-                      asChild
-                      size="lg"
-                      className="bg-white text-primary hover:bg-cream hover:text-primary rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105"
-                    >
-                      <Link to={`/product/${product.slug}`}>Descubra Mais</Link>
-                    </Button>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            {topStock.length > 1 && (
-              <>
-                <CarouselPrevious className="left-4 md:left-8 bg-black/20 border-white/20 text-white hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                <CarouselNext className="right-4 md:right-8 bg-black/20 border-white/20 text-white hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </>
-            )}
-          </Carousel>
+        ) : heroProduct ? (
+          <div className="relative h-full w-full">
+            <div className="absolute inset-0 z-0 bg-black">
+              <img
+                src={getPrimaryImageUrl(heroProduct.product_images)}
+                alt={heroProduct.name}
+                className="w-full h-full object-cover opacity-70"
+              />
+            </div>
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center text-white px-4 max-w-3xl mx-auto animate-fade-in-up">
+              <h1 className="text-5xl md:text-7xl font-serif mb-4 leading-tight">
+                O Essencial é ser inesquecível
+              </h1>
+              <p className="text-xl md:text-3xl mb-4 font-light tracking-wider drop-shadow-md">
+                {heroProduct.name}
+              </p>
+              {heroProduct.description && (
+                <p className="text-base md:text-lg mb-4 font-light max-w-xl mx-auto drop-shadow-md line-clamp-2">
+                  {heroProduct.description}
+                </p>
+              )}
+              <p className="text-2xl font-medium mb-8 drop-shadow-md">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  heroProduct.price,
+                )}
+              </p>
+              <Button
+                asChild
+                size="lg"
+                className="bg-white text-primary hover:bg-cream hover:text-primary rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105"
+              >
+                <Link to={`/product/${heroProduct.slug}`}>Descubra Mais</Link>
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <h1 className="text-5xl md:text-7xl font-serif text-white mb-8 leading-tight animate-fade-in-up">
@@ -142,33 +132,33 @@ const Index = () => {
             <div className="flex justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : featuredProduct ? (
+          ) : showcaseProduct ? (
             <div className="flex flex-col lg:flex-row items-center gap-16">
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
-                <Link to={`/product/${featuredProduct.slug}`}>
+                <Link to={`/product/${showcaseProduct.slug}`}>
                   <img
-                    src={getPrimaryImageUrl(featuredProduct.product_images)}
-                    alt={featuredProduct.name}
+                    src={getPrimaryImageUrl(showcaseProduct.product_images)}
+                    alt={showcaseProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 </Link>
               </div>
               <div className="flex-1 lg:pl-12 text-center lg:text-left">
-                <h2 className="font-serif text-4xl mb-4">{featuredProduct.name}</h2>
+                <h2 className="font-serif text-4xl mb-4">{showcaseProduct.name}</h2>
                 <p className="text-xl font-medium mb-6">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                    featuredProduct.price,
+                    showcaseProduct.price,
                   )}
                 </p>
                 <p className="text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-                  {featuredProduct.description}
+                  {showcaseProduct.description}
                 </p>
                 <Button
                   asChild
                   size="lg"
                   className="rounded-none px-12 py-6 text-sm uppercase tracking-widest"
                 >
-                  <Link to={`/product/${featuredProduct.slug}`}>Comprar Agora</Link>
+                  <Link to={`/product/${showcaseProduct.slug}`}>Comprar Agora</Link>
                 </Button>
               </div>
             </div>
