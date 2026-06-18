@@ -73,35 +73,36 @@ export async function getProductByName(name: string) {
 }
 
 export async function getMixedCollectionProducts() {
-  const { data: highest, error: errHigh } = await supabase
+  const { data, error } = await supabase
     .from('products')
     .select(`
       *,
       product_colors (*),
       product_images (*)
     `)
-    .order('price', { ascending: false })
-    .limit(3)
+    .order('created_at', { ascending: false })
+    .limit(20)
 
-  if (errHigh) throw errHigh
+  if (error) throw error
 
-  const { data: lowest, error: errLow } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .order('price', { ascending: true })
-    .limit(3)
+  const uniqueProducts: Product[] = []
+  const names = new Set<string>()
 
-  if (errLow) throw errLow
+  for (const product of data as Product[]) {
+    if (!names.has(product.name)) {
+      names.add(product.name)
+      uniqueProducts.push(product)
+    }
+  }
 
-  const map = new Map<string, Product>()
-  highest.forEach((p) => map.set(p.id, p as Product))
-  lowest.forEach((p) => map.set(p.id, p as Product))
+  // Ensure "T shirt Basica" is prominent (at the front)
+  const basicaIndex = uniqueProducts.findIndex((p) => p.name.toLowerCase().includes('basica'))
+  if (basicaIndex > 0) {
+    const basica = uniqueProducts.splice(basicaIndex, 1)[0]
+    uniqueProducts.unshift(basica)
+  }
 
-  return Array.from(map.values())
+  return uniqueProducts.slice(0, 6)
 }
 
 export async function getTopStockProducts() {

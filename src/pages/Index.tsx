@@ -18,6 +18,11 @@ import {
 } from '@/components/ui/carousel'
 import Autoplay from 'embla-carousel-autoplay'
 
+const getPrimaryImageUrl = (images?: Product['product_images']) => {
+  if (!images || images.length === 0) return '/placeholder.svg'
+  return [...images].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))[0].url
+}
+
 const Index = () => {
   const [promoProducts, setPromoProducts] = useState<Product[]>([])
   const [mixedCollection, setMixedCollection] = useState<Product[]>([])
@@ -35,10 +40,33 @@ const Index = () => {
           getTopStockProducts(),
         ])
 
-        setPromoProducts(all.filter((p) => p.is_promotion))
-        setFeaturedProduct(featured || all[0])
+        const uniqueTopStock: Product[] = []
+        const topStockNames = new Set<string>()
+        for (const p of top) {
+          if (!topStockNames.has(p.name)) {
+            topStockNames.add(p.name)
+            uniqueTopStock.push(p)
+          }
+        }
+
+        const uniquePromo: Product[] = []
+        const promoNames = new Set<string>()
+        for (const p of all.filter((p) => p.is_promotion)) {
+          if (!promoNames.has(p.name)) {
+            promoNames.add(p.name)
+            uniquePromo.push(p)
+          }
+        }
+
+        setPromoProducts(uniquePromo)
+
+        // Prefer "T shirt Basica" as featured if no "T shirt Cowntry" found, or just the first product
+        setFeaturedProduct(
+          featured || all.find((p) => p.name === 'T shirt Basica') || all[0] || null,
+        )
+
         setMixedCollection(mixed)
-        setTopStock(top)
+        setTopStock(uniqueTopStock)
       } catch (error) {
         console.error(error)
       } finally {
@@ -68,10 +96,7 @@ const Index = () => {
                 <CarouselItem key={product.id} className="relative h-full w-full">
                   <div className="absolute inset-0 z-0 bg-black">
                     <img
-                      src={
-                        product.product_images?.[0]?.url ||
-                        'https://img.usecurling.com/p/1920/1080?q=high%20fashion%20elegant%20woman%20minimalist&dpr=2'
-                      }
+                      src={getPrimaryImageUrl(product.product_images)}
                       alt={product.name}
                       className="w-full h-full object-cover opacity-70"
                     />
@@ -122,10 +147,7 @@ const Index = () => {
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
                 <Link to={`/product/${featuredProduct.slug}`}>
                   <img
-                    src={
-                      featuredProduct.product_images?.[0]?.url ||
-                      'https://img.usecurling.com/p/800/1000?q=country%20clothing&dpr=2'
-                    }
+                    src={getPrimaryImageUrl(featuredProduct.product_images)}
                     alt={featuredProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -177,10 +199,7 @@ const Index = () => {
                   <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
                       <img
-                        src={
-                          product.product_images?.[0]?.url ||
-                          'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
-                        }
+                        src={getPrimaryImageUrl(product.product_images)}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
@@ -236,10 +255,7 @@ const Index = () => {
                   <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
                       <img
-                        src={
-                          product.product_images?.[0]?.url ||
-                          'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
-                        }
+                        src={getPrimaryImageUrl(product.product_images)}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
