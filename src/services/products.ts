@@ -22,6 +22,7 @@ export type Product = {
   description: string
   composition: string
   measurements: string
+  is_promotion: boolean
   product_colors: ProductColor[]
   product_images: ProductImage[]
 }

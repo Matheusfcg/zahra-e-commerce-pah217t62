@@ -24,6 +24,9 @@ const Index = () => {
       })
   }, [])
 
+  const promoProducts = products.filter((p) => p.is_promotion)
+  const collectionProducts = products.filter((p) => !p.is_promotion)
+
   return (
     <div className="w-full">
       {/* Hero Section */}
@@ -63,7 +66,7 @@ const Index = () => {
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-cream-dark">
                 <Link to={`/product/${featuredProduct.slug}`}>
                   <img
-                    src={featuredBagImg}
+                    src={featuredProduct.product_images?.[0]?.url || featuredBagImg}
                     alt={featuredProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -94,35 +97,34 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Feminino Collection */}
-      {!isLoading && products.length > 1 && (
-        <section className="py-24 bg-white" id="feminino">
+      {/* Nossa Coleção Collection */}
+      {!isLoading && collectionProducts.length > 0 && (
+        <section className="py-24 bg-white" id="colecao">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="font-serif text-4xl mb-4">Feminino</h2>
+              <h2 className="font-serif text-4xl mb-4">Nossa Coleção</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Bolsas exclusivas com design minimalista, penduradas com elegância para inspirar o
-                seu dia a dia.
+                Peças exclusivas com design minimalista, desenhadas para inspirar o seu dia a dia.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.slice(1).map((product) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {collectionProducts.map((product) => (
                 <div key={product.id} className="group cursor-pointer">
-                  <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[4/5]">
+                  <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
                       <img
                         src={
                           product.product_images?.[0]?.url ||
-                          'https://img.usecurling.com/p/800/1000?q=minimalist%20bag%20hanging%20door&dpr=2'
+                          'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
                         }
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     </Link>
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-serif text-xl mb-2">
+                  <div className="text-center pt-2">
+                    <h3 className="font-serif text-xl mb-1">
                       <Link
                         to={`/product/${product.slug}`}
                         className="hover:text-primary/80 transition-colors"
@@ -131,6 +133,55 @@ const Index = () => {
                       </Link>
                     </h3>
                     <p className="font-medium text-muted-foreground">
+                      R$ {Number(product.price).toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Promoção Section */}
+      {!isLoading && promoProducts.length > 0 && (
+        <section className="py-24 bg-red-50" id="promocao">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-serif text-4xl mb-4 text-[#D94F4F]">Promoção</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Seleção especial com preços irresistíveis. Aproveite as nossas ofertas.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {promoProducts.map((product) => (
+                <div key={product.id} className="group cursor-pointer">
+                  <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
+                    <Link to={`/product/${product.slug}`}>
+                      <img
+                        src={
+                          product.product_images?.[0]?.url ||
+                          'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </Link>
+                    <div className="absolute top-3 right-3 bg-[#D94F4F] text-white text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 shadow-sm rounded-sm z-10">
+                      Promoção
+                    </div>
+                  </div>
+                  <div className="text-center pt-2">
+                    <h3 className="font-serif text-xl mb-1">
+                      <Link
+                        to={`/product/${product.slug}`}
+                        className="hover:text-[#D94F4F] transition-colors"
+                      >
+                        {product.name}
+                      </Link>
+                    </h3>
+                    <p className="font-medium text-[#D94F4F]">
                       R$ {Number(product.price).toFixed(2).replace('.', ',')}
                     </p>
                   </div>

@@ -7,6 +7,7 @@ import { Loader2, UploadCloud, X, ImageIcon, Trash2, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 
 export function ProductForm({
@@ -25,6 +26,7 @@ export function ProductForm({
   const [desc, setDesc] = useState('')
   const [comp, setComp] = useState('')
   const [meas, setMeas] = useState('')
+  const [isPromotion, setIsPromotion] = useState(false)
 
   const [existingImages, setExistingImages] = useState<any[]>([])
   const [existingColors, setExistingColors] = useState<any[]>([])
@@ -91,6 +93,7 @@ export function ProductForm({
       setDesc(product.description || '')
       setComp(product.composition || '')
       setMeas(product.measurements || '')
+      setIsPromotion(product.is_promotion || false)
       setExistingImages(product.product_images || [])
       setExistingColors(product.product_colors || [])
       setNewColors([])
@@ -108,6 +111,7 @@ export function ProductForm({
       setDesc('')
       setComp('')
       setMeas('')
+      setIsPromotion(false)
       setExistingImages([])
       setExistingColors([])
       setNewColors([])
@@ -169,6 +173,7 @@ export function ProductForm({
           description: desc || null,
           composition: comp || null,
           measurements: meas || null,
+          is_promotion: isPromotion,
         })
         .eq('id', product.id)
 
@@ -187,6 +192,7 @@ export function ProductForm({
           description: desc || null,
           composition: comp || null,
           measurements: meas || null,
+          is_promotion: isPromotion,
         })
         .select()
         .single()
@@ -298,7 +304,7 @@ export function ProductForm({
         />
       </div>
       <div className="space-y-2">
-        <Label>Descrição</Label>
+        <Label>Sobre (Descrição)</Label>
         <Textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
@@ -306,6 +312,19 @@ export function ProductForm({
           rows={3}
         />
       </div>
+
+      <div className="flex items-center space-x-2 rounded-md border p-4 bg-muted/20">
+        <Switch
+          id="promotion"
+          checked={isPromotion}
+          onCheckedChange={setIsPromotion}
+          disabled={uploading}
+        />
+        <Label htmlFor="promotion" className="cursor-pointer font-medium text-foreground">
+          Marcar como Produto em Promoção (Aparecerá na seção Promoção do site)
+        </Label>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Composição</Label>

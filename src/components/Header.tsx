@@ -10,6 +10,7 @@ import {
   Mail,
   MessageCircle,
   Settings,
+  Instagram,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
@@ -154,47 +155,9 @@ export function Header() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Roupas
-                      </Link>
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Sapatos
-                      </Link>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="tudo" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
-                    Tudo
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
-                      <Link
-                        to="/product/zahra-signature-tote"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Feminino
-                      </Link>
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Masculino
-                      </Link>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="acessorios" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
-                    Acessórios
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Bolsas
-                      </Link>
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Cintos
-                      </Link>
+                      <a href="/#colecao" onClick={() => setMobileMenuOpen(false)}>
+                        Nossa Coleção
+                      </a>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -205,9 +168,9 @@ export function Header() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-2 space-y-4 text-[#D94F4F]/80 font-medium">
-                      <Link to="#" onClick={() => setMobileMenuOpen(false)}>
-                        Até 50% OFF
-                      </Link>
+                      <a href="/#promocao" onClick={() => setMobileMenuOpen(false)}>
+                        Ofertas Especiais
+                      </a>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -219,25 +182,29 @@ export function Header() {
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-4 space-y-5 text-sm text-muted-foreground font-medium mt-2">
                       <a
-                        href="tel:08000258990"
+                        href="https://wa.me/5511934160219"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
                         <Phone className="h-4 w-4" />
-                        0800 025 8990
+                        (11) 93416-0219
                       </a>
                       <a
-                        href="mailto:falecom@zahra.com.br"
+                        href="mailto:saczharabrasil@gmail.com"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
                         <Mail className="h-4 w-4" />
-                        falecom@zahra.com.br
+                        saczharabrasil@gmail.com
                       </a>
                       <a
-                        href="https://wa.me/5547991067738"
+                        href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <MessageCircle className="h-4 w-4" />
-                        47 99106 7738
+                        <Instagram className="h-4 w-4" />
+                        @zahra__brasil
                       </a>
                     </div>
                   </AccordionContent>
