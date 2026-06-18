@@ -563,7 +563,165 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
                 Atualize seus dados pessoais ou altere sua senha.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleUpdateProfile} className="space-y-5">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                const fileInput = document.getElementById('avatar-upload-input') as HTMLInputElement
+                const file = fileInput?.files?.[0]
+                const formEl = e.currentTarget
+                const submitButton = formEl.querySelector(
+                  'button[type="submit"]',
+                ) as HTMLButtonElement
+
+                if (file) {
+                  const originalText = submitButton?.innerText || 'Salvando...'
+                  if (submitButton) {
+                    submitButton.disabled = true
+                    submitButton.innerText = 'Salvando Foto...'
+                  }
+
+                  try {
+                    const { supabase } = await import('@/lib/supabase/client')
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser()
+                    if (user) {
+                      const ext = file.name.split('.').pop() || 'jpg'
+                      const fileName = `${user.id}-${Date.now()}.${ext}`
+
+                      const { error: uploadError } = await supabase.storage
+                        .from('avatars')
+                        .upload(`${user.id}/${fileName}`, file, { upsert: true })
+
+                      if (!uploadError) {
+                        const {
+                          data: { publicUrl },
+                        } = supabase.storage.from('avatars').getPublicUrl(`${user.id}/${fileName}`)
+
+                        await supabase
+                          .from('user_profiles')
+                          .update({ avatar_url: publicUrl })
+                          .eq('id', user.id)
+
+                        const { toast } = await import('sonner')
+                        toast.success('Foto de perfil atualizada!')
+                      }
+                    }
+                  } catch (err) {
+                    console.error('Error uploading avatar:', err)
+                  }
+
+                  if (submitButton) {
+                    submitButton.innerText = originalText
+                    submitButton.disabled = false
+                  }
+                }
+
+                // Proceed with standard update profile
+                handleUpdateProfile(e as any)
+              }}
+              className="space-y-5"
+            >
+              <div className="flex flex-col items-center justify-center mb-2">
+                <label htmlFor="avatar-upload-input" className="cursor-pointer group relative">
+                  <div
+                    ref={(el) => {
+                      if (el && !el.dataset.loaded) {
+                        el.dataset.loaded = 'true'
+                        import('@/lib/supabase/client').then(({ supabase }) => {
+                          supabase.auth.getUser().then(({ data: { user } }) => {
+                            if (user) {
+                              supabase
+                                .from('user_profiles')
+                                .select('avatar_url')
+                                .eq('id', user.id)
+                                .single()
+                                .then(({ data }) => {
+                                  if (data?.avatar_url) {
+                                    const img = el.querySelector(
+                                      '#avatar-preview-img',
+                                    ) as HTMLImageElement
+                                    const svg = el.querySelector(
+                                      '#avatar-placeholder-icon',
+                                    ) as SVGSVGElement
+                                    if (img && svg) {
+                                      img.src = data.avatar_url
+                                      img.classList.remove('hidden')
+                                      svg.classList.add('hidden')
+                                    }
+                                  }
+                                })
+                            }
+                          })
+                        })
+                      }
+                    }}
+                    className="w-24 h-24 rounded-full overflow-hidden bg-secondary/50 border-4 border-background shadow-sm flex items-center justify-center relative"
+                  >
+                    <img
+                      id="avatar-preview-img"
+                      src=""
+                      alt="Avatar"
+                      className="w-full h-full object-cover hidden"
+                    />
+                    <svg
+                      id="avatar-placeholder-icon"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-muted-foreground"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </div>
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-white"
+                    >
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                      <circle cx="12" cy="13" r="3" />
+                    </svg>
+                  </div>
+                </label>
+                <input
+                  id="avatar-upload-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const url = URL.createObjectURL(file)
+                      const img = document.getElementById('avatar-preview-img') as HTMLImageElement
+                      const icon = document.getElementById('avatar-placeholder-icon')
+                      if (img) {
+                        img.src = url
+                        img.classList.remove('hidden')
+                      }
+                      if (icon) {
+                        icon.classList.add('hidden')
+                      }
+                    }
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label className="pl-1">Nome Completo</Label>
                 <Input
