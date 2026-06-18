@@ -115,10 +115,11 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
           description: errorMessage,
           variant: 'destructive',
         })
-      } else {
-        toast({ title: 'Login realizado com sucesso!' })
-        setAuthModalOpen(false)
+        return // Abort subsequent state updates per AC guard clause
       }
+
+      toast({ title: 'Login realizado com sucesso!' })
+      setAuthModalOpen(false)
     } catch (err) {
       setLoginError('Ocorreu um erro inesperado ao fazer login.')
       toast({

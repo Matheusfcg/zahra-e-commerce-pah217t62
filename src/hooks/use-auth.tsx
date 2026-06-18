@@ -55,28 +55,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
   const signIn = async (email: string, password: string) => {
     try {
+      // Payload cleaning: Remove extraneous metadata that the GoTrue client might append
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('gotrue_meta_security')
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       })
 
       if (error) {
-        if (
+        const isInvalidCredentials =
           error.status === 400 ||
           error.message?.toLowerCase().includes('invalid login credentials') ||
           error.message?.toLowerCase().includes('invalid login') ||
           error.name === 'AuthApiError'
-        ) {
+
+        if (isInvalidCredentials) {
           return {
             data: null,
             error: {
               message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
               code: 'invalid_credentials',
-              status: error.status || 400,
+              status: 400,
             },
           }
         }
-        return { data: null, error: { message: error.message, status: error.status } }
+        return { data: null, error: { message: error.message, status: error.status || 500 } }
       }
 
       return { data, error: null }
@@ -86,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error: {
           message: err?.message || 'Erro inesperado ao fazer login. Verifique sua conexão.',
           code: 'unknown_error',
+          status: 500,
         },
       }
     }
