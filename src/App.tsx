@@ -7,6 +7,7 @@ import Index from './pages/Index'
 import Product from './pages/Product'
 import Checkout from './pages/Checkout'
 import NotFound from './pages/NotFound'
+import AdminUpload from './pages/admin/AdminUpload'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/product/:id" element={<Product />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin/upload" element={<AdminUpload />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
