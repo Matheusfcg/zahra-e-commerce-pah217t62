@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import {
@@ -41,6 +41,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   // Auth Forms
   const [email, setEmail] = useState('')
@@ -263,6 +264,13 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
   const renderAuthMenu = () => (
     <div className="flex flex-col items-center pt-2">
       <Avatar className="h-20 w-20 mb-4 border-2 border-primary/10 shadow-sm">
+        {profile?.avatar_url && (
+          <AvatarImage
+            src={profile.avatar_url}
+            alt={profile.full_name || 'Usuário'}
+            className="w-full h-full object-cover"
+          />
+        )}
         <AvatarFallback className="text-2xl bg-secondary text-foreground">
           {profile?.full_name?.charAt(0) || user?.email?.charAt(0)}
         </AvatarFallback>
@@ -322,6 +330,13 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
     <button className="hover:text-gold transition-colors flex items-center justify-center p-2 -m-2 outline-none">
       {user ? (
         <Avatar className="h-6 w-6 border border-current">
+          {profile?.avatar_url && (
+            <AvatarImage
+              src={profile.avatar_url}
+              alt={profile.full_name || 'Usuário'}
+              className="w-full h-full object-cover"
+            />
+          )}
           <AvatarFallback className="text-[10px] bg-secondary/80 text-foreground">
             {profile?.full_name?.charAt(0) || user?.email?.charAt(0)}
           </AvatarFallback>
@@ -573,18 +588,9 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
                 e.preventDefault()
                 const fileInput = fileInputRef.current
                 const file = fileInput?.files?.[0]
-                const formEl = e.currentTarget
-                const submitButton = formEl.querySelector(
-                  'button[type="submit"]',
-                ) as HTMLButtonElement
 
                 if (file) {
-                  const originalText = submitButton?.innerText || 'Salvando...'
-                  if (submitButton) {
-                    submitButton.disabled = true
-                    submitButton.innerText = 'Salvando Foto...'
-                  }
-
+                  setUploadingAvatar(true)
                   try {
                     const { supabase } = await import('@/lib/supabase/client')
                     const {
@@ -614,11 +620,8 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
                     }
                   } catch (err) {
                     console.error('Error uploading avatar:', err)
-                  }
-
-                  if (submitButton) {
-                    submitButton.innerText = originalText
-                    submitButton.disabled = false
+                  } finally {
+                    setUploadingAvatar(false)
                   }
                 }
 
@@ -736,9 +739,13 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
               <Button
                 type="submit"
                 className="w-full h-12 mt-6 rounded-xl text-base font-semibold"
-                disabled={loading}
+                disabled={loading || uploadingAvatar}
               >
-                {loading ? 'Salvando...' : 'Salvar Alterações'}
+                {uploadingAvatar
+                  ? 'Salvando Foto...'
+                  : loading
+                    ? 'Salvando...'
+                    : 'Salvar Alterações'}
               </Button>
             </form>
           </div>

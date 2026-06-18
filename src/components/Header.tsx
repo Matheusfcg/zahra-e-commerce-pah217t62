@@ -123,9 +123,19 @@ export function Header() {
               <ProfileMenu
                 renderTrigger={(user, profile) => (
                   <button className="flex items-center gap-5 w-full text-left outline-none mt-2">
-                    <div className="w-14 h-14 rounded-full bg-[#C2A878] flex items-center justify-center flex-shrink-0 text-[#4A3320]">
-                      <User className="h-7 w-7" />
-                    </div>
+                    {profile?.avatar_url ? (
+                      <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#C2A878]">
+                        <img
+                          src={profile.avatar_url}
+                          alt={profile.full_name || 'Usuário'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-[#C2A878] flex items-center justify-center flex-shrink-0 text-[#4A3320]">
+                        <User className="h-7 w-7" />
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       {user ? (
                         <>
