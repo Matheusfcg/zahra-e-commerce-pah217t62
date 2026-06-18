@@ -9,7 +9,6 @@ import {
   Phone,
   Mail,
   MessageCircle,
-  Settings,
   Instagram,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -148,6 +147,16 @@ export function Header() {
 
             {/* Navigation Accordion */}
             <div className="flex-1 overflow-y-auto py-2">
+              {isAdmin && (
+                <Link
+                  to="/admin/upload"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex flex-1 items-center justify-between px-6 py-4 font-serif text-xl text-[#3d271d] font-normal hover:no-underline"
+                >
+                  Painel Administrativo
+                </Link>
+              )}
+
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="novidade" className="border-b-0">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
@@ -209,26 +218,6 @@ export function Header() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-
-                {isAdmin && (
-                  <AccordionItem value="admin" className="border-b-0">
-                    <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
-                      Administração
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="flex flex-col px-6 pb-4 space-y-4 text-muted-foreground font-medium mt-2">
-                        <Link
-                          to="/admin/upload"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 hover:text-foreground"
-                        >
-                          <Settings className="h-4 w-4" />
-                          Gerenciar Catálogo
-                        </Link>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
               </Accordion>
             </div>
           </div>

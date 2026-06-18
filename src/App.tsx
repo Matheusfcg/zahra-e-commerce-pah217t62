@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
+import { AdminRoute } from './components/AdminRoute'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -22,7 +23,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/product/:id" element={<Product />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/admin/upload" element={<AdminUpload />} />
+            <Route
+              path="/admin/upload"
+              element={
+                <AdminRoute>
+                  <AdminUpload />
+                </AdminRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
