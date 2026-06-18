@@ -25,9 +25,12 @@ export function Footer() {
           <h4 className="font-medium uppercase tracking-wider text-sm mb-6">Atendimento</h4>
           <ul className="space-y-3 text-sm opacity-80">
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <a
+                href="mailto:saczharabrasil@gmail.com"
+                className="hover:text-gold transition-colors"
+              >
                 Contato
-              </Link>
+              </a>
             </li>
             <li>
               <Link to="#" className="hover:text-gold transition-colors">

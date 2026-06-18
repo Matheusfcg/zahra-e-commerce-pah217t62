@@ -229,7 +229,6 @@ export default function AdminUpload() {
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">
                     <div>{product.name}</div>
-                    <div className="text-xs text-muted-foreground">{product.slug}</div>
                   </TableCell>
                   <TableCell>R$ {product.price?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell>{product.product_images?.length || 0}</TableCell>
