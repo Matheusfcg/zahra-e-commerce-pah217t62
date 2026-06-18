@@ -21,6 +21,7 @@ const ProductPage = () => {
   const { id } = useParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
+  const [selectedSize, setSelectedSize] = useState<string>('')
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const { addToCart } = useCart()
@@ -61,6 +62,7 @@ const ProductPage = () => {
 
   const handleAddToCart = () => {
     if (product.product_colors && product.product_colors.length > 0 && !selectedColor) return
+    if (!selectedSize) return
     setIsAdding(true)
     setTimeout(() => {
       addToCart({
@@ -71,10 +73,13 @@ const ProductPage = () => {
           ? getImageUrl(selectedColor.image_url)
           : getImageUrl(sortedImages[0]?.url),
         color: selectedColor?.name || 'Padrão',
+        size: selectedSize || 'Único',
       })
       setIsAdding(false)
     }, 600) // Simulate network delay for feeling
   }
+
+  const availableSizes = ['P', 'M', 'G', 'GG']
 
   const sortedImages = [...(product.product_images || [])].sort(
     (a, b) => a.display_order - b.display_order,
@@ -124,7 +129,7 @@ const ProductPage = () => {
           </p>
 
           {product.product_colors && product.product_colors.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-6">
               <div className="flex justify-between text-sm mb-3">
                 <span className="font-medium">Cor: {selectedColor?.name || 'Selecione'}</span>
               </div>
@@ -147,12 +152,35 @@ const ProductPage = () => {
             </div>
           )}
 
+          <div className="mb-8">
+            <div className="flex justify-between text-sm mb-3">
+              <span className="font-medium">Tamanho: {selectedSize || 'Selecione'}</span>
+            </div>
+            <div className="flex gap-3">
+              {availableSizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  className={cn(
+                    'w-10 h-10 border flex items-center justify-center text-sm transition-all',
+                    selectedSize === size
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input hover:border-primary',
+                  )}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Button
             className="w-full h-14 rounded-none text-base uppercase tracking-widest mb-12 relative overflow-hidden group"
             onClick={handleAddToCart}
             disabled={
               isAdding ||
-              (product.product_colors && product.product_colors.length > 0 && !selectedColor)
+              (product.product_colors && product.product_colors.length > 0 && !selectedColor) ||
+              !selectedSize
             }
           >
             <span className={cn('transition-opacity', isAdding ? 'opacity-0' : 'opacity-100')}>

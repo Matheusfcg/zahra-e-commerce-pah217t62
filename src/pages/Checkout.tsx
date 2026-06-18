@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Lock } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,10 +10,20 @@ import { Separator } from '@/components/ui/separator'
 
 const Checkout = () => {
   const { items, subtotal } = useCart()
+  const { session } = useAuth()
   const shipping = items.length > 0 ? 35.0 : 0
   const total = subtotal + shipping
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'pix'>('credit')
+
+  const userEmail = session?.user?.email
+
+  useEffect(() => {
+    if (userEmail && step === 1) {
+      setStep(2)
+    }
+  }, [userEmail, step])
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-24">
@@ -36,31 +47,42 @@ const Checkout = () => {
               </h2>
               {step === 1 ? (
                 <div className="space-y-4 animate-fade-in">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      className="rounded-none h-12"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Nome</Label>
-                      <Input id="firstName" className="rounded-none h-12" />
+                  {userEmail ? (
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium">Você está logado como: {userEmail}</p>
+                      <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(2)}>
+                        Continuar para Entrega
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Sobrenome</Label>
-                      <Input id="lastName" className="rounded-none h-12" />
-                    </div>
-                  </div>
-                  <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(2)}>
-                    Continuar para Entrega
-                  </Button>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">E-mail</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          className="rounded-none h-12"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">Nome</Label>
+                          <Input id="firstName" className="rounded-none h-12" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Sobrenome</Label>
+                          <Input id="lastName" className="rounded-none h-12" />
+                        </div>
+                      </div>
+                      <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(2)}>
+                        Continuar para Entrega
+                      </Button>
+                    </>
+                  )}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">cliente@email.com</p>
+                <p className="text-muted-foreground text-sm">{userEmail || 'cliente@email.com'}</p>
               )}
             </div>
 
@@ -107,40 +129,46 @@ const Checkout = () => {
               {step === 3 && (
                 <div className="space-y-6 animate-fade-in">
                   <div className="flex border rounded-none overflow-hidden">
-                    <button className="flex-1 py-3 text-sm font-medium bg-primary text-primary-foreground">
+                    <button
+                      className={`flex-1 py-3 text-sm font-medium ${paymentMethod === 'credit' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                      onClick={() => setPaymentMethod('credit')}
+                    >
                       Cartão de Crédito
                     </button>
-                    <button className="flex-1 py-3 text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80">
+                    <button
+                      className={`flex-1 py-3 text-sm font-medium ${paymentMethod === 'pix' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                      onClick={() => setPaymentMethod('pix')}
+                    >
                       Pix
                     </button>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="cardName">Nome no Cartão</Label>
-                      <Input id="cardName" className="rounded-none h-12" />
+
+                  {paymentMethod === 'credit' ? (
+                    <div className="space-y-4 text-center py-6">
+                      <p className="text-lg font-medium mb-4">Conclua sua compra em crédito aqui</p>
+                      <Button
+                        asChild
+                        className="w-full rounded-none h-14 text-lg bg-[#25D366] hover:bg-[#128C7E] text-white"
+                      >
+                        <a
+                          href="https://whatsapp.com/dl/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Falar com Atendimento
+                        </a>
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Número do Cartão</Label>
-                      <Input
-                        id="cardNumber"
-                        placeholder="0000 0000 0000 0000"
-                        className="rounded-none h-12"
-                      />
+                  ) : (
+                    <div className="space-y-4 text-center py-6">
+                      <p className="text-sm text-muted-foreground">
+                        Chave Pix será gerada após a confirmação do pedido.
+                      </p>
+                      <Button className="w-full rounded-none h-14 text-lg flex items-center justify-center gap-2">
+                        <Lock className="h-4 w-4" /> Finalizar Pedido com Pix
+                      </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiry">Validade (MM/AA)</Label>
-                        <Input id="expiry" placeholder="MM/AA" className="rounded-none h-12" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input id="cvv" placeholder="123" className="rounded-none h-12" />
-                      </div>
-                    </div>
-                  </div>
-                  <Button className="w-full rounded-none h-14 text-lg flex items-center justify-center gap-2">
-                    <Lock className="h-4 w-4" /> Finalizar Pedido
-                  </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -153,7 +181,7 @@ const Checkout = () => {
 
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
-                  <div key={`${item.id}-${item.color}`} className="flex gap-4">
+                  <div key={`${item.id}-${item.color}-${item.size}`} className="flex gap-4">
                     <div className="h-20 w-16 bg-muted">
                       <img
                         src={item.image}
@@ -164,7 +192,7 @@ const Checkout = () => {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Cor: {item.color} | Qtd: {item.quantity}
+                        Cor: {item.color} | Tam: {item.size} | Qtd: {item.quantity}
                       </p>
                       <p className="text-sm font-medium mt-1">
                         R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
