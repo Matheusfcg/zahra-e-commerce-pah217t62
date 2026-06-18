@@ -54,7 +54,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
   }
 
   const handleSave = async () => {
-    if (!name || !slug) return toast.error('Name and slug are required')
+    if (!name || !slug) return toast.error('Nome e slug são obrigatórios')
     setUploading(true)
     setProgress(10)
 
@@ -72,7 +72,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       .single()
 
     if (prodErr) {
-      toast.error(`Failed: ${prodErr.message}`)
+      toast.error(`Falha: ${prodErr.message}`)
       return setUploading(false)
     }
 
@@ -100,9 +100,9 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
     }
 
     setUploading(false)
-    if (files.length === 0) toast.success('Product created without images')
-    else if (success > 0) toast.success(`Created & uploaded ${success} image(s)`)
-    if (fail > 0) toast.error(`${fail} image(s) failed`)
+    if (files.length === 0) toast.success('Produto criado sem imagens')
+    else if (success > 0) toast.success(`Criado e carregado ${success} imagem(ns)`)
+    if (fail > 0) toast.error(`${fail} imagem(ns) falharam`)
 
     resetForm()
     onCreated()
@@ -112,12 +112,12 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
     <div className="space-y-4 py-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Name *</Label>
+          <Label>Nome do Produto *</Label>
           <Input
             value={name}
             onChange={(e) => handleName(e.target.value)}
             disabled={uploading}
-            placeholder="e.g. Vestido Midi"
+            placeholder="ex. Vestido Midi"
           />
         </div>
         <div className="space-y-2">
@@ -131,7 +131,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Price (R$)</Label>
+        <Label>Preço (R$)</Label>
         <Input
           type="number"
           step="0.01"
@@ -143,7 +143,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
         />
       </div>
       <div className="space-y-2">
-        <Label>Description</Label>
+        <Label>Descrição</Label>
         <Textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
@@ -153,26 +153,26 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Composition</Label>
+          <Label>Composição</Label>
           <Input
             value={comp}
             onChange={(e) => setComp(e.target.value)}
             disabled={uploading}
-            placeholder="e.g. 100% Algodão"
+            placeholder="ex. 100% Algodão"
           />
         </div>
         <div className="space-y-2">
-          <Label>Measurements</Label>
+          <Label>Medidas</Label>
           <Input
             value={meas}
             onChange={(e) => setMeas(e.target.value)}
             disabled={uploading}
-            placeholder="e.g. P, M, G"
+            placeholder="ex. P, M, G"
           />
         </div>
       </div>
       <div className="space-y-2 pt-2">
-        <Label>Upload Images</Label>
+        <Label>Carregar Imagens</Label>
         <div
           className={cn(
             'rounded-lg border-2 border-dashed p-6 text-center transition-colors',
@@ -195,8 +195,10 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
           onClick={() => !uploading && fileRef.current?.click()}
         >
           <UploadCloud className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium">Drag & drop images here, or click to select</p>
-          <p className="mt-1 text-xs text-muted-foreground">Supports JPG, PNG, WEBP</p>
+          <p className="text-sm font-medium">
+            Arraste e solte imagens aqui, ou clique para selecionar
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Suporta JPG, PNG, WEBP</p>
           <input
             type="file"
             ref={fileRef}
@@ -211,10 +213,10 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       {files.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Files ({files.length})</h4>
+            <h4 className="text-sm font-medium">Arquivos ({files.length})</h4>
             {!uploading && (
               <Button variant="ghost" size="sm" onClick={() => setFiles([])}>
-                Clear All
+                Limpar Tudo
               </Button>
             )}
           </div>
@@ -243,7 +245,7 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
       {uploading && (
         <div className="space-y-2 py-2">
           <div className="flex justify-between text-sm">
-            <span>Saving product...</span>
+            <span>Salvando produto...</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} />
@@ -254,10 +256,10 @@ export function CreateProductForm({ onCreated }: { onCreated: () => void }) {
         <Button onClick={handleSave} disabled={uploading}>
           {uploading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
             </>
           ) : (
-            'Save Product & Start Next'
+            'Salvar Produto & Adicionar Próximo'
           )}
         </Button>
       </div>

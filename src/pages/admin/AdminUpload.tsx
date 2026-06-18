@@ -42,7 +42,7 @@ export default function AdminUpload() {
   const fetchProducts = async () => {
     const { data, error } = await supabase.from('products').select('*').order('name')
     if (data) setProducts(data)
-    if (error) toast.error('Error fetching products')
+    if (error) toast.error('Erro ao buscar produtos')
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ export default function AdminUpload() {
     const { error } = await signIn(email, password)
     setLoginLoading(false)
     if (error) toast.error(error.message)
-    else toast.success('Logged in successfully')
+    else toast.success('Login realizado com sucesso')
   }
 
   if (authLoading) {
@@ -67,13 +67,15 @@ export default function AdminUpload() {
       <div className="mx-auto mb-20 mt-24 max-w-md px-4">
         <Card>
           <CardHeader>
-            <CardTitle>Admin Login</CardTitle>
-            <CardDescription>Please login to access the admin area.</CardDescription>
+            <CardTitle>Login Administrativo</CardTitle>
+            <CardDescription>
+              Por favor, faça login para acessar a área administrativa.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -83,7 +85,7 @@ export default function AdminUpload() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -94,7 +96,7 @@ export default function AdminUpload() {
               </div>
               <Button type="submit" className="w-full" disabled={loginLoading}>
                 {loginLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Login
+                Entrar
               </Button>
             </form>
           </CardContent>
@@ -107,9 +109,9 @@ export default function AdminUpload() {
     <div className="mx-auto mb-20 mt-24 max-w-4xl px-4">
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Products</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Produtos</h1>
           <p className="mt-2 text-muted-foreground">
-            Update product prices and upload images simultaneously.
+            Atualize preços de produtos e envie imagens simultaneamente.
           </p>
         </div>
 
@@ -117,15 +119,15 @@ export default function AdminUpload() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add New Product
+              Adicionar Novo Produto
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>Adicionar Novo Produto</DialogTitle>
               <DialogDescription>
-                Create a new product and upload its images. The form will reset upon saving so you
-                can quickly add the next item.
+                Crie um novo produto e envie suas imagens. O formulário será redefinido após salvar
+                para que você possa adicionar rapidamente o próximo item.
               </DialogDescription>
             </DialogHeader>
             <CreateProductForm onCreated={fetchProducts} />
@@ -136,7 +138,7 @@ export default function AdminUpload() {
       {products.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <p>No products found in the database.</p>
+            <p>Nenhum produto encontrado no banco de dados.</p>
           </CardContent>
         </Card>
       ) : (

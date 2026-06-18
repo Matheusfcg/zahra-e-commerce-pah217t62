@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Search, ShoppingBag, Menu, X, User, Phone, Mail, MessageCircle } from 'lucide-react'
+import {
+  Search,
+  ShoppingBag,
+  Menu,
+  X,
+  User,
+  Phone,
+  Mail,
+  MessageCircle,
+  Settings,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -12,6 +22,8 @@ import {
 } from '@/components/ui/accordion'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
 import logoZahra from '../assets/logozahra-e51d5.png'
 
 export function Header() {
@@ -19,8 +31,23 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { totalItems, openDrawer } = useCart()
   const location = useLocation()
+  const { user } = useAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const isHome = location.pathname === '/'
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => setIsAdmin(!!(data as any)?.is_admin))
+    } else {
+      setIsAdmin(false)
+    }
+  }, [user])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -215,6 +242,26 @@ export function Header() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+
+                {isAdmin && (
+                  <AccordionItem value="admin" className="border-b-0">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
+                      Administração
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col px-6 pb-4 space-y-4 text-muted-foreground font-medium mt-2">
+                        <Link
+                          to="/admin/upload"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-3 hover:text-foreground"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Gerenciar Catálogo
+                        </Link>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                )}
               </Accordion>
             </div>
           </div>

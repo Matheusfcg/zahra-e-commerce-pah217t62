@@ -56,13 +56,13 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       .eq('id', product.id)
 
     if (priceError) {
-      toast.error('Failed to update price')
+      toast.error('Falha ao atualizar o preço')
       setUploading(false)
       return
     }
 
     if (files.length === 0) {
-      toast.success('Price updated successfully')
+      toast.success('Preço atualizado com sucesso')
       setUploading(false)
       onUpdated()
       return
@@ -76,7 +76,7 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       .limit(1)
 
     if (orderError) {
-      toast.error('Error fetching current image order')
+      toast.error('Erro ao buscar a ordem atual das imagens')
       setUploading(false)
       return
     }
@@ -96,7 +96,7 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
         .upload(fileName, file, { upsert: true })
 
       if (uploadError) {
-        toast.error(`Failed to upload ${file.name}`)
+        toast.error(`Falha ao fazer upload de ${file.name}`)
         failCount++
       } else {
         const { data: publicUrlData } = supabase.storage
@@ -117,18 +117,18 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
 
     setUploading(false)
     if (successCount > 0) {
-      toast.success(`Updated price and uploaded ${successCount} image(s)`)
+      toast.success(`Preço atualizado e ${successCount} imagem(ns) enviada(s)`)
       setFiles([])
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
-    if (failCount > 0) toast.error(`${failCount} image(s) failed to upload`)
+    if (failCount > 0) toast.error(`${failCount} imagem(ns) falharam ao ser enviada(s)`)
     onUpdated()
   }
 
   return (
     <div className="space-y-6 pt-4 pb-2">
       <div className="space-y-2">
-        <Label htmlFor={`price-${product.id}`}>Price (R$)</Label>
+        <Label htmlFor={`price-${product.id}`}>Preço (R$)</Label>
         <Input
           id={`price-${product.id}`}
           type="number"
@@ -142,7 +142,7 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       </div>
 
       <div className="space-y-2">
-        <Label>Upload Images</Label>
+        <Label>Carregar Imagens</Label>
         <div
           className={cn(
             'rounded-lg border-2 border-dashed p-8 text-center transition-colors',
@@ -155,9 +155,11 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
           onClick={() => !uploading && fileInputRef.current?.click()}
         >
           <UploadCloud className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-          <p className="text-sm font-medium">Drag & drop images here, or click to select</p>
+          <p className="text-sm font-medium">
+            Arraste e solte imagens aqui, ou clique para selecionar
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Supports JPG, PNG, WEBP (Unlimited files)
+            Suporta JPG, PNG, WEBP (Arquivos ilimitados)
           </p>
           <input
             type="file"
@@ -173,10 +175,10 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       {files.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Selected Files ({files.length})</h4>
+            <h4 className="text-sm font-medium">Arquivos Selecionados ({files.length})</h4>
             {!uploading && (
               <Button variant="ghost" size="sm" onClick={() => setFiles([])}>
-                Clear All
+                Limpar Tudo
               </Button>
             )}
           </div>
@@ -210,7 +212,7 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       {uploading && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Saving changes...</span>
+            <span>Salvando alterações...</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} />
@@ -220,10 +222,10 @@ export function ProductAdminForm({ product, onUpdated }: { product: any; onUpdat
       <Button className="w-full sm:w-auto" onClick={handleSave} disabled={uploading}>
         {uploading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
           </>
         ) : (
-          'Save Changes'
+          'Salvar Alterações'
         )}
       </Button>
     </div>
