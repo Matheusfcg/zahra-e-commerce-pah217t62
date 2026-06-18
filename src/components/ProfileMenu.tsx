@@ -95,7 +95,7 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
 
       toast({
         title: 'Erro no login',
-        description: isInvalidCredentials ? 'E-mail ou senha inválidos' : error.message,
+        description: isInvalidCredentials ? 'E-mail ou senha incorretos' : error.message,
         variant: 'destructive',
       })
     } else {
