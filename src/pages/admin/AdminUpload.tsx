@@ -13,7 +13,17 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Plus } from 'lucide-react'
 import { ProductAdminForm } from '@/components/admin/ProductAdminForm'
+import { CreateProductForm } from '@/components/admin/CreateProductForm'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -95,11 +105,32 @@ export default function AdminUpload() {
 
   return (
     <div className="mx-auto mb-20 mt-24 max-w-4xl px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Manage Products</h1>
-        <p className="mt-2 text-muted-foreground">
-          Update product prices and upload images simultaneously.
-        </p>
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Manage Products</h1>
+          <p className="mt-2 text-muted-foreground">
+            Update product prices and upload images simultaneously.
+          </p>
+        </div>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+              <DialogDescription>
+                Create a new product and upload its images. The form will reset upon saving so you
+                can quickly add the next item.
+              </DialogDescription>
+            </DialogHeader>
+            <CreateProductForm onCreated={fetchProducts} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {products.length === 0 ? (
