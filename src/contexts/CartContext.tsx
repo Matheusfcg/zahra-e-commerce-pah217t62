@@ -31,7 +31,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY)
-      return saved ? JSON.parse(saved) : []
+      if (saved) {
+        const parsed: CartItem[] = JSON.parse(saved)
+        return parsed.filter(
+          (item) =>
+            !item.name.toLowerCase().includes('cowntry') &&
+            !item.name.toLowerCase().includes('basica') &&
+            !item.name.toLowerCase().includes('básica'),
+        )
+      }
+      return []
     } catch {
       return []
     }

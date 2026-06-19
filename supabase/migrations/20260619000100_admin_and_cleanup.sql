@@ -30,7 +30,7 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
   END IF;
   
-  -- Delete the mock products
+  -- Delete the mock products completely
   DELETE FROM public.products WHERE name ILIKE '%Cowntry%' OR name ILIKE '%Basica%';
 
 END $$;

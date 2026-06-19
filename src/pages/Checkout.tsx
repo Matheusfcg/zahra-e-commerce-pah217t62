@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Lock } from 'lucide-react'
+import { ChevronRight, Lock, Copy } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { toast } from '@/hooks/use-toast'
+import { generatePixPayload } from '@/lib/pix'
 
 const Checkout = () => {
   const { items, subtotal } = useCart()
@@ -17,6 +19,9 @@ const Checkout = () => {
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'pix'>('credit')
   const [guestEmail, setGuestEmail] = useState('')
+  const [pixPayload, setPixPayload] = useState('')
+  const [isGeneratingPix, setIsGeneratingPix] = useState(false)
+  const [pixGenerated, setPixGenerated] = useState(false)
 
   const userEmail = session?.user?.email
   const displayEmail = userEmail || guestEmail || 'Convidado'
@@ -26,6 +31,36 @@ const Checkout = () => {
       setStep(2)
     }
   }, [userEmail, step])
+
+  const handleGeneratePix = () => {
+    setIsGeneratingPix(true)
+    try {
+      const payload = generatePixPayload({
+        pixKey: 'contato@zahrabrasil.com.br',
+        merchantName: 'Zahra Brasil',
+        merchantCity: 'Sao Paulo',
+        amount: total,
+      })
+      setPixPayload(payload)
+      setPixGenerated(true)
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao gerar o código PIX. Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsGeneratingPix(false)
+    }
+  }
+
+  const copyPixKey = () => {
+    navigator.clipboard.writeText(pixPayload)
+    toast({
+      title: 'Copiado!',
+      description: 'Chave PIX copiada para a área de transferência.',
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-24">
@@ -163,16 +198,41 @@ const Checkout = () => {
                         </a>
                       </Button>
                     </div>
+                  ) : pixGenerated ? (
+                    <div className="space-y-6 flex flex-col items-center py-4 animate-fade-in">
+                      <p className="font-medium text-lg">Escaneie o QR Code abaixo</p>
+                      <div className="bg-white p-4 rounded-lg border">
+                        <img
+                          src={`https://quickchart.io/qr?size=250&text=${encodeURIComponent(pixPayload)}`}
+                          alt="PIX QR Code"
+                          className="w-48 h-48"
+                        />
+                      </div>
+                      <div className="w-full max-w-sm space-y-2">
+                        <Label>Ou copie a chave PIX Copia e Cola:</Label>
+                        <div className="flex gap-2">
+                          <Input value={pixPayload} readOnly className="font-mono text-xs" />
+                          <Button variant="outline" onClick={copyPixKey} title="Copiar">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-4 text-center py-6">
                       <p className="text-2xl font-medium text-primary mb-2">
                         Total a pagar: R$ {total.toFixed(2).replace('.', ',')}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Chave Pix será gerada após a confirmação do pedido.
+                        Chave Pix será gerada com o valor exato da compra.
                       </p>
-                      <Button className="w-full rounded-none h-14 text-lg flex items-center justify-center gap-2">
-                        <Lock className="h-4 w-4" /> Finalizar Pedido com Pix
+                      <Button
+                        className="w-full rounded-none h-14 text-lg flex items-center justify-center gap-2"
+                        onClick={handleGeneratePix}
+                        disabled={isGeneratingPix}
+                      >
+                        <Lock className="h-4 w-4" />
+                        {isGeneratingPix ? 'Gerando...' : 'Finalizar Pedido com Pix'}
                       </Button>
                     </div>
                   )}
