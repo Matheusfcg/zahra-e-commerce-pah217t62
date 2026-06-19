@@ -3,8 +3,15 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { getProducts, type Product } from '@/services/products'
-import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from '@/components/ui/carousel'
 import Autoplay from 'embla-carousel-autoplay'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProductCard } from '@/components/ProductCard'
 import imgBrand1 from '@/assets/image-048b7.png'
 import imgBrand2 from '@/assets/image-43b69.png'
@@ -15,9 +22,11 @@ const getPrimaryImageUrl = (images?: Product['product_images']) => {
 }
 
 const Index = () => {
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [promoProducts, setPromoProducts] = useState<Product[]>([])
   const [carouselProducts, setCarouselProducts] = useState<Product[]>([])
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const autoplayPlugin = useRef(Autoplay({ delay: 5000, stopOnInteraction: true }))
@@ -26,23 +35,16 @@ const Index = () => {
     const fetchData = async () => {
       try {
         const all = await getProducts()
+        setAllProducts(all)
 
-        // Multi-category carousel logic: exactly 2 per category where show_in_carousel is true
-        const carouselCandidates = all.filter((p) => p.show_in_carousel === true)
-        const categories = [...new Set(carouselCandidates.map((p) => p.category).filter(Boolean))]
-        const categoryCarousel: Product[] = []
+        const heroCandidates = all.filter((p) => p.show_in_carousel === true)
+        setCarouselProducts(
+          heroCandidates.length > 0 ? heroCandidates.slice(0, 5) : all.slice(0, 5),
+        )
 
-        categories.forEach((cat) => {
-          const inCat = carouselCandidates.filter((p) => p.category === cat)
-          categoryCarousel.push(...inCat.slice(0, 2))
-        })
+        const cats = [...new Set(all.map((p) => p.category).filter(Boolean))] as string[]
+        setCategories(cats)
 
-        // Fallback if no specific categories match
-        if (categoryCarousel.length === 0) {
-          categoryCarousel.push(...all.slice(0, 4))
-        }
-
-        setCarouselProducts(categoryCarousel)
         setPromoProducts(all.filter((p) => p.is_promotion).slice(0, 4))
         setFeaturedProducts(all.filter((p) => p.is_featured).slice(0, 8))
       } catch (error) {
@@ -120,6 +122,55 @@ const Index = () => {
           </Carousel>
         ) : null}
       </section>
+
+      {/* Categorized Product Carousel */}
+      {categories.length > 0 && (
+        <section className="py-16 md:py-24 bg-white px-4 md:px-8 max-w-7xl mx-auto">
+          <div className="mb-12 md:mb-16 text-center">
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-[#3c6e47] mb-4">
+              Coleções
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground uppercase tracking-widest max-w-2xl mx-auto">
+              Nossas categorias exclusivas
+            </p>
+          </div>
+          <Tabs defaultValue={categories[0]} className="w-full">
+            <TabsList className="w-full flex flex-wrap justify-center bg-transparent mb-8 h-auto gap-2">
+              {categories.map((cat) => (
+                <TabsTrigger
+                  key={cat}
+                  value={cat}
+                  className="data-[state=active]:bg-[#3c6e47] data-[state=active]:text-white rounded-none border border-[#3c6e47] px-6 py-2 uppercase text-xs font-bold text-[#3c6e47] bg-transparent transition-colors"
+                >
+                  {cat}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {categories.map((cat) => {
+              const catProducts = allProducts.filter((p) => p.category === cat).slice(0, 2)
+              return (
+                <TabsContent key={cat} value={cat} className="mt-0">
+                  <Carousel className="w-full max-w-5xl mx-auto">
+                    <CarouselContent>
+                      {catProducts.map((product) => (
+                        <CarouselItem key={product.id} className="md:basis-1/2">
+                          <ProductCard product={product} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {catProducts.length > 1 && (
+                      <>
+                        <CarouselPrevious className="hidden md:flex -left-12 text-[#3c6e47] border-[#3c6e47]" />
+                        <CarouselNext className="hidden md:flex -right-12 text-[#3c6e47] border-[#3c6e47]" />
+                      </>
+                    )}
+                  </Carousel>
+                </TabsContent>
+              )
+            })}
+          </Tabs>
+        </section>
+      )}
 
       {/* Brand Concept Section 1 */}
       <section className="py-16 md:py-32 bg-white">
