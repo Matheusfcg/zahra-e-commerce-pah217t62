@@ -70,7 +70,28 @@ export default function AdminUpload() {
 
   const fetchSiteContent = async () => {
     const { data, error } = await supabase.from('site_content').select('*').order('section_key')
-    if (data) setSiteContent(data)
+    if (data) {
+      const existingKeys = new Set(data.map((d) => d.section_key))
+      const requiredKeys = [
+        { key: 'main_title', value: 'Todas as Peças' },
+        { key: 'sets_title', value: 'Conjuntos' },
+        { key: 'tops_title', value: 'Partes de Cima' },
+        { key: 'bottoms_title', value: 'Partes de Baixo' },
+      ]
+
+      const mergedData = [...data]
+      requiredKeys.forEach((req) => {
+        if (!existingKeys.has(req.key)) {
+          mergedData.push({
+            id: '',
+            section_key: req.key,
+            content_value: req.value,
+          })
+        }
+      })
+
+      setSiteContent(mergedData)
+    }
     if (error) toast.error('Erro ao buscar conteúdos do site')
   }
 
@@ -102,10 +123,19 @@ export default function AdminUpload() {
     setSavingContent(true)
     try {
       for (const item of siteContent) {
-        await supabase
-          .from('site_content')
-          .update({ content_value: item.content_value })
-          .eq('id', item.id)
+        if (item.id) {
+          await supabase
+            .from('site_content')
+            .update({ content_value: item.content_value })
+            .eq('id', item.id)
+        } else {
+          await supabase
+            .from('site_content')
+            .upsert(
+              { section_key: item.section_key, content_value: item.content_value },
+              { onConflict: 'section_key' },
+            )
+        }
       }
       toast.success('Conteúdo atualizado com sucesso!')
       setTimeout(() => {
@@ -154,15 +184,19 @@ export default function AdminUpload() {
     hero_description: 'DESCRIÇÃO DO HERO',
     hero_left_image: 'IMAGEM ESQUERDA DO HERO',
     hero_right_image: 'IMAGEM DIREITA DO HERO',
-    hero_title: 'TÍTULO DO HERO',
+    hero_title: 'TÍTULO DA SEÇÃO (PRINCIPAL/HERO)',
+    main_title: 'TÍTULO DA SEÇÃO (TODAS AS PEÇAS)',
     values_1_title: 'TÍTULO DO VALOR 1',
     values_1_desc: 'DESCRIÇÃO DO VALOR 1',
     values_2_title: 'TÍTULO DO VALOR 2',
     values_2_desc: 'DESCRIÇÃO DO VALOR 2',
     values_3_title: 'TÍTULO DO VALOR 3',
     values_3_desc: 'DESCRIÇÃO DO VALOR 3',
+    sets_title: 'TÍTULO DA SEÇÃO (CONJUNTOS)',
     sets_description: 'DESCRIÇÃO DA CATEGORIA (CONJUNTOS)',
+    tops_title: 'TÍTULO DA SEÇÃO (PARTES DE CIMA)',
     tops_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE CIMA)',
+    bottoms_title: 'TÍTULO DA SEÇÃO (PARTES DE BAIXO)',
     bottoms_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE BAIXO)',
   }
 
@@ -170,12 +204,15 @@ export default function AdminUpload() {
     return siteContent
       .filter((item) => {
         const key = item.section_key
-        if (category === 'sets') return ['sets_description'].includes(key)
-        if (category === 'tops') return ['tops_description'].includes(key)
-        if (category === 'bottoms') return ['bottoms_description'].includes(key)
+        if (category === 'sets') return ['sets_title', 'sets_description'].includes(key)
+        if (category === 'tops') return ['tops_title', 'tops_description'].includes(key)
+        if (category === 'bottoms') return ['bottoms_title', 'bottoms_description'].includes(key)
         return ![
+          'sets_title',
           'sets_description',
+          'tops_title',
           'tops_description',
+          'bottoms_title',
           'bottoms_description',
           'hero_carousel_1',
           'hero_carousel_2',

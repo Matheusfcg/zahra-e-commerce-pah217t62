@@ -4,6 +4,7 @@ import { getProducts, type Product } from '@/services/products'
 import { Loader2 } from 'lucide-react'
 import { ProductCard } from '@/components/ProductCard'
 import { useFavorites } from '@/hooks/use-favorites'
+import { supabase } from '@/lib/supabase/client'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -12,21 +13,54 @@ export default function ProductsPage() {
   const category = searchParams.get('category')
   const promotion = searchParams.get('promotion')
   const { favorites, toggleFavorite } = useFavorites()
+  const [siteContent, setSiteContent] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setIsLoading(true)
-    getProducts(category || undefined, promotion === 'true')
-      .then(setProducts)
+    Promise.all([
+      getProducts(category || undefined, promotion === 'true'),
+      supabase.from('site_content').select('*'),
+    ])
+      .then(([productsData, contentResponse]) => {
+        setProducts(productsData || [])
+        if (contentResponse.data) {
+          const contentMap = contentResponse.data.reduce(
+            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
+            {} as Record<string, string>,
+          )
+          setSiteContent(contentMap)
+        }
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false))
   }, [category, promotion])
 
-  const title = promotion === 'true' ? 'Promoções' : category ? category : 'Todas as Peças'
+  const getText = (key: string, fallback: string) => siteContent[key] || fallback
 
-  const subtitle =
-    promotion === 'true'
-      ? 'Aproveite nossas ofertas exclusivas.'
-      : 'Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.'
+  let title = 'Todas as Peças'
+  let subtitle =
+    'Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.'
+
+  if (promotion === 'true') {
+    title = 'Promoções'
+    subtitle = 'Aproveite nossas ofertas exclusivas.'
+  } else if (category) {
+    const catLower = category.toLowerCase()
+    if (catLower.includes('conjuntos')) {
+      title = getText('sets_title', category)
+      subtitle = getText('sets_description', subtitle)
+    } else if (catLower.includes('cima')) {
+      title = getText('tops_title', category)
+      subtitle = getText('tops_description', subtitle)
+    } else if (catLower.includes('baixo')) {
+      title = getText('bottoms_title', category)
+      subtitle = getText('bottoms_description', subtitle)
+    } else {
+      title = category
+    }
+  } else {
+    title = getText('main_title', 'Todas as Peças')
+  }
 
   return (
     <div className="w-full pt-28 pb-24 min-h-screen bg-background">
