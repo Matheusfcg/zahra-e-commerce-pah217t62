@@ -56,9 +56,8 @@ const Index = () => {
         // Hero product is Maxi Renda, fallback to first top stock
         setHeroProduct(maxiRenda || uniqueTopStock[0] || all[0] || null)
 
-        // Showcase product is T-shirt Basica or fallback to next available
-        const tshirtBasica = all.find((p) => p.name.toLowerCase().includes('basica'))
-        setShowcaseProduct(tshirtBasica || uniqueTopStock[1] || all[1] || null)
+        // Showcase product is the second top stock or fallback to next available
+        setShowcaseProduct(uniqueTopStock[1] || all[1] || null)
 
         setMixedCollection(mixed)
         setTopStock(uniqueTopStock)
@@ -197,12 +196,6 @@ const Index = () => {
                         {product.name}
                       </Link>
                     </h3>
-                    <p className="font-medium text-muted-foreground">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(product.price)}
-                    </p>
                   </div>
                 </div>
               ))}

@@ -95,13 +95,6 @@ export async function getMixedCollectionProducts() {
     }
   }
 
-  // Ensure "T shirt Basica" is prominent (at the front)
-  const basicaIndex = uniqueProducts.findIndex((p) => p.name.toLowerCase().includes('basica'))
-  if (basicaIndex > 0) {
-    const basica = uniqueProducts.splice(basicaIndex, 1)[0]
-    uniqueProducts.unshift(basica)
-  }
-
   return uniqueProducts.slice(0, 6)
 }
 
