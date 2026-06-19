@@ -13,7 +13,6 @@ import { ProductCard } from '@/components/ProductCard'
 
 const Index = () => {
   const [heroProducts, setHeroProducts] = useState<Product[]>([])
-  const [twoByTwoSections, setTwoByTwoSections] = useState<Product[][]>([])
   const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -36,16 +35,8 @@ const Index = () => {
             !p.slug?.toLowerCase().includes('basico'),
         )
 
-        // Two-by-Two: 3 sections of 2 products each (6 products)
-        const twoByTwoPool = nonBasics.slice(0, 6)
-        const sections: Product[][] = []
-        for (let i = 0; i < twoByTwoPool.length; i += 2) {
-          sections.push(twoByTwoPool.slice(i, i + 2))
-        }
-        setTwoByTwoSections(sections)
-
         // Curated Grid: Mixed prices, remaining products
-        const curated = nonBasics.slice(6, 14)
+        const curated = nonBasics.slice(0, 8)
         setCuratedProducts(curated)
       } catch (error) {
         console.error(error)
@@ -115,41 +106,48 @@ const Index = () => {
             </div>
           </section>
 
-          {/* Three "Two-by-Two" Sections */}
-          <div className="w-full flex flex-col">
-            {twoByTwoSections.map((sectionProducts, index) => (
-              <section
-                key={index}
-                className="w-full flex flex-col md:flex-row min-h-[60vh] lg:min-h-[80vh]"
-              >
-                {sectionProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    to={`/product/${product.slug}`}
-                    className="group relative w-full md:w-1/2 overflow-hidden block aspect-square md:aspect-auto"
-                  >
-                    <img
-                      src={
-                        product.product_images?.[0]?.url ||
-                        'https://img.usecurling.com/p/1200/1600?q=fashion%20editorial&dpr=2'
-                      }
-                      alt={product.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
-                      <h2 className="text-3xl md:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg">
-                        {product.name}
-                      </h2>
-                      <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
-                        Descubra
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </section>
-            ))}
-          </div>
+          {/* Split-Screen Banner Section */}
+          <section className="w-full flex flex-col md:flex-row min-h-[60vh] lg:min-h-[80vh]">
+            <Link
+              to="/produtos?q=vestido"
+              className="group relative w-full md:w-1/2 overflow-hidden block aspect-[4/5] md:aspect-auto"
+            >
+              <img
+                src="https://img.usecurling.com/p/1200/1600?q=elegant%20woman%20forest%20dress&dpr=2"
+                alt="Vestido Longo Elegance"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-500" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg max-w-[80%]">
+                  VESTIDO LONGO ELEGANCE
+                </h2>
+                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-10 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
+                  DESCUBRA
+                </span>
+              </div>
+            </Link>
+
+            <Link
+              to="/produtos?q=conjunto"
+              className="group relative w-full md:w-1/2 overflow-hidden block aspect-[4/5] md:aspect-auto"
+            >
+              <img
+                src="https://img.usecurling.com/p/1200/1600?q=woman%20tailoring%20vintage%20workshop&dpr=2"
+                alt="Conjunto Alfaiataria"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-500" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg max-w-[80%]">
+                  CONJUNTO ALFAIATARIA
+                </h2>
+                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-10 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
+                  DESCUBRA
+                </span>
+              </div>
+            </Link>
+          </section>
 
           {/* Curated Product Grid */}
           <section className="py-20 md:py-32 px-4 md:px-8 bg-[#FAFAFA]">
