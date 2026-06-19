@@ -103,7 +103,7 @@ const Index = () => {
   return (
     <div className="w-full pt-[80px] md:pt-[120px] pb-0 bg-[#FAFAFA]">
       {isLoading ? (
-        <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex items-center justify-center min-h-[50vh] opacity-[1] shadow-[0px_0px_6px_0px_transparent] border-[inherit]">
           <Loader2 className="h-8 w-8 animate-spin text-[#2D0B0B]" />
         </div>
       ) : (

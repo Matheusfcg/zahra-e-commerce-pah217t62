@@ -50,11 +50,7 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
         </button>
 
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 items-start">
-          {product.is_featured && (
-            <div className="bg-[#2D0B0B] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
-              Destaque
-            </div>
-          )}
+          {product.is_featured && null}
         </div>
       </div>
       <div className="flex flex-col items-center text-center gap-1 mt-3 px-1">
