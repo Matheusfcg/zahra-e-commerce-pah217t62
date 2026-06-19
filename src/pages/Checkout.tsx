@@ -62,9 +62,64 @@ const Checkout = () => {
     }
   }, [userEmail, step])
 
-  const handleGeneratePix = () => {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
+
+  const handleGeneratePix = async () => {
+    if (items.length === 0) {
+      toast({
+        title: 'Carrinho vazio',
+        description: 'Adicione produtos antes de finalizar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsGeneratingPix(true)
     try {
+      // Create Order
+      const customerName =
+        profile?.full_name || (firstName ? `${firstName} ${lastName}` : 'Cliente')
+      const customerEmail = displayEmail
+      const customerPhone = profile?.phone || phone
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: userId || null,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          customer_phone: customerPhone,
+          total_amount: total,
+          status: 'pending_payment',
+          payment_method: 'pix',
+        })
+        .select()
+        .single()
+
+      if (orderError) throw orderError
+
+      // Insert Items
+      const orderItems = items.map((item: any) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_at_purchase: item.product.price,
+      }))
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+
+      if (itemsError) throw itemsError
+
+      // Trigger Edge Function Notification Asynchronously
+      supabase.functions
+        .invoke('process-order-notifications', {
+          body: { order_id: order.id },
+        })
+        .catch((err) => console.error('Edge function trigger error:', err))
+
+      // Update UI for PIX Flow
       const payload = generatePixPayload({
         pixKey: 'contato@zahrabrasil.com.br',
         merchantName: 'Zahra Brasil',
@@ -74,9 +129,10 @@ const Checkout = () => {
       setPixPayload(payload)
       setPixGenerated(true)
     } catch (error) {
+      console.error(error)
       toast({
         title: 'Erro',
-        description: 'Falha ao gerar o código PIX. Tente novamente.',
+        description: 'Falha ao processar o pedido. Tente novamente.',
         variant: 'destructive',
       })
     } finally {
@@ -143,11 +199,31 @@ const Checkout = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="firstName">Nome</Label>
-                          <Input id="firstName" className="rounded-none h-12" />
+                          <Input
+                            id="firstName"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            className="rounded-none h-12"
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="lastName">Sobrenome</Label>
-                          <Input id="lastName" className="rounded-none h-12" />
+                          <Input
+                            id="lastName"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            className="rounded-none h-12"
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="phone">Telefone</Label>
+                          <Input
+                            id="phone"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="(11) 99999-9999"
+                            className="rounded-none h-12"
+                          />
                         </div>
                       </div>
                       <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(2)}>
