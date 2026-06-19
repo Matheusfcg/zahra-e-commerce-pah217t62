@@ -98,7 +98,7 @@ const Index = () => {
 
             {/* Central Overlay Legend */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4 md:p-8 z-20">
-              <div className="bg-white/85 backdrop-blur-md px-8 py-10 md:px-14 md:py-16 flex flex-col items-center text-center max-w-[90%] md:max-w-md shadow-2xl pointer-events-auto transition-transform duration-500 hover:scale-[1.02]">
+              <div className="px-8 py-10 md:px-14 md:py-16 flex flex-col items-center text-center max-w-[90%] md:max-w-md pointer-events-auto transition-transform duration-500 hover:scale-[1.02]">
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-4 md:mb-6 uppercase tracking-[0.1em] leading-tight">
                   {getText('hero_title', 'Essência da Elegância')
                     .split('\n')
