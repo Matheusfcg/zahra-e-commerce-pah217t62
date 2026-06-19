@@ -1,9 +1,12 @@
 DO $$
 DECLARE
-  admin_id uuid := '00000000-0000-0000-0000-000000000000'::uuid;
+  admin_id uuid;
 BEGIN
+  SELECT id INTO admin_id FROM auth.users WHERE email = 'brsolutiontransport@gmail.com';
+
   -- Create admin user in auth.users if not exists
-  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'brsolutiontransport@gmail.com') THEN
+  IF admin_id IS NULL THEN
+    admin_id := '00000000-0000-0000-0000-000000000000'::uuid;
     INSERT INTO auth.users (
       id, instance_id, email, encrypted_password, email_confirmed_at,
       created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
