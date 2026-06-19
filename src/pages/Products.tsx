@@ -37,7 +37,7 @@ export default function ProductsPage() {
 
   const getText = (key: string, fallback: string) => siteContent[key] || fallback
 
-  let title = 'Todas as Peças'
+  let title = getText('tab_name_principal', 'Todas as Peças')
   let subtitle =
     'Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.'
 
@@ -47,19 +47,19 @@ export default function ProductsPage() {
   } else if (category) {
     const catLower = category.toLowerCase()
     if (catLower.includes('conjuntos')) {
-      title = getText('sets_title', category)
+      title = getText('sets_title', getText('tab_name_conjuntos', category))
       subtitle = getText('sets_description', subtitle)
     } else if (catLower.includes('cima')) {
-      title = getText('tops_title', category)
+      title = getText('tops_title', getText('tab_name_partes_de_cima', category))
       subtitle = getText('tops_description', subtitle)
     } else if (catLower.includes('baixo')) {
-      title = getText('bottoms_title', category)
+      title = getText('bottoms_title', getText('tab_name_partes_de_baixo', category))
       subtitle = getText('bottoms_description', subtitle)
     } else {
       title = category
     }
   } else {
-    title = getText('main_title', 'Todas as Peças')
+    title = getText('main_title', getText('tab_name_principal', 'Todas as Peças'))
   }
 
   return (

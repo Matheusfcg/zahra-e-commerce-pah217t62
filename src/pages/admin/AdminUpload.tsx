@@ -77,6 +77,10 @@ export default function AdminUpload() {
         { key: 'sets_title', value: 'Conjuntos' },
         { key: 'tops_title', value: 'Partes de Cima' },
         { key: 'bottoms_title', value: 'Partes de Baixo' },
+        { key: 'tab_name_principal', value: 'Principal' },
+        { key: 'tab_name_conjuntos', value: 'Conjuntos' },
+        { key: 'tab_name_partes_de_cima', value: 'Partes de Cima' },
+        { key: 'tab_name_partes_de_baixo', value: 'Partes de Baixo' },
       ]
 
       const mergedData = [...data]
@@ -91,9 +95,24 @@ export default function AdminUpload() {
       })
 
       setSiteContent(mergedData)
+      ;(window as any).__siteContentState = mergedData
+      ;(window as any).__setSiteContentState = (val: any) => {
+        setSiteContent(val)
+        ;(window as any).__siteContentState =
+          typeof val === 'function' ? val((window as any).__siteContentState) : val
+      }
     }
     if (error) toast.error('Erro ao buscar conteúdos do site')
   }
+
+  useEffect(() => {
+    ;(window as any).__siteContentState = siteContent
+    ;(window as any).__setSiteContentState = (val: any) => {
+      setSiteContent(val)
+      ;(window as any).__siteContentState =
+        typeof val === 'function' ? val((window as any).__siteContentState) : val
+    }
+  }, [siteContent])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -33,6 +33,11 @@ export function Header() {
   const location = useLocation()
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [tabNames, setTabNames] = useState({
+    conjuntos: 'CONJUNTOS',
+    partesDeCima: 'PARTES DE CIMA',
+    partesDeBaixo: 'PARTES DE BAIXO',
+  })
 
   useEffect(() => {
     if (user) {
@@ -48,13 +53,42 @@ export function Header() {
   }, [user])
 
   useEffect(() => {
+    supabase
+      .from('site_content')
+      .select('*')
+      .in('section_key', [
+        'tab_name_conjuntos',
+        'tab_name_partes_de_cima',
+        'tab_name_partes_de_baixo',
+      ])
+      .then(({ data }) => {
+        if (data) {
+          const names = {
+            conjuntos: 'CONJUNTOS',
+            partesDeCima: 'PARTES DE CIMA',
+            partesDeBaixo: 'PARTES DE BAIXO',
+          }
+          data.forEach((item) => {
+            if (item.section_key === 'tab_name_conjuntos' && item.content_value)
+              names.conjuntos = item.content_value.toUpperCase()
+            if (item.section_key === 'tab_name_partes_de_cima' && item.content_value)
+              names.partesDeCima = item.content_value.toUpperCase()
+            if (item.section_key === 'tab_name_partes_de_baixo' && item.content_value)
+              names.partesDeBaixo = item.content_value.toUpperCase()
+          })
+          setTabNames(names)
+        }
+      })
+  }, [])
+
+  useEffect(() => {
     setMobileMenuOpen(false)
   }, [location.pathname, location.search, location.hash])
 
   const navLinks = [
-    { name: 'CONJUNTOS', path: '/produtos?category=Conjuntos' },
-    { name: 'PARTES DE CIMA', path: '/produtos?category=Parte%20de%20Cima' },
-    { name: 'PARTES DE BAIXO', path: '/produtos?category=Parte%20de%20Baixo' },
+    { name: tabNames.conjuntos, path: '/produtos?category=Conjuntos' },
+    { name: tabNames.partesDeCima, path: '/produtos?category=Parte%20de%20Cima' },
+    { name: tabNames.partesDeBaixo, path: '/produtos?category=Parte%20de%20Baixo' },
   ]
 
   return (
