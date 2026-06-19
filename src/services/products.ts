@@ -24,6 +24,7 @@ export type Product = {
   measurements: string
   is_promotion: boolean
   is_featured?: boolean
+  show_in_carousel?: boolean
   category?: string
   product_colors: ProductColor[]
   product_images: ProductImage[]
@@ -78,6 +79,22 @@ export async function getProductByName(name: string) {
 
   if (error) throw error
   return data as Product | null
+}
+
+export async function getCarouselProducts() {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_colors (*),
+      product_images (*)
+    `)
+    .eq('show_in_carousel', true)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (error) throw error
+  return data as Product[]
 }
 
 export async function getMixedCollectionProducts() {
