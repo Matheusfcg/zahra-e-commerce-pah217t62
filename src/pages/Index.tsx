@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getProducts, type Product } from '@/services/products'
@@ -14,8 +13,8 @@ import { ProductCard } from '@/components/ProductCard'
 
 const Index = () => {
   const [heroProducts, setHeroProducts] = useState<Product[]>([])
-  const [featuredProduct, setFeaturedProduct] = useState<Product | null>(null)
-  const [soffiProducts, setSoffiProducts] = useState<Product[]>([])
+  const [twoByTwoSections, setTwoByTwoSections] = useState<Product[][]>([])
+  const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -26,19 +25,28 @@ const Index = () => {
         // Hero: Grab top products for the high-impact carousel
         setHeroProducts(all.slice(0, 6))
 
-        // Featured: Target "Trijunto Malibu" explicitly, or fallback to any featured
-        const featured =
-          all.find((p) => p.slug === 'trijunto-malibu') || all.find((p) => p.is_featured) || all[0]
-        setFeaturedProduct(featured || null)
-
-        // Soffi Grid: Exclude T-shirts, avoid repeating the featured product, ensure mixed prices
-        const soffi = all.filter(
+        // Exclude basics for remaining sections
+        const nonBasics = all.filter(
           (p) =>
             !p.name.toLowerCase().includes('t-shirt') &&
             !p.category?.toLowerCase().includes('t-shirt') &&
-            p.id !== featured?.id,
+            !p.slug?.toLowerCase().includes('t-shirt') &&
+            !p.name.toLowerCase().includes('básico') &&
+            !p.name.toLowerCase().includes('basico') &&
+            !p.slug?.toLowerCase().includes('basico'),
         )
-        setSoffiProducts(soffi.slice(0, 8))
+
+        // Two-by-Two: 3 sections of 2 products each (6 products)
+        const twoByTwoPool = nonBasics.slice(0, 6)
+        const sections: Product[][] = []
+        for (let i = 0; i < twoByTwoPool.length; i += 2) {
+          sections.push(twoByTwoPool.slice(i, i + 2))
+        }
+        setTwoByTwoSections(sections)
+
+        // Curated Grid: Mixed prices, remaining products
+        const curated = nonBasics.slice(6, 14)
+        setCuratedProducts(curated)
       } catch (error) {
         console.error(error)
       } finally {
@@ -50,7 +58,7 @@ const Index = () => {
   }, [])
 
   return (
-    <div className="w-full pt-[80px] md:pt-[120px] pb-20 bg-background">
+    <div className="w-full pt-[80px] md:pt-[120px] pb-0 bg-[#FAFAFA]">
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[50vh]">
           <Loader2 className="h-8 w-8 animate-spin text-[#2D0B0B]" />
@@ -83,7 +91,7 @@ const Index = () => {
                           <img
                             src={
                               product.product_images?.[0]?.url ||
-                              'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
+                              'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=black&dpr=2'
                             }
                             alt={product.name}
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -107,44 +115,53 @@ const Index = () => {
             </div>
           </section>
 
-          {/* Peça em Destaque Block */}
-          {featuredProduct && (
-            <section className="py-20 px-4 flex justify-center bg-background">
-              <div className="max-w-md w-full flex flex-col items-center text-center animate-fade-in-up">
-                <div className="bg-[#2D0B0B] text-white text-[10px] uppercase tracking-widest font-bold px-4 py-1.5 mb-8">
-                  Peça em Destaque
-                </div>
-                <h2 className="text-4xl font-serif text-[#2D0B0B] mb-4">{featuredProduct.name}</h2>
-                <p className="text-xl font-medium text-[#2D0B0B] mb-6">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                    featuredProduct.price,
-                  )}
-                </p>
-                <p className="text-[#5A5858] text-sm mb-10 max-w-sm font-sans leading-relaxed">
-                  {featuredProduct.description ||
-                    `${featuredProduct.name}, versátil e confortável.`}
-                </p>
-                <Button
-                  asChild
-                  className="bg-[#2D0B0B] hover:bg-black text-white rounded-none px-12 py-6 uppercase tracking-widest text-[11px] font-bold transition-all"
-                >
-                  <Link to={`/product/${featuredProduct.slug}`}>Comprar Agora</Link>
-                </Button>
-              </div>
-            </section>
-          )}
+          {/* Three "Two-by-Two" Sections */}
+          <div className="w-full flex flex-col">
+            {twoByTwoSections.map((sectionProducts, index) => (
+              <section
+                key={index}
+                className="w-full flex flex-col md:flex-row min-h-[60vh] lg:min-h-[80vh]"
+              >
+                {sectionProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.slug}`}
+                    className="group relative w-full md:w-1/2 overflow-hidden block aspect-square md:aspect-auto"
+                  >
+                    <img
+                      src={
+                        product.product_images?.[0]?.url ||
+                        'https://img.usecurling.com/p/1200/1600?q=fashion%20editorial&dpr=2'
+                      }
+                      alt={product.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+                      <h2 className="text-3xl md:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg">
+                        {product.name}
+                      </h2>
+                      <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
+                        Descubra
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </section>
+            ))}
+          </div>
 
-          {/* CONFECÇÃO SÔFFI Grid Section */}
-          <section className="py-16 md:py-24 px-4 md:px-8 bg-background">
+          {/* Curated Product Grid */}
+          <section className="py-20 md:py-32 px-4 md:px-8 bg-[#FAFAFA]">
             <div className="text-center mb-16">
               <h2 className="text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] text-[#2D0B0B]">
-                CONFECÇÃO SÔFFI
+                Curadoria Exclusiva
               </h2>
             </div>
 
             <div className="max-w-[1400px] mx-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-x-8 md:gap-y-12">
-                {soffiProducts.map((product) => (
+                {curatedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
