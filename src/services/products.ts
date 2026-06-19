@@ -41,7 +41,7 @@ export async function getProducts(category?: string, isPromotion?: boolean) {
     .order('created_at', { ascending: false })
 
   if (category) {
-    query = query.eq('category', category)
+    query = query.ilike('category', category)
   }
 
   if (isPromotion) {
