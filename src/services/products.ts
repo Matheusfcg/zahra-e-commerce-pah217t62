@@ -94,6 +94,7 @@ export async function getCarouselProducts() {
       product_images (*)
     `)
     .eq('show_in_carousel', true)
+    .gt('quantity', 0)
     .order('created_at', { ascending: false })
     .limit(5)
 

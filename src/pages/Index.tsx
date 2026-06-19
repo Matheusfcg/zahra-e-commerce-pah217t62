@@ -100,58 +100,59 @@ const Index = () => {
       <section className="relative w-full h-[calc(100vh-64px)] md:h-[calc(100vh-116px)] bg-background overflow-hidden">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#3c6e47]" />
           </div>
         ) : carouselProducts.length > 0 ? (
           <Carousel
             plugins={[autoplayPlugin.current]}
-            className="w-full h-full relative group/carousel"
+            className="w-full h-full relative"
             opts={{ loop: true }}
           >
             <CarouselContent className="h-full -ml-0">
               {carouselProducts.map((product) => (
-                <CarouselItem key={product.id} className="relative h-full w-full pl-0">
-                  <div className="absolute inset-0 z-0">
-                    <img
-                      src={
-                        getPrimaryImageUrl(product.product_images) ||
-                        getFallbackImageUrl(product.name)
-                      }
-                      alt={product.name}
-                      className="w-full h-full object-cover object-center"
-                    />
-                    <div className="absolute inset-0 bg-black/20 md:bg-transparent md:bg-gradient-to-r from-background/90 via-background/40 to-transparent" />
-                  </div>
-                  <div className="absolute inset-0 z-10 flex flex-col items-center md:items-start justify-center text-center md:text-left px-4 md:px-24 max-w-5xl">
-                    <p className="text-lg md:text-xl font-medium tracking-widest mb-2 uppercase text-white md:text-foreground/80 animate-fade-in-up drop-shadow-md md:drop-shadow-none">
-                      {product.is_promotion ? 'SALE' : 'NEW DROP'}
-                    </p>
-                    <h1
-                      className="text-5xl md:text-8xl font-black mb-2 uppercase tracking-tighter text-white md:text-foreground leading-none animate-fade-in-up drop-shadow-lg md:drop-shadow-none"
-                      style={{ animationDelay: '100ms' }}
-                    >
-                      {product.name}
-                    </h1>
-                    <p
-                      className="text-lg md:text-2xl mb-8 md:mb-12 font-light tracking-widest uppercase text-white/90 md:text-foreground/70 animate-fade-in-up drop-shadow-md md:drop-shadow-none"
-                      style={{ animationDelay: '200ms' }}
-                    >
-                      BY ZAHRÁ
-                    </p>
-                    <div
-                      className="mt-4 md:mt-auto md:pb-0 animate-fade-in-up"
-                      style={{ animationDelay: '300ms' }}
-                    >
-                      <p className="hidden md:block text-md md:text-lg mb-4 font-medium uppercase tracking-widest text-foreground/80">
-                        Já Disponível
-                      </p>
-                      <Button
-                        asChild
-                        size="lg"
-                        className="bg-white text-black md:bg-foreground md:text-background hover:opacity-90 rounded-none px-8 py-6 text-sm uppercase tracking-widest font-medium transition-transform hover:scale-105 shadow-xl md:shadow-none"
+                <CarouselItem key={product.id} className="relative h-full w-full pl-0 bg-[#FCFAF8]">
+                  <div className="flex flex-col md:flex-row h-full w-full">
+                    {/* Left Content */}
+                    <div className="flex-1 flex flex-col justify-center px-6 md:pl-24 md:pr-8 relative z-10 h-[45%] md:h-full order-2 md:order-1 pb-10 md:pb-0">
+                      <div className="flex flex-col text-[#3c6e47] mt-auto md:mt-0 w-full animate-fade-in-up">
+                        <p className="text-sm md:text-2xl font-medium tracking-wide mb-1 md:mb-2 uppercase">
+                          {product.is_promotion ? 'SALE' : 'NEW DROP'}
+                        </p>
+                        <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-[130px] font-black uppercase tracking-tighter leading-[0.85] mb-2 md:mb-0 text-[#3c6e47]">
+                          {product.name}
+                        </h1>
+                        <p className="text-lg md:text-3xl lg:text-4xl font-medium tracking-widest uppercase md:text-right text-[#3c6e47] w-full md:pr-4 opacity-80">
+                          BY ZAHRÁ
+                        </p>
+                      </div>
+
+                      <div
+                        className="mt-6 md:mt-auto md:mb-24 flex items-center justify-between text-[#3c6e47] w-full animate-fade-in-up"
+                        style={{ animationDelay: '200ms' }}
                       >
-                        <Link to={`/product/${product.slug}`}>Descubra Mais</Link>
-                      </Button>
+                        <p className="text-xs md:text-lg lg:text-xl font-medium uppercase tracking-widest">
+                          Já Disponível
+                        </p>
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="border-[#3c6e47] text-[#3c6e47] hover:bg-[#3c6e47] hover:text-[#FCFAF8] rounded-none px-6 py-4 md:px-8 md:py-6 text-[10px] md:text-sm uppercase tracking-widest font-bold transition-colors bg-transparent"
+                        >
+                          <Link to={`/product/${product.slug}`}>Descubra Mais</Link>
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Right Content - Image */}
+                    <div className="flex-1 relative h-[55%] md:h-full overflow-hidden flex items-center justify-center bg-[#FCFAF8] order-1 md:order-2">
+                      <img
+                        src={
+                          getPrimaryImageUrl(product.product_images) ||
+                          getFallbackImageUrl(product.name)
+                        }
+                        alt={product.name}
+                        className="w-full h-full object-cover md:object-contain object-bottom mix-blend-multiply p-4 md:p-12 animate-fade-in"
+                      />
                     </div>
                   </div>
                 </CarouselItem>
@@ -159,12 +160,12 @@ const Index = () => {
             </CarouselContent>
 
             <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-4 right-4 justify-between pointer-events-none z-20">
-              <CarouselPrevious className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300" />
-              <CarouselNext className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300" />
+              <CarouselPrevious className="relative pointer-events-auto translate-y-0 h-16 w-16 bg-transparent hover:bg-transparent border-none text-[#3c6e47] opacity-60 hover:opacity-100 transition-opacity duration-300 [&>svg]:h-10 [&>svg]:w-10" />
+              <CarouselNext className="relative pointer-events-auto translate-y-0 h-16 w-16 bg-transparent hover:bg-transparent border-none text-[#3c6e47] opacity-60 hover:opacity-100 transition-opacity duration-300 [&>svg]:h-10 [&>svg]:w-10" />
             </div>
           </Carousel>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#FCFAF8]">
             <h1 className="text-3xl md:text-5xl font-serif text-foreground mb-4 text-center px-4 leading-tight animate-fade-in-up">
               Nenhuma peça em destaque
             </h1>
