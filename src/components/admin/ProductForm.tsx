@@ -3,12 +3,28 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
-import { Loader2, UploadCloud, X, ImageIcon, Trash2, Plus } from 'lucide-react'
+import {
+  Loader2,
+  UploadCloud,
+  X,
+  ImageIcon,
+  Trash2,
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export function ProductForm({
   product,
@@ -27,6 +43,8 @@ export function ProductForm({
   const [comp, setComp] = useState('')
   const [meas, setMeas] = useState('')
   const [isPromotion, setIsPromotion] = useState(false)
+  const [isFeatured, setIsFeatured] = useState(false)
+  const [category, setCategory] = useState('')
 
   const [existingImages, setExistingImages] = useState<any[]>([])
   const [existingColors, setExistingColors] = useState<any[]>([])
@@ -94,7 +112,13 @@ export function ProductForm({
       setComp(product.composition || '')
       setMeas(product.measurements || '')
       setIsPromotion(product.is_promotion || false)
-      setExistingImages(product.product_images || [])
+      setIsFeatured(product.is_featured || false)
+      setCategory(product.category || '')
+      setExistingImages(
+        [...(product.product_images || [])].sort(
+          (a, b) => (a.display_order || 0) - (b.display_order || 0),
+        ),
+      )
       setExistingColors(product.product_colors || [])
       setNewColors([])
       setColorsToDelete([])
@@ -112,6 +136,8 @@ export function ProductForm({
       setComp('')
       setMeas('')
       setIsPromotion(false)
+      setIsFeatured(false)
+      setCategory('')
       setExistingImages([])
       setExistingColors([])
       setNewColors([])
@@ -134,6 +160,24 @@ export function ProductForm({
           .replace(/[^\w-]+/g, ''),
       )
     }
+  }
+
+  const moveImageLeft = (idx: number) => {
+    if (idx === 0) return
+    const newImages = [...existingImages]
+    const temp = newImages[idx]
+    newImages[idx] = newImages[idx - 1]
+    newImages[idx - 1] = temp
+    setExistingImages(newImages)
+  }
+
+  const moveImageRight = (idx: number) => {
+    if (idx === existingImages.length - 1) return
+    const newImages = [...existingImages]
+    const temp = newImages[idx]
+    newImages[idx] = newImages[idx + 1]
+    newImages[idx + 1] = temp
+    setExistingImages(newImages)
   }
 
   const handleFiles = (newFiles: FileList | null) => {
@@ -174,6 +218,8 @@ export function ProductForm({
           composition: comp || null,
           measurements: meas || null,
           is_promotion: isPromotion,
+          is_featured: isFeatured,
+          category: category || null,
         })
         .eq('id', product.id)
 
@@ -193,6 +239,8 @@ export function ProductForm({
           composition: comp || null,
           measurements: meas || null,
           is_promotion: isPromotion,
+          is_featured: isFeatured,
+          category: category || null,
         })
         .select()
         .single()
@@ -227,10 +275,16 @@ export function ProductForm({
     setProgress(30)
 
     let [success, fail] = [0, 0]
-    let currentOrder = 0
-    if (existingImages.length > 0) {
-      currentOrder = Math.max(...existingImages.map((img) => img.display_order || 0))
+
+    for (let i = 0; i < existingImages.length; i++) {
+      const img = existingImages[i]
+      await supabase
+        .from('product_images')
+        .update({ display_order: i + 1 })
+        .eq('id', img.id)
     }
+
+    let currentOrder = existingImages.length
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -325,7 +379,33 @@ export function ProductForm({
         </Label>
       </div>
 
+      <div className="flex items-center space-x-2 rounded-md border p-4 bg-muted/20 mt-4">
+        <Switch
+          id="featured"
+          checked={isFeatured}
+          onCheckedChange={setIsFeatured}
+          disabled={uploading}
+        />
+        <Label htmlFor="featured" className="cursor-pointer font-medium text-foreground">
+          Marcar como Peça em Destaque (Ganhará um selo especial no site)
+        </Label>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Categoria</Label>
+          <Select value={category} onValueChange={setCategory} disabled={uploading}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Conjuntos">Conjuntos</SelectItem>
+              <SelectItem value="Parte de Cima">Parte de Cima</SelectItem>
+              <SelectItem value="Parte de Baixo">Parte de Baixo</SelectItem>
+              <SelectItem value="Acessórios">Acessórios</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-2">
           <Label>Composição</Label>
           <Input
@@ -468,24 +548,60 @@ export function ProductForm({
         <Label>Imagens do Produto</Label>
 
         {existingImages.length > 0 && (
-          <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {existingImages.map((img) => (
-              <div
-                key={img.id}
-                className="group relative aspect-square overflow-hidden rounded-md border"
-              >
-                <img src={img.url} alt="Produto" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeExistingImage(img.id)}
-                  disabled={uploading}
-                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive/80 text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
-                  title="Remover imagem"
+          <div className="mb-4 space-y-2">
+            <div className="flex justify-between items-center">
+              <Label className="text-xs text-muted-foreground">
+                Arraste não suportado, use as setas para ordenar as fotos
+              </Label>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {existingImages.map((img, idx) => (
+                <div
+                  key={img.id}
+                  className="group relative aspect-square overflow-hidden rounded-md border"
                 >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+                  <img src={img.url} alt="Produto" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        moveImageLeft(idx)
+                      }}
+                      disabled={uploading || idx === 0}
+                      className="p-1.5 bg-white text-black rounded-full hover:bg-gray-200 disabled:opacity-50"
+                      title="Mover para esquerda"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        removeExistingImage(img.id)
+                      }}
+                      disabled={uploading}
+                      className="p-1.5 bg-destructive text-white rounded-full hover:bg-destructive/80"
+                      title="Remover imagem"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        moveImageRight(idx)
+                      }}
+                      disabled={uploading || idx === existingImages.length - 1}
+                      className="p-1.5 bg-white text-black rounded-full hover:bg-gray-200 disabled:opacity-50"
+                      title="Mover para direita"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

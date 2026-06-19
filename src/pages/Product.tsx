@@ -7,6 +7,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel'
 import { useCart } from '@/contexts/CartContext'
 import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
@@ -89,29 +96,28 @@ const ProductPage = () => {
     <div className="w-full bg-background pt-20">
       <div className="flex flex-col lg:flex-row min-h-[calc(100vh-80px)]">
         {/* Left: Images */}
-        <div className="w-full lg:w-3/5 lg:border-r">
-          <div className="hidden lg:grid grid-cols-2 gap-1 p-1">
-            {sortedImages.map((img) => (
-              <div key={img.id} className="aspect-[3/4] overflow-hidden bg-muted">
-                <img
-                  src={getImageUrl(img.url)}
-                  alt={`${product.name} detail`}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                />
+        <div className="w-full lg:w-3/5 lg:border-r overflow-hidden relative group">
+          <Carousel className="w-full h-full">
+            <CarouselContent>
+              {sortedImages.map((img) => (
+                <CarouselItem key={img.id}>
+                  <div className="aspect-[3/4] overflow-hidden bg-muted lg:h-full lg:aspect-auto">
+                    <img
+                      src={getImageUrl(img.url)}
+                      alt={`${product.name} detail`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {sortedImages.length > 1 && (
+              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <CarouselPrevious className="relative pointer-events-auto left-0 translate-y-0 h-10 w-10 bg-white/70 hover:bg-white" />
+                <CarouselNext className="relative pointer-events-auto right-0 translate-y-0 h-10 w-10 bg-white/70 hover:bg-white" />
               </div>
-            ))}
-          </div>
-          {/* Mobile Gallery (Simple scroll snap) */}
-          <div className="flex lg:hidden overflow-x-auto snap-x snap-mandatory">
-            {sortedImages.map((img) => (
-              <img
-                key={img.id}
-                src={getImageUrl(img.url)}
-                alt=""
-                className="w-full h-auto aspect-[3/4] object-cover snap-center flex-shrink-0"
-              />
-            ))}
-          </div>
+            )}
+          </Carousel>
         </div>
 
         {/* Right: Product Details (Sticky on desktop) */}
@@ -120,7 +126,7 @@ const ProductPage = () => {
             <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>{' '}
-            /<span className="ml-2">Acessórios</span>
+            /<span className="ml-2">{product.category || 'Produtos'}</span>
           </nav>
 
           <h1 className="font-serif text-3xl md:text-4xl mb-4">{product.name}</h1>

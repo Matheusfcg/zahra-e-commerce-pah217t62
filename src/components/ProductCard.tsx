@@ -42,11 +42,18 @@ export function ProductCard({ product, isFavorite, onToggleFavorite }: ProductCa
           />
         </button>
 
-        {product.is_promotion && (
-          <div className="absolute top-4 left-4 bg-foreground text-background text-[10px] uppercase tracking-widest font-semibold px-3 py-1.5 shadow-sm rounded-none z-10">
-            Promoção
-          </div>
-        )}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          {product.is_promotion && (
+            <div className="bg-foreground text-background text-[10px] uppercase tracking-widest font-semibold px-3 py-1.5 shadow-sm rounded-none">
+              Promoção
+            </div>
+          )}
+          {product.is_featured && (
+            <div className="bg-primary text-primary-foreground text-[10px] uppercase tracking-widest font-semibold px-3 py-1.5 shadow-sm rounded-none">
+              Peça em destaque
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex flex-col gap-1 px-1">
         <div className="flex justify-between items-start gap-3">

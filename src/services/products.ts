@@ -23,6 +23,7 @@ export type Product = {
   composition: string
   measurements: string
   is_promotion: boolean
+  is_featured?: boolean
   category?: string
   product_colors: ProductColor[]
   product_images: ProductImage[]

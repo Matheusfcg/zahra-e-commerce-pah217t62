@@ -56,8 +56,14 @@ const Index = () => {
         // Hero product is Maxi Renda, fallback to first top stock
         setHeroProduct(maxiRenda || uniqueTopStock[0] || all[0] || null)
 
-        // Showcase product is the second top stock or fallback to next available
-        setShowcaseProduct(uniqueTopStock[1] || all[1] || null)
+        const trijunto =
+          all.find((p) => p.name.toLowerCase().includes('trijunto malibu')) ||
+          all.find((p) => p.is_featured) ||
+          uniqueTopStock[1] ||
+          all[1] ||
+          null
+        // Showcase product is Trijunto Malibu or featured or fallback
+        setShowcaseProduct(trijunto)
 
         setMixedCollection(mixed)
         setTopStock(uniqueTopStock)
@@ -118,6 +124,41 @@ const Index = () => {
         )}
       </section>
 
+      {/* Brand Values */}
+      <section className="py-24 bg-cream-dark/30">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center max-w-5xl mx-auto">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
+                <Star className="h-8 w-8" />
+              </div>
+              <h3 className="font-serif text-xl font-medium">Design Autoral</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Peças exclusivas desenhadas no Brasil com foco no minimalismo atemporal.
+              </p>
+            </div>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
+                <ShieldCheck className="h-8 w-8" />
+              </div>
+              <h3 className="font-serif text-xl font-medium">Qualidade Premium</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Seleção rigorosa de materiais para garantir durabilidade e sofisticação.
+              </p>
+            </div>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
+                <Leaf className="h-8 w-8" />
+              </div>
+              <h3 className="font-serif text-xl font-medium">Sustentabilidade</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Compromisso com o meio ambiente utilizando couro vegano de alta tecnologia.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Product Showcase */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
@@ -137,6 +178,14 @@ const Index = () => {
                 </Link>
               </div>
               <div className="flex-1 lg:pl-12 text-center lg:text-left">
+                {(showcaseProduct.is_featured ||
+                  showcaseProduct.name.toLowerCase().includes('trijunto malibu')) && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-primary text-primary-foreground text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 shadow-sm">
+                      Peça em destaque
+                    </span>
+                  </div>
+                )}
                 <h2 className="font-serif text-4xl mb-4">{showcaseProduct.name}</h2>
                 <p className="text-xl font-medium mb-6">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -262,41 +311,6 @@ const Index = () => {
           </div>
         </section>
       )}
-
-      {/* Brand Values */}
-      <section className="py-24 bg-cream-dark/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center max-w-5xl mx-auto">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
-                <Star className="h-8 w-8" />
-              </div>
-              <h3 className="font-serif text-xl font-medium">Design Autoral</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Peças exclusivas desenhadas no Brasil com foco no minimalismo atemporal.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
-                <ShieldCheck className="h-8 w-8" />
-              </div>
-              <h3 className="font-serif text-xl font-medium">Qualidade Premium</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Seleção rigorosa de materiais para garantir durabilidade e sofisticação.
-              </p>
-            </div>
-            <div className="flex flex-col items-center space-y-4">
-              <div className="p-4 rounded-full bg-white shadow-sm text-primary">
-                <Leaf className="h-8 w-8" />
-              </div>
-              <h3 className="font-serif text-xl font-medium">Sustentabilidade</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Compromisso com o meio ambiente utilizando couro vegano de alta tecnologia.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
