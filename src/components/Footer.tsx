@@ -2,8 +2,29 @@ import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import logoZahra from '../assets/logozahra-e51d5.png'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export function Footer() {
+  const [siteContent, setSiteContent] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    supabase
+      .from('site_content')
+      .select('*')
+      .then(({ data }) => {
+        if (data) {
+          const contentMap = data.reduce(
+            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
+            {} as Record<string, string>,
+          )
+          setSiteContent(contentMap)
+        }
+      })
+  }, [])
+
+  const getText = (key: string, fallback: string) => siteContent[key] || fallback
+
   return (
     <footer className="bg-[#FAFAF8] text-foreground border-t border-muted/50 py-20 font-sans">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
@@ -15,9 +36,11 @@ export function Footer() {
               className="h-[40px] w-[40px] object-cover rounded-full"
             />
           </Link>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-            A essência do estilo minimalista. Peças autorais desenhadas no Brasil com materiais
-            premium e compromisso com a excelência.
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs whitespace-pre-wrap">
+            {getText(
+              'footer_about',
+              'A essência do estilo minimalista. Peças autorais desenhadas no Brasil com materiais premium e compromisso com a excelência.',
+            )}
           </p>
         </div>
 
@@ -103,8 +126,8 @@ export function Footer() {
         </div>
       </div>
       <div className="container mx-auto px-4 mt-20 pt-8 border-t border-muted/50 flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground gap-4">
-        <p>&copy; 2024 Zahra Brasil. Todos os direitos reservados.</p>
-        <p>WhatsApp: (11) 93416-0219</p>
+        <p>{getText('footer_copyright', '© 2024 Zahra Brasil. Todos os direitos reservados.')}</p>
+        <p>{getText('footer_whatsapp', 'WhatsApp: (11) 93416-0219')}</p>
       </div>
     </footer>
   )

@@ -63,7 +63,7 @@ const Index = () => {
       ) : (
         <>
           {/* Three-Column Hero Section */}
-          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
+          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 gap-0 min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
             {/* Left Image */}
             <Link
               to="/produtos"
