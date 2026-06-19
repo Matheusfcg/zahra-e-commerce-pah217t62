@@ -1,14 +1,19 @@
 import { Link } from 'react-router-dom'
 import { Loader2, Star, ShieldCheck, Leaf } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import Autoplay from 'embla-carousel-autoplay'
 import { getProducts, type Product } from '@/services/products'
 import { ProductCard } from '@/components/ProductCard'
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel'
 import { supabase } from '@/lib/supabase/client'
 
 const Index = () => {
   const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
+  const [heroImages, setHeroImages] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [siteContent, setSiteContent] = useState<Record<string, string>>({})
+
+  const plugin = useRef(Autoplay({ delay: 5000, stopOnInteraction: false }))
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,8 +23,9 @@ const Index = () => {
           supabase.from('site_content').select('*'),
         ])
 
+        let contentMap: Record<string, string> = {}
         if (contentResponse.data) {
-          const contentMap = contentResponse.data.reduce(
+          contentMap = contentResponse.data.reduce(
             (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
             {} as Record<string, string>,
           )
@@ -27,6 +33,44 @@ const Index = () => {
         }
 
         const all = productsData || []
+
+        const urls: string[] = []
+        for (let i = 1; i <= 6; i++) {
+          if (contentMap[`hero_carousel_${i}`]) {
+            urls.push(contentMap[`hero_carousel_${i}`])
+          }
+        }
+
+        if (urls.length >= 6) {
+          setHeroImages(urls.slice(0, 6))
+        } else {
+          const fallbackUrls: string[] = []
+          const categories = ['Conjuntos', 'Partes de Cima', 'Partes de Baixo']
+
+          for (const cat of categories) {
+            const catProducts = all.filter(
+              (p) =>
+                p.category?.toLowerCase() === cat.toLowerCase() ||
+                p.category?.toLowerCase().includes(cat.toLowerCase()),
+            )
+            let catImagesAdded = 0
+            for (const p of catProducts) {
+              if (p.product_images?.length > 0) {
+                fallbackUrls.push(p.product_images[0].url)
+                catImagesAdded++
+                if (catImagesAdded === 2) break
+              }
+            }
+          }
+
+          while (fallbackUrls.length < 6) {
+            fallbackUrls.push(
+              `https://img.usecurling.com/p/1600/900?q=fashion&seed=${fallbackUrls.length}`,
+            )
+          }
+
+          setHeroImages(urls.length > 0 ? urls : fallbackUrls.slice(0, 6))
+        }
 
         // Exclude basics for curated
         const nonBasics = all.filter(
@@ -62,44 +106,36 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {/* Two-Column Hero Section with Integrated Central Overlay */}
-          <section className="relative w-full flex flex-col md:flex-row min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
-            {/* Left Image */}
-            <Link
-              to="/produtos"
-              className="group relative w-full md:w-1/2 h-[50vh] md:h-auto overflow-hidden block"
-            >
-              <img
-                src={getText(
-                  'hero_left_image',
-                  'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2',
-                )}
-                alt="Coleção Elegance"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
-            </Link>
+          {/* Edge-to-Edge Hero Section with Background Carousel */}
+          <section className="relative w-full h-[75vh] lg:h-[85vh] bg-white overflow-hidden flex items-center justify-center">
+            {/* Background Carousel */}
+            <div className="absolute inset-0 z-0">
+              <Carousel
+                plugins={[plugin.current]}
+                className="w-full h-full"
+                opts={{ loop: true, watchDrag: false }}
+              >
+                <CarouselContent className="ml-0 h-[75vh] lg:h-[85vh]">
+                  {heroImages.map((img, i) => (
+                    <CarouselItem key={i} className="pl-0 w-full h-full">
+                      <img
+                        src={img}
+                        alt={`Hero Carousel Image ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
 
-            {/* Right Image */}
-            <Link
-              to="/produtos"
-              className="group relative w-full md:w-1/2 h-[50vh] md:h-auto overflow-hidden block"
-            >
-              <img
-                src={getText(
-                  'hero_right_image',
-                  'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2',
-                )}
-                alt="Coleção Sofisticada"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
-            </Link>
+            {/* Optional subtle overlay to ensure text contrast over any image */}
+            <div className="absolute inset-0 bg-white/10 z-10 pointer-events-none" />
 
-            {/* Central Overlay Legend */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4 md:p-8 z-20">
+            {/* Central Overlay Legend - Static Position */}
+            <div className="relative z-20 flex flex-col items-center justify-center p-4 md:p-8 w-full h-full pointer-events-none">
               <div className="px-8 py-10 md:px-14 md:py-16 flex flex-col items-center text-center max-w-[90%] md:max-w-md pointer-events-auto transition-transform duration-500 hover:scale-[1.02]">
-                <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-4 md:mb-6 uppercase tracking-[0.1em] leading-tight">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-4 md:mb-6 uppercase tracking-[0.1em] leading-tight drop-shadow-sm">
                   {getText('hero_title', 'Essência da Elegância')
                     .split('\n')
                     .map((line, i) => (
@@ -109,7 +145,7 @@ const Index = () => {
                       </span>
                     ))}
                 </h1>
-                <p className="text-[#5C4B4B] text-sm md:text-base mb-6 md:mb-8 max-w-[260px] tracking-wide">
+                <p className="text-[#2D0B0B]/90 text-sm md:text-base mb-6 md:mb-8 max-w-[260px] tracking-wide font-medium drop-shadow-sm">
                   {getText(
                     'hero_description',
                     'Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza natural.',
