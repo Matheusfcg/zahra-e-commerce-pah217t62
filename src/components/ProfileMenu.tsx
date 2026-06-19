@@ -320,6 +320,19 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
         >
           <LogOut className="mr-3 h-5 w-5" /> Sair da Conta
         </Button>
+
+        {profile?.is_admin && (
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-[#3c6e47] hover:bg-[#3c6e47]/10 mt-2"
+            asChild
+          >
+            <a href="/admin/upload" onClick={() => setIsOpen(false)}>
+              <Settings className="mr-2 h-4 w-4" />
+              Painel Administrador
+            </a>
+          </Button>
+        )}
       </div>
     </div>
   )
