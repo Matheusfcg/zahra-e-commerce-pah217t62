@@ -50,30 +50,25 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
         </button>
 
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 items-start">
-          {product.is_promotion && (
-            <div className="bg-[#D94F4F] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
-              SALE
-            </div>
-          )}
           {product.is_featured && (
-            <div className="bg-[#3A2222] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
+            <div className="bg-[#2D0B0B] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
               Destaque
             </div>
           )}
         </div>
       </div>
-      <div className="flex flex-col items-center text-center gap-1 mt-1 px-1">
-        <h3 className="font-sans text-[13px] font-medium text-black">
+      <div className="flex flex-col items-center text-center gap-1 mt-3 px-1">
+        <h3 className="font-sans text-[13px] font-medium text-[#2D0B0B]">
           <Link to={`/product/${product.slug}`} className="hover:opacity-70 transition-opacity">
             {product.name}
           </Link>
         </h3>
-        <span className="font-sans text-[14px] font-bold text-black mt-0.5">
+        <span className="font-sans text-[14px] font-bold text-[#2D0B0B] mt-0.5">
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
             product.price,
           )}
         </span>
-        <span className="font-sans text-[12px] text-gray-500">
+        <span className="font-sans text-[11px] text-[#5A5858] mt-1 tracking-wide">
           6 x de{' '}
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
             installmentValue,
