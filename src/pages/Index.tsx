@@ -38,11 +38,17 @@ const Index = () => {
         const categories = ['Conjuntos', 'Partes de Cima', 'Partes de Baixo']
 
         for (const cat of categories) {
-          const catProducts = all.filter(
-            (p) =>
-              p.category?.toLowerCase() === cat.toLowerCase() ||
-              p.category?.toLowerCase().includes(cat.toLowerCase()),
-          )
+          const catProducts = all
+            .filter(
+              (p) =>
+                p.category?.toLowerCase() === cat.toLowerCase() ||
+                p.category?.toLowerCase().includes(cat.toLowerCase()),
+            )
+            .sort(
+              (a, b) =>
+                new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+            )
+
           let catImagesAdded = 0
           for (const p of catProducts) {
             const images = p.product_images

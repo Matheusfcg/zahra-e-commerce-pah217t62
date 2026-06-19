@@ -145,21 +145,51 @@ export default function AdminUpload() {
     }
   }
 
+  const labelMap: Record<string, string> = {
+    curated_title: 'TÍTULO DA CURADORIA',
+    footer_about: 'RODAPÉ - SOBRE',
+    footer_copyright: 'RODAPÉ - COPYRIGHT',
+    footer_whatsapp: 'RODAPÉ - WHATSAPP',
+    hero_button: 'BOTÃO DO HERO',
+    hero_description: 'DESCRIÇÃO DO HERO',
+    hero_left_image: 'IMAGEM ESQUERDA DO HERO',
+    hero_right_image: 'IMAGEM DIREITA DO HERO',
+    hero_title: 'TÍTULO DO HERO',
+    values_1_title: 'TÍTULO DO VALOR 1',
+    values_1_desc: 'DESCRIÇÃO DO VALOR 1',
+    values_2_title: 'TÍTULO DO VALOR 2',
+    values_2_desc: 'DESCRIÇÃO DO VALOR 2',
+    values_3_title: 'TÍTULO DO VALOR 3',
+    values_3_desc: 'DESCRIÇÃO DO VALOR 3',
+    sets_description: 'DESCRIÇÃO DA CATEGORIA (CONJUNTOS)',
+    tops_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE CIMA)',
+    bottoms_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE BAIXO)',
+  }
+
   const getFieldsForCategory = (category: string) => {
-    return siteContent.filter((item) => {
-      const key = item.section_key
-      if (category === 'sets') return ['hero_carousel_1', 'hero_carousel_2'].includes(key)
-      if (category === 'tops') return ['hero_carousel_3', 'hero_carousel_4'].includes(key)
-      if (category === 'bottoms') return ['hero_carousel_5', 'hero_carousel_6'].includes(key)
-      return ![
-        'hero_carousel_1',
-        'hero_carousel_2',
-        'hero_carousel_3',
-        'hero_carousel_4',
-        'hero_carousel_5',
-        'hero_carousel_6',
-      ].includes(key)
-    })
+    return siteContent
+      .filter((item) => {
+        const key = item.section_key
+        if (category === 'sets') return ['sets_description'].includes(key)
+        if (category === 'tops') return ['tops_description'].includes(key)
+        if (category === 'bottoms') return ['bottoms_description'].includes(key)
+        return ![
+          'sets_description',
+          'tops_description',
+          'bottoms_description',
+          'hero_carousel_1',
+          'hero_carousel_2',
+          'hero_carousel_3',
+          'hero_carousel_4',
+          'hero_carousel_5',
+          'hero_carousel_6',
+        ].includes(key)
+      })
+      .sort((a, b) => {
+        const labelA = labelMap[a.section_key] || a.section_key
+        const labelB = labelMap[b.section_key] || b.section_key
+        return labelA.localeCompare(labelB)
+      })
   }
 
   const renderContentGroup = (category: string) => {
@@ -169,7 +199,7 @@ export default function AdminUpload() {
         {fields.map((item) => (
           <div key={item.id} className="space-y-2">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-              {item.section_key.replace(/_/g, ' ')}
+              {labelMap[item.section_key] || item.section_key.replace(/_/g, ' ')}
             </Label>
             {item.section_key.includes('image') || item.section_key.includes('carousel') ? (
               <div className="flex gap-2">
@@ -263,7 +293,12 @@ export default function AdminUpload() {
   }
 
   return (
-    <div className="mx-auto mb-20 mt-24 max-w-5xl px-4">
+    <div
+      className="mx-auto mb-20 mt-24 max-w-5xl px-4 min-h-[80vh]"
+      style={{
+        cursor: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232D0B0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>'), auto`,
+      }}
+    >
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Administração</h1>
