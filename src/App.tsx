@@ -10,7 +10,6 @@ import Checkout from './pages/Checkout'
 import Favorites from './pages/Favorites'
 import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
-import AdminContent from './pages/admin/AdminContent'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 import { AdminRoute } from './components/AdminRoute'
@@ -33,14 +32,6 @@ const App = () => (
               element={
                 <AdminRoute>
                   <AdminUpload />
-                </AdminRoute>
-              }
-            />
-            <Route
-              path="/admin/content"
-              element={
-                <AdminRoute>
-                  <AdminContent />
                 </AdminRoute>
               }
             />

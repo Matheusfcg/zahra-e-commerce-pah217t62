@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Loader2, Plus, Pencil, Trash2, MousePointerClick, Upload } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -118,10 +118,97 @@ export default function AdminUpload() {
     }
   }
 
-  const handleContentChange = (index: number, value: string) => {
-    const newContent = [...siteContent]
-    newContent[index].content_value = value
-    setSiteContent(newContent)
+  const handleContentChangeByKey = (key: string, value: string) => {
+    setSiteContent((prev) =>
+      prev.map((item) => (item.section_key === key ? { ...item, content_value: value } : item)),
+    )
+  }
+
+  const handleImageUpload = async (key: string, file: File) => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `site-content/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('product-images').getPublicUrl(filePath)
+
+      handleContentChangeByKey(key, data.publicUrl)
+      toast.success('Imagem enviada com sucesso!')
+    } catch (err: any) {
+      toast.error('Erro ao enviar imagem: ' + err.message)
+    }
+  }
+
+  const getFieldsForCategory = (category: string) => {
+    return siteContent.filter((item) => {
+      const key = item.section_key
+      if (category === 'sets') return ['hero_carousel_1', 'hero_carousel_2'].includes(key)
+      if (category === 'tops') return ['hero_carousel_3', 'hero_carousel_4'].includes(key)
+      if (category === 'bottoms') return ['hero_carousel_5', 'hero_carousel_6'].includes(key)
+      return ![
+        'hero_carousel_1',
+        'hero_carousel_2',
+        'hero_carousel_3',
+        'hero_carousel_4',
+        'hero_carousel_5',
+        'hero_carousel_6',
+      ].includes(key)
+    })
+  }
+
+  const renderContentGroup = (category: string) => {
+    const fields = getFieldsForCategory(category)
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+        {fields.map((item) => (
+          <div key={item.id} className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              {item.section_key.replace(/_/g, ' ')}
+            </Label>
+            {item.section_key.includes('image') || item.section_key.includes('carousel') ? (
+              <div className="flex gap-2">
+                <Input
+                  value={item.content_value}
+                  onChange={(e) => handleContentChangeByKey(item.section_key, e.target.value)}
+                  type="url"
+                  placeholder="https://..."
+                  className="flex-1"
+                />
+                <Label className="cursor-pointer flex items-center justify-center px-3 border rounded-md hover:bg-secondary shrink-0 transition-colors">
+                  <Upload className="h-4 w-4" />
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleImageUpload(item.section_key, file)
+                    }}
+                  />
+                </Label>
+              </div>
+            ) : item.content_value.length > 50 || item.section_key.includes('desc') ? (
+              <Textarea
+                value={item.content_value}
+                onChange={(e) => handleContentChangeByKey(item.section_key, e.target.value)}
+                className="min-h-[100px] resize-none"
+              />
+            ) : (
+              <Input
+                value={item.content_value}
+                onChange={(e) => handleContentChangeByKey(item.section_key, e.target.value)}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    )
   }
 
   if (authLoading) {
@@ -314,46 +401,45 @@ export default function AdminUpload() {
 
         <TabsContent value="content">
           <Card>
-            <CardHeader>
-              <CardTitle>Gerenciar Textos do Site</CardTitle>
-              <CardDescription>
-                Altere os textos exibidos na página inicial e outras áreas públicas.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#8B4513] bg-[#1a0f0f] shrink-0">
+                <MousePointerClick className="h-6 w-6 text-[#8B4513]" />
+              </div>
+              <div>
+                <CardTitle>Gerenciar Textos do Site</CardTitle>
+                <CardDescription>
+                  Altere os textos exibidos na página inicial e outras áreas públicas.
+                </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleContentSave} className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {siteContent.map((item, index) => (
-                    <div key={item.id} className="space-y-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                        {item.section_key.replace(/_/g, ' ')}
-                      </Label>
-                      {item.section_key.includes('image') ? (
-                        <Input
-                          value={item.content_value}
-                          onChange={(e) => handleContentChange(index, e.target.value)}
-                          type="url"
-                          placeholder="https://..."
-                        />
-                      ) : item.content_value.length > 50 || item.section_key.includes('desc') ? (
-                        <Textarea
-                          value={item.content_value}
-                          onChange={(e) => handleContentChange(index, e.target.value)}
-                          className="min-h-[100px] resize-none"
-                        />
-                      ) : (
-                        <Input
-                          value={item.content_value}
-                          onChange={(e) => handleContentChange(index, e.target.value)}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="pt-4 border-t flex justify-end">
+                <Tabs defaultValue="main" className="w-full">
+                  <TabsList className="mb-6 flex-wrap h-auto">
+                    <TabsTrigger value="main" className="flex-1 sm:flex-none">
+                      Opção Principal
+                    </TabsTrigger>
+                    <TabsTrigger value="sets" className="flex-1 sm:flex-none">
+                      Conjuntos
+                    </TabsTrigger>
+                    <TabsTrigger value="tops" className="flex-1 sm:flex-none">
+                      Partes de Cima
+                    </TabsTrigger>
+                    <TabsTrigger value="bottoms" className="flex-1 sm:flex-none">
+                      Partes de Baixo
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="main">{renderContentGroup('main')}</TabsContent>
+                  <TabsContent value="sets">{renderContentGroup('sets')}</TabsContent>
+                  <TabsContent value="tops">{renderContentGroup('tops')}</TabsContent>
+                  <TabsContent value="bottoms">{renderContentGroup('bottoms')}</TabsContent>
+                </Tabs>
+
+                <div className="pt-6 border-t flex justify-end">
                   <Button type="submit" disabled={savingContent} className="w-full sm:w-auto">
                     {savingContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Salvar Textos
+                    Salvar Alterações
                   </Button>
                 </div>
               </form>
