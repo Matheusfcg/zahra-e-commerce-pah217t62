@@ -11,8 +11,7 @@ import {
 } from '@/services/products'
 
 const getPrimaryImageUrl = (images?: Product['product_images']) => {
-  if (!images || images.length === 0)
-    return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing&dpr=2'
+  if (!images || images.length === 0) return ''
   return [...images].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))[0].url
 }
 
@@ -98,15 +97,10 @@ const Index = () => {
                 {heroProduct.name}
               </p>
               {heroProduct.description && (
-                <p className="text-base md:text-lg mb-4 font-light max-w-xl mx-auto drop-shadow-md line-clamp-2">
+                <p className="text-base md:text-lg mb-8 font-light max-w-xl mx-auto drop-shadow-md line-clamp-2">
                   {heroProduct.description}
                 </p>
               )}
-              <p className="text-2xl font-medium mb-8 drop-shadow-md">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                  heroProduct.price,
-                )}
-              </p>
               <Button
                 asChild
                 size="lg"

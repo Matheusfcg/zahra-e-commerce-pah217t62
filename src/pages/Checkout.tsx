@@ -16,8 +16,10 @@ const Checkout = () => {
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'pix'>('credit')
+  const [guestEmail, setGuestEmail] = useState('')
 
   const userEmail = session?.user?.email
+  const displayEmail = userEmail || guestEmail || 'Convidado'
 
   useEffect(() => {
     if (userEmail && step === 1) {
@@ -61,6 +63,8 @@ const Checkout = () => {
                         <Input
                           id="email"
                           type="email"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
                           placeholder="seu@email.com"
                           className="rounded-none h-12"
                         />
@@ -82,7 +86,7 @@ const Checkout = () => {
                   )}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">{userEmail || 'cliente@email.com'}</p>
+                <p className="text-muted-foreground text-sm">{displayEmail}</p>
               )}
             </div>
 
@@ -161,6 +165,9 @@ const Checkout = () => {
                     </div>
                   ) : (
                     <div className="space-y-4 text-center py-6">
+                      <p className="text-2xl font-medium text-primary mb-2">
+                        Total a pagar: R$ {total.toFixed(2).replace('.', ',')}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         Chave Pix será gerada após a confirmação do pedido.
                       </p>
