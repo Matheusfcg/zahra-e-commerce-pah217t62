@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
+    
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Supabase configuration missing in environment')
     }
@@ -45,20 +45,19 @@ Deno.serve(async (req) => {
 
     if (itemsError) throw itemsError
 
-    const customerEmail = order.customer_email
-    const customerName = order.customer_name || 'Cliente'
+    const customerEmail = order.customer_email;
+    const customerName = order.customer_name || 'Cliente';
 
     // 1. Send Post-Purchase Receipt Email via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (resendKey) {
-      const itemsHtml = items
-        .map((item: any) => {
-          // Sort images to get the primary one and maintain carousel logic consistency
-          const images = item.products?.product_images || []
-          images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-          const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing'
-
-          return `
+      const itemsHtml = items.map((item: any) => {
+        // Sort images to get the primary one and maintain carousel logic consistency
+        const images = item.products?.product_images || [];
+        images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+        const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing';
+        
+        return `
         <tr>
           <td style="padding: 12px; border-bottom: 1px solid #eee;">
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -69,9 +68,7 @@ Deno.serve(async (req) => {
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
           <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">R$ ${Number(item.price_at_purchase).toFixed(2).replace('.', ',')}</td>
         </tr>
-      `
-        })
-        .join('')
+      `}).join('')
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; padding: 20px;">
@@ -111,67 +108,62 @@ Deno.serve(async (req) => {
       const emailReq = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           from: 'Zahrá <pedidos@zahrabrasil.com.br>',
           to: customerEmail,
           subject: `Confirmação do seu pedido na Zahrá - #${order_id.split('-')[0]}`,
-          html: html,
-        }),
+          html: html
+        })
       })
-
+      
       if (!emailReq.ok) {
         console.error('Failed to send email:', await emailReq.text())
       }
     } else {
-      console.log('RESEND_API_KEY not configured. Skipping email.')
+      console.log('RESEND_API_KEY not configured. Skipping email.');
     }
 
     // 2. Send WhatsApp Notification to Store Admin
     const wpToken = Deno.env.get('WHATSAPP_API_TOKEN')
     const wpPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
     const adminPhone = '5511934160219'
-
+    
     if (wpToken && wpPhoneId) {
-      const itemsListText = items
-        .map(
-          (i: any) =>
-            `- ${i.quantity}x ${i.products?.name} (R$ ${Number(i.price_at_purchase).toFixed(2).replace('.', ',')})`,
-        )
-        .join('\n')
+      const itemsListText = items.map((i: any) => `- ${i.quantity}x ${i.products?.name} (R$ ${Number(i.price_at_purchase).toFixed(2).replace('.', ',')})`).join('\n')
       const message = `*Novo Pedido Zahrá!*\n\n*ID:* ${order_id.split('-')[0]}\n*Cliente:* ${customerName}\n*Email:* ${customerEmail}\n*Telefone:* ${order.customer_phone || 'Não informado'}\n*Total:* R$ ${Number(order.total_amount).toFixed(2).replace('.', ',')}\n\n*Itens:*\n${itemsListText}`
 
       const wpReq = await fetch(`https://graph.facebook.com/v17.0/${wpPhoneId}/messages`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${wpToken}`,
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${wpToken}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           messaging_product: 'whatsapp',
           to: adminPhone,
           type: 'text',
-          text: { body: message },
-        }),
+          text: { body: message }
+        })
       })
-
+      
       if (!wpReq.ok) {
         console.error('Failed to send WhatsApp:', await wpReq.text())
       }
     } else {
-      console.log('WhatsApp API not configured. Skipping admin notification.')
+      console.log('WhatsApp API not configured. Skipping admin notification.');
     }
 
     return new Response(JSON.stringify({ success: true, message: 'Notifications processed' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error: any) {
     console.error('Error processing notifications:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
