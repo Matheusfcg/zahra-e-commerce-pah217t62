@@ -19,6 +19,7 @@ const CMS_FIELDS = [
   { key: 'footer_about', label: 'Rodapé - Sobre a Marca', type: 'textarea' },
   { key: 'footer_copyright', label: 'Rodapé - Direitos Autorais (Copyright)', type: 'input' },
   { key: 'footer_whatsapp', label: 'Rodapé - WhatsApp / Contato', type: 'input' },
+  { key: 'curated_title', label: 'Curadoria - Título', type: 'input' },
 ]
 
 export default function AdminContent() {
@@ -145,6 +146,29 @@ export default function AdminContent() {
         <div className="space-y-6 mt-4">
           <h2 className="text-xl font-medium text-[#2D0B0B] border-b pb-2">Pilares da Marca</h2>
           {CMS_FIELDS.filter((f) => f.key.startsWith('values_')).map((field) => (
+            <div key={field.key} className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">{field.label}</label>
+              {field.type === 'textarea' ? (
+                <Textarea
+                  value={content[field.key]?.value || ''}
+                  onChange={(e) => handleUpdateField(field.key, e.target.value)}
+                  className="w-full focus-visible:ring-[#2D0B0B]"
+                  rows={2}
+                />
+              ) : (
+                <Input
+                  value={content[field.key]?.value || ''}
+                  onChange={(e) => handleUpdateField(field.key, e.target.value)}
+                  className="w-full focus-visible:ring-[#2D0B0B]"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-6 mt-4">
+          <h2 className="text-xl font-medium text-[#2D0B0B] border-b pb-2">Seções</h2>
+          {CMS_FIELDS.filter((f) => f.key.startsWith('curated_')).map((field) => (
             <div key={field.key} className="space-y-2">
               <label className="text-sm font-medium text-gray-700">{field.label}</label>
               {field.type === 'textarea' ? (

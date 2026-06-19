@@ -62,12 +62,12 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {/* Three-Column Hero Section */}
-          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 gap-0 min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
+          {/* Two-Column Hero Section with Integrated Central Overlay */}
+          <section className="relative w-full flex flex-col md:flex-row min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
             {/* Left Image */}
             <Link
               to="/produtos"
-              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-1 lg:order-1 bg-[#F9F8F6]"
+              className="group relative w-full md:w-1/2 h-[50vh] md:h-auto overflow-hidden block"
             >
               <img
                 src={getText(
@@ -78,43 +78,12 @@ const Index = () => {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
-                  Ver Coleção
-                </span>
-              </div>
             </Link>
-
-            {/* Central Legend */}
-            <div className="flex flex-col items-center justify-center p-12 lg:p-16 text-center bg-[#F9F8F6] order-2 lg:order-2 min-h-[40vh] lg:min-h-0 relative z-10">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-6 uppercase tracking-[0.1em] leading-tight">
-                {getText('hero_title', 'Essência da Elegância')
-                  .split('\n')
-                  .map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-              </h1>
-              <p className="text-[#5C4B4B] text-sm md:text-base mb-8 max-w-[280px] lg:max-w-xs tracking-wide">
-                {getText(
-                  'hero_description',
-                  'Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza natural.',
-                )}
-              </p>
-              <Link
-                to="/produtos"
-                className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F9F8F6] transition-colors"
-              >
-                {getText('hero_button', 'Explorar Coleção')}
-              </Link>
-            </div>
 
             {/* Right Image */}
             <Link
               to="/produtos"
-              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-3 lg:order-3 bg-[#F9F8F6]"
+              className="group relative w-full md:w-1/2 h-[50vh] md:h-auto overflow-hidden block"
             >
               <img
                 src={getText(
@@ -125,12 +94,35 @@ const Index = () => {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
-                  Ver Coleção
-                </span>
-              </div>
             </Link>
+
+            {/* Central Overlay Legend */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4 md:p-8 z-20">
+              <div className="bg-white/85 backdrop-blur-md px-8 py-10 md:px-14 md:py-16 flex flex-col items-center text-center max-w-[90%] md:max-w-md shadow-2xl pointer-events-auto transition-transform duration-500 hover:scale-[1.02]">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-4 md:mb-6 uppercase tracking-[0.1em] leading-tight">
+                  {getText('hero_title', 'Essência da Elegância')
+                    .split('\n')
+                    .map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        <br />
+                      </span>
+                    ))}
+                </h1>
+                <p className="text-[#5C4B4B] text-sm md:text-base mb-6 md:mb-8 max-w-[260px] tracking-wide">
+                  {getText(
+                    'hero_description',
+                    'Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza natural.',
+                  )}
+                </p>
+                <Link
+                  to="/produtos"
+                  className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F9F8F6] transition-colors bg-white/50 backdrop-blur-sm"
+                >
+                  {getText('hero_button', 'Explorar Coleção')}
+                </Link>
+              </div>
+            </div>
           </section>
 
           {/* Values Section */}
@@ -185,7 +177,7 @@ const Index = () => {
           <section className="py-20 md:py-32 px-4 md:px-8 bg-[#FAFAFA]">
             <div className="text-center mb-16">
               <h2 className="text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] text-[#2D0B0B]">
-                Curadoria Exclusiva
+                {getText('curated_title', 'Curadoria Exclusiva')}
               </h2>
             </div>
 
