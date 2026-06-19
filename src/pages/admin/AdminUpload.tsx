@@ -328,7 +328,14 @@ export default function AdminUpload() {
                       <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                         {item.section_key.replace(/_/g, ' ')}
                       </Label>
-                      {item.content_value.length > 50 || item.section_key.includes('desc') ? (
+                      {item.section_key.includes('image') ? (
+                        <Input
+                          value={item.content_value}
+                          onChange={(e) => handleContentChange(index, e.target.value)}
+                          type="url"
+                          placeholder="https://..."
+                        />
+                      ) : item.content_value.length > 50 || item.section_key.includes('desc') ? (
                         <Textarea
                           value={item.content_value}
                           onChange={(e) => handleContentChange(index, e.target.value)}

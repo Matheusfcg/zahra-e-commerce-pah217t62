@@ -6,7 +6,6 @@ import { ProductCard } from '@/components/ProductCard'
 import { supabase } from '@/lib/supabase/client'
 
 const Index = () => {
-  const [heroProducts, setHeroProducts] = useState<Product[]>([])
   const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [siteContent, setSiteContent] = useState<Record<string, string>>({})
@@ -29,7 +28,7 @@ const Index = () => {
 
         const all = productsData || []
 
-        // Exclude basics for hero and curated
+        // Exclude basics for curated
         const nonBasics = all.filter(
           (p) =>
             !p.name.toLowerCase().includes('t-shirt') &&
@@ -40,11 +39,8 @@ const Index = () => {
             !p.slug?.toLowerCase().includes('basico'),
         )
 
-        // Hero: Grab top 2 products for the 3-column layout
-        setHeroProducts(nonBasics.slice(0, 2))
-
-        // Curated Grid: Remaining products
-        const curated = nonBasics.slice(2, 10)
+        // Curated Grid: top 8 products
+        const curated = nonBasics.slice(0, 8)
         setCuratedProducts(curated)
       } catch (error) {
         console.error(error)
@@ -55,9 +51,6 @@ const Index = () => {
 
     fetchData()
   }, [])
-
-  const heroLeft = heroProducts[0]
-  const heroRight = heroProducts[1]
 
   const getText = (key: string, fallback: string) => siteContent[key] || fallback
 
@@ -73,21 +66,21 @@ const Index = () => {
           <section className="w-full flex flex-col lg:grid lg:grid-cols-3 min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
             {/* Left Image */}
             <Link
-              to={heroLeft ? `/product/${heroLeft.slug}` : '/produtos'}
+              to="/produtos"
               className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-1 lg:order-1 bg-[#F9F8F6]"
             >
               <img
-                src={
-                  heroLeft?.product_images?.[0]?.url ||
-                  'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2'
-                }
-                alt={heroLeft?.name || 'Coleção Elegance'}
-                className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
+                src={getText(
+                  'hero_left_image',
+                  'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2',
+                )}
+                alt="Coleção Elegance"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                 <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
-                  {heroLeft ? 'Ver Peça' : 'Ver Coleção'}
+                  Ver Coleção
                 </span>
               </div>
             </Link>
@@ -120,21 +113,21 @@ const Index = () => {
 
             {/* Right Image */}
             <Link
-              to={heroRight ? `/product/${heroRight.slug}` : '/produtos'}
+              to="/produtos"
               className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-3 lg:order-3 bg-[#F9F8F6]"
             >
               <img
-                src={
-                  heroRight?.product_images?.[0]?.url ||
-                  'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2'
-                }
-                alt={heroRight?.name || 'Coleção Sofisticada'}
-                className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
+                src={getText(
+                  'hero_right_image',
+                  'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2',
+                )}
+                alt="Coleção Sofisticada"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                 <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
-                  {heroRight ? 'Ver Peça' : 'Ver Coleção'}
+                  Ver Coleção
                 </span>
               </div>
             </Link>
