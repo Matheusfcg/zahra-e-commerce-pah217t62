@@ -34,43 +34,45 @@ const Index = () => {
 
         const all = productsData || []
 
-        const urls: string[] = []
-        for (let i = 1; i <= 6; i++) {
-          if (contentMap[`hero_carousel_${i}`]) {
-            urls.push(contentMap[`hero_carousel_${i}`])
-          }
-        }
+        let heroUrls: string[] = []
+        const categories = ['Conjuntos', 'Partes de Cima', 'Partes de Baixo']
 
-        if (urls.length >= 6) {
-          setHeroImages(urls.slice(0, 6))
-        } else {
-          const fallbackUrls: string[] = []
-          const categories = ['Conjuntos', 'Partes de Cima', 'Partes de Baixo']
-
-          for (const cat of categories) {
-            const catProducts = all.filter(
-              (p) =>
-                p.category?.toLowerCase() === cat.toLowerCase() ||
-                p.category?.toLowerCase().includes(cat.toLowerCase()),
-            )
-            let catImagesAdded = 0
-            for (const p of catProducts) {
-              if (p.product_images?.length > 0) {
-                fallbackUrls.push(p.product_images[0].url)
-                catImagesAdded++
-                if (catImagesAdded === 2) break
-              }
+        for (const cat of categories) {
+          const catProducts = all.filter(
+            (p) =>
+              p.category?.toLowerCase() === cat.toLowerCase() ||
+              p.category?.toLowerCase().includes(cat.toLowerCase()),
+          )
+          let catImagesAdded = 0
+          for (const p of catProducts) {
+            const images = p.product_images
+              ? [...p.product_images].sort((a, b) => a.display_order - b.display_order)
+              : []
+            if (images.length > 0) {
+              heroUrls.push(images[0].url)
+              catImagesAdded++
+              if (catImagesAdded === 2) break
             }
           }
-
-          while (fallbackUrls.length < 6) {
-            fallbackUrls.push(
-              `https://img.usecurling.com/p/1600/900?q=fashion&seed=${fallbackUrls.length}`,
-            )
-          }
-
-          setHeroImages(urls.length > 0 ? urls : fallbackUrls.slice(0, 6))
         }
+
+        if (heroUrls.length < 6) {
+          for (const p of all) {
+            if (heroUrls.length >= 6) break
+            const images = p.product_images
+              ? [...p.product_images].sort((a, b) => a.display_order - b.display_order)
+              : []
+            if (images.length > 0 && !heroUrls.includes(images[0].url)) {
+              heroUrls.push(images[0].url)
+            }
+          }
+        }
+
+        while (heroUrls.length < 6) {
+          heroUrls.push(`https://img.usecurling.com/p/1600/900?q=fashion&seed=${heroUrls.length}`)
+        }
+
+        setHeroImages(heroUrls.slice(0, 6))
 
         // Exclude basics for curated
         const nonBasics = all.filter(
@@ -136,7 +138,7 @@ const Index = () => {
             <div className="relative z-20 flex flex-col items-center justify-center p-4 md:p-8 w-full h-full pointer-events-none">
               <div className="px-8 py-10 md:px-14 md:py-16 flex flex-col items-center text-center max-w-[90%] md:max-w-md pointer-events-auto transition-transform duration-500 hover:scale-[1.02]">
                 <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-4 md:mb-6 uppercase tracking-[0.1em] leading-tight drop-shadow-sm">
-                  {getText('hero_title', 'Essência da Elegância')
+                  {getText('hero_title', 'ESSÊNCIA DA\nELEGÂNCIA')
                     .split('\n')
                     .map((line, i) => (
                       <span key={i}>
@@ -153,9 +155,9 @@ const Index = () => {
                 </p>
                 <Link
                   to="/produtos"
-                  className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F9F8F6] transition-colors bg-white/50 backdrop-blur-sm"
+                  className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F9F8F6] transition-colors"
                 >
-                  {getText('hero_button', 'Explorar Coleção')}
+                  {getText('hero_button', 'EXPLORAR COLEÇÃO')}
                 </Link>
               </div>
             </div>
