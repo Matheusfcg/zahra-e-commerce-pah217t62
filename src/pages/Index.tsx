@@ -23,6 +23,10 @@ const getPrimaryImageUrl = (images?: Product['product_images']) => {
   return [...images].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))[0].url
 }
 
+const getFallbackImageUrl = (productName: string) => {
+  return `https://img.usecurling.com/p/800/1000?q=${encodeURIComponent(productName.split(' ')[0] + ' clothing')}`
+}
+
 const Index = () => {
   const [promoProducts, setPromoProducts] = useState<Product[]>([])
   const [mixedCollection, setMixedCollection] = useState<Product[]>([])
@@ -64,7 +68,10 @@ const Index = () => {
 
         let finalCarousel = carousel
         if (finalCarousel.length === 0) {
-          finalCarousel = all.slice(0, 3)
+          finalCarousel = all.filter((p) => p.product_images?.length > 0).slice(0, 3)
+          if (finalCarousel.length === 0) {
+            finalCarousel = all.slice(0, 3)
+          }
         }
         setCarouselProducts(finalCarousel)
 
@@ -98,7 +105,7 @@ const Index = () => {
         ) : carouselProducts.length > 0 ? (
           <Carousel
             plugins={[autoplayPlugin.current]}
-            className="w-full h-full relative"
+            className="w-full h-full relative group/carousel"
             opts={{ loop: true }}
           >
             <CarouselContent className="h-full -ml-0">
@@ -106,7 +113,10 @@ const Index = () => {
                 <CarouselItem key={product.id} className="relative h-full w-full pl-0">
                   <div className="absolute inset-0 z-0">
                     <img
-                      src={getPrimaryImageUrl(product.product_images)}
+                      src={
+                        getPrimaryImageUrl(product.product_images) ||
+                        getFallbackImageUrl(product.name)
+                      }
                       alt={product.name}
                       className="w-full h-full object-cover object-center"
                     />
@@ -149,15 +159,21 @@ const Index = () => {
             </CarouselContent>
 
             <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-4 right-4 justify-between pointer-events-none z-20">
-              <CarouselPrevious className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm" />
-              <CarouselNext className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm" />
+              <CarouselPrevious className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300" />
+              <CarouselNext className="relative pointer-events-auto translate-y-0 h-12 w-12 bg-background/50 hover:bg-foreground hover:text-background border-none shadow-md backdrop-blur-sm opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300" />
             </div>
           </Carousel>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <h1 className="text-5xl md:text-7xl font-serif text-foreground mb-8 leading-tight animate-fade-in-up">
-              O Essencial é ser inesquecível
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/20">
+            <h1 className="text-3xl md:text-5xl font-serif text-foreground mb-4 text-center px-4 leading-tight animate-fade-in-up">
+              Nenhuma peça em destaque
             </h1>
+            <p
+              className="text-muted-foreground animate-fade-in-up text-center px-4"
+              style={{ animationDelay: '100ms' }}
+            >
+              Nossa nova coleção estará disponível em breve.
+            </p>
           </div>
         )}
       </section>
@@ -209,7 +225,10 @@ const Index = () => {
               <div className="flex-1 w-full lg:w-1/2 group overflow-hidden bg-muted">
                 <Link to={`/product/${showcaseProduct.slug}`}>
                   <img
-                    src={getPrimaryImageUrl(showcaseProduct.product_images)}
+                    src={
+                      getPrimaryImageUrl(showcaseProduct.product_images) ||
+                      getFallbackImageUrl(showcaseProduct.name)
+                    }
                     alt={showcaseProduct.name}
                     className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
                   />
@@ -270,7 +289,10 @@ const Index = () => {
                   <div className="overflow-hidden bg-muted mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
                       <img
-                        src={getPrimaryImageUrl(product.product_images)}
+                        src={
+                          getPrimaryImageUrl(product.product_images) ||
+                          getFallbackImageUrl(product.name)
+                        }
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
@@ -328,7 +350,10 @@ const Index = () => {
                   <div className="overflow-hidden bg-muted mb-4 relative aspect-[3/4]">
                     <Link to={`/product/${product.slug}`}>
                       <img
-                        src={getPrimaryImageUrl(product.product_images)}
+                        src={
+                          getPrimaryImageUrl(product.product_images) ||
+                          getFallbackImageUrl(product.name)
+                        }
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />

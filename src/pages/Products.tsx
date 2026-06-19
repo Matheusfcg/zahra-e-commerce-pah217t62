@@ -10,26 +10,32 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchParams] = useSearchParams()
   const category = searchParams.get('category')
+  const promotion = searchParams.get('promotion')
   const { favorites, toggleFavorite } = useFavorites()
 
   useEffect(() => {
     setIsLoading(true)
-    getProducts(category || undefined)
+    getProducts(category || undefined, promotion === 'true')
       .then(setProducts)
       .catch(console.error)
       .finally(() => setIsLoading(false))
-  }, [category])
+  }, [category, promotion])
+
+  const title = promotion === 'true' ? 'Promoções' : category ? category : 'Todas as Peças'
+
+  const subtitle =
+    promotion === 'true'
+      ? 'Aproveite nossas ofertas exclusivas.'
+      : 'Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.'
 
   return (
     <div className="w-full pt-28 pb-24 min-h-screen bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="font-sans font-light tracking-tight text-4xl md:text-5xl mb-4 text-foreground">
-            {category ? category : 'Todas as Peças'}
+          <h1 className="font-sans font-light tracking-tight text-4xl md:text-5xl mb-4 text-foreground uppercase">
+            {title}
           </h1>
-          <p className="text-muted-foreground font-sans max-w-2xl mx-auto">
-            Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.
-          </p>
+          <p className="text-muted-foreground font-sans max-w-2xl mx-auto">{subtitle}</p>
         </div>
 
         {isLoading ? (
@@ -48,7 +54,9 @@ export default function ProductsPage() {
             ))}
             {products.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground">
-                Nenhuma peça encontrada no catálogo.
+                {promotion === 'true'
+                  ? 'Nenhuma promoção ativa no momento.'
+                  : 'Nenhuma peça encontrada no catálogo.'}
               </div>
             )}
           </div>

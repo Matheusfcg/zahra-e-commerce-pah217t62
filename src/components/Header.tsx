@@ -55,6 +55,7 @@ export function Header() {
     { name: 'CONJUNTOS', path: '/produtos?category=Conjuntos' },
     { name: 'PARTES DE CIMA', path: '/produtos?category=Parte%20de%20Cima' },
     { name: 'PARTES DE BAIXO', path: '/produtos?category=Parte%20de%20Baixo' },
+    { name: 'PROMOÇÕES', path: '/produtos?promotion=true', className: 'text-[#D94F4F]' },
   ]
 
   return (

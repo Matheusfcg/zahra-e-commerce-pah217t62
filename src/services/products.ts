@@ -30,7 +30,7 @@ export type Product = {
   product_images: ProductImage[]
 }
 
-export async function getProducts(category?: string) {
+export async function getProducts(category?: string, isPromotion?: boolean) {
   let query = supabase
     .from('products')
     .select(`
@@ -42,6 +42,10 @@ export async function getProducts(category?: string) {
 
   if (category) {
     query = query.eq('category', category)
+  }
+
+  if (isPromotion) {
+    query = query.eq('is_promotion', true)
   }
 
   const { data, error } = await query
