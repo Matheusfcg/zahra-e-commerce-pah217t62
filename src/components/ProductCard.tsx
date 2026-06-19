@@ -29,7 +29,7 @@ export function ProductCard({ product, isFavorite, onToggleFavorite }: ProductCa
             e.preventDefault()
             onToggleFavorite(product.id)
           }}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur hover:bg-white transition-colors"
+          className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur hover:bg-white transition-colors"
           aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         >
           <Heart
@@ -42,38 +42,35 @@ export function ProductCard({ product, isFavorite, onToggleFavorite }: ProductCa
           />
         </button>
 
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        <div className="absolute top-4 right-4 flex flex-col gap-2 z-10 items-end">
           {product.is_promotion && (
-            <div className="bg-foreground text-background text-[10px] uppercase tracking-widest font-semibold px-3 py-1.5 shadow-sm rounded-none">
-              Promoção
+            <div className="bg-[#D94F4F] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
+              SALE
             </div>
           )}
           {product.is_featured && (
-            <div className="bg-primary text-primary-foreground text-[10px] uppercase tracking-widest font-semibold px-3 py-1.5 shadow-sm rounded-none">
+            <div className="bg-[#3A2222] text-white text-[10px] uppercase tracking-widest font-bold px-3 py-1 shadow-sm rounded-sm">
               Peça em destaque
             </div>
           )}
         </div>
       </div>
-      <div className="flex flex-col gap-1 px-1">
-        <div className="flex justify-between items-start gap-3">
-          <h3 className="font-sans text-sm font-medium leading-tight">
-            <Link
-              to={`/product/${product.slug}`}
-              className="hover:underline underline-offset-4 decoration-muted-foreground/30 transition-all"
-            >
-              {product.name}
-            </Link>
-          </h3>
-          <span className="font-sans text-sm text-muted-foreground whitespace-nowrap">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              product.price,
-            )}
-          </span>
-        </div>
-        {product.category && (
-          <p className="text-xs text-muted-foreground font-sans">{product.category}</p>
-        )}
+      <div className="flex flex-col items-center text-center gap-1 mt-3 px-1">
+        <h3 className="font-serif text-[13px] uppercase tracking-wider text-[#3A2222]">
+          <Link to={`/product/${product.slug}`} className="hover:opacity-70 transition-opacity">
+            {product.name}
+          </Link>
+        </h3>
+        <span
+          className={cn(
+            'font-sans text-[13px] whitespace-nowrap font-medium',
+            product.is_promotion ? 'text-[#D94F4F]' : 'text-[#3A2222]',
+          )}
+        >
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+            product.price,
+          )}
+        </span>
       </div>
     </div>
   )

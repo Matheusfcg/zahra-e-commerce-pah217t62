@@ -65,12 +65,12 @@ export function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Left: Search (Desktop) / Menu (Mobile) */}
           <div className="flex-1 md:w-1/3 flex items-center justify-start gap-2">
-            <div className="hidden md:block relative w-full max-w-[280px]">
+            <div className="hidden md:block relative w-full max-w-[220px]">
               <Input
                 placeholder="Buscar"
-                className="pl-4 pr-10 rounded-none h-10 border-foreground/20 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent"
+                className="pl-4 pr-10 rounded-none h-8 border border-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent text-xs"
               />
-              <Search className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute right-3 top-2 h-4 w-4 text-muted-foreground" />
             </div>
             <Button
               variant="ghost"
@@ -102,12 +102,12 @@ export function Header() {
             <div className="hidden lg:block">
               <ProfileMenu
                 renderTrigger={(user, profile) => (
-                  <button className="flex items-center gap-2 border border-foreground/20 px-4 py-2 rounded-none hover:bg-muted transition-colors">
+                  <button className="flex items-center gap-2 px-2 py-2 hover:opacity-70 transition-opacity">
                     <User className="h-4 w-4" />
-                    <span className="text-[11px] uppercase tracking-wider font-medium whitespace-nowrap">
+                    <span className="text-[10px] uppercase tracking-widest font-semibold whitespace-nowrap">
                       {user ? profile?.full_name?.split(' ')[0] || 'Minha conta' : 'Minha conta'}
                     </span>
-                    <ChevronDown className="h-3 w-3 ml-1" />
+                    <ChevronDown className="h-3 w-3" />
                   </button>
                 )}
               />
