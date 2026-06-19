@@ -5,8 +5,8 @@ import logoZahra from '../assets/logozahra-e51d5.png'
 
 export function Footer() {
   return (
-    <footer className="bg-background text-primary border-t py-16">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+    <footer className="bg-background text-foreground border-t py-20 font-sans">
+      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
         <div className="space-y-4">
           <Link to="/" className="inline-block mb-4">
             <img
@@ -22,28 +22,28 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-medium uppercase tracking-wider text-sm mb-6">Atendimento</h4>
-          <ul className="space-y-3 text-sm opacity-80">
+          <h4 className="font-semibold uppercase tracking-wider text-xs mb-6">Atendimento</h4>
+          <ul className="space-y-4 text-sm text-muted-foreground">
             <li>
               <a
                 href="mailto:saczharabrasil@gmail.com"
-                className="hover:text-gold transition-colors"
+                className="hover:text-foreground transition-colors"
               >
                 Contato
               </a>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Frete e Entregas
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Trocas e Devoluções
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Guia de Tamanhos
               </Link>
             </li>
@@ -51,25 +51,25 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-medium uppercase tracking-wider text-sm mb-6">Institucional</h4>
-          <ul className="space-y-3 text-sm opacity-80">
+          <h4 className="font-semibold uppercase tracking-wider text-xs mb-6">Institucional</h4>
+          <ul className="space-y-4 text-sm text-muted-foreground">
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Nossa História
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Sustentabilidade
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Termos de Serviço
               </Link>
             </li>
             <li>
-              <Link to="#" className="hover:text-gold transition-colors">
+              <Link to="#" className="hover:text-foreground transition-colors">
                 Privacidade
               </Link>
             </li>
@@ -77,24 +77,28 @@ export function Footer() {
         </div>
 
         <div>
-          <h4 className="font-medium uppercase tracking-wider text-sm mb-6">Newsletter</h4>
-          <p className="text-sm opacity-80 mb-4">
+          <h4 className="font-semibold uppercase tracking-wider text-xs mb-6">Newsletter</h4>
+          <p className="text-sm text-muted-foreground mb-6">
             Inscreva-se para receber novidades e acesso antecipado a coleções exclusivas.
           </p>
-          <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
             <Input
               type="email"
               placeholder="Seu e-mail"
-              className="bg-transparent border-primary/20 focus-visible:ring-primary rounded-none"
+              className="bg-transparent border-border focus-visible:ring-foreground rounded-none h-11"
             />
-            <Button type="submit" className="rounded-none px-6">
+            <Button
+              type="submit"
+              className="rounded-none h-11 px-8 uppercase text-xs tracking-wider font-semibold"
+            >
               Assinar
             </Button>
           </form>
         </div>
       </div>
-      <div className="container mx-auto px-4 mt-16 pt-8 border-t border-primary/10 text-center text-xs opacity-60">
+      <div className="container mx-auto px-4 mt-20 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
         <p>&copy; {new Date().getFullYear()} Zahrá Brazil. Todos os direitos reservados.</p>
+        <p>WhatsApp: (11) 93416-0219</p>
       </div>
     </footer>
   )

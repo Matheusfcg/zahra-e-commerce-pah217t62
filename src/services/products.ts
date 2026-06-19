@@ -23,12 +23,13 @@ export type Product = {
   composition: string
   measurements: string
   is_promotion: boolean
+  category?: string
   product_colors: ProductColor[]
   product_images: ProductImage[]
 }
 
-export async function getProducts() {
-  const { data, error } = await supabase
+export async function getProducts(category?: string) {
+  let query = supabase
     .from('products')
     .select(`
       *,
@@ -36,6 +37,12 @@ export async function getProducts() {
       product_images (*)
     `)
     .order('created_at', { ascending: false })
+
+  if (category) {
+    query = query.eq('category', category)
+  }
+
+  const { data, error } = await query
 
   if (error) throw error
   return data as Product[]

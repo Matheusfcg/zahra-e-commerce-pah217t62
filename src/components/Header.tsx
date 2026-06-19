@@ -10,6 +10,7 @@ import {
   Mail,
   MessageCircle,
   Instagram,
+  Heart,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
@@ -75,14 +76,32 @@ export function Header() {
           >
             <Menu className="h-6 w-6 md:h-7 md:w-7" />
           </Button>
-          <div className="hidden md:flex items-center">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             <Link
               to="/produtos"
-              className="text-xs lg:text-sm uppercase tracking-widest font-medium hover:opacity-70 transition-opacity"
+              className="text-xs lg:text-sm uppercase tracking-wider font-medium hover:opacity-70 transition-opacity"
             >
-              Todas as Peças
+              Todos
             </Link>
-          </div>
+            <Link
+              to="/produtos?category=Conjuntos"
+              className="text-xs lg:text-sm uppercase tracking-wider font-medium hover:opacity-70 transition-opacity"
+            >
+              Conjuntos
+            </Link>
+            <Link
+              to="/produtos?category=Parte%20de%20Cima"
+              className="text-xs lg:text-sm uppercase tracking-wider font-medium hover:opacity-70 transition-opacity"
+            >
+              Tops
+            </Link>
+            <Link
+              to="/produtos?category=Parte%20de%20Baixo"
+              className="text-xs lg:text-sm uppercase tracking-wider font-medium hover:opacity-70 transition-opacity"
+            >
+              Bottoms
+            </Link>
+          </nav>
         </div>
 
         {/* Center Section (Logo) */}
@@ -97,15 +116,19 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Right Section (Search+Bag) */}
+        {/* Right Section (Search+Favorites+Bag) */}
         <div className="flex-1 flex justify-end items-center gap-4 md:gap-6">
-          <button className="hover:text-gold transition-colors">
-            <Search className="h-5 w-5 md:h-6 md:w-6" />
+          <button className="hover:opacity-70 transition-opacity">
+            <Search className="h-5 w-5 md:h-5 md:w-5" />
           </button>
+
+          <Link to="/favoritos" className="hover:opacity-70 transition-opacity">
+            <Heart className="h-5 w-5 md:h-5 md:w-5" />
+          </Link>
 
           <button
             onClick={openDrawer}
-            className="relative hover:text-gold transition-colors md:mr-0"
+            className="relative hover:opacity-70 transition-opacity md:mr-0"
           >
             <ShoppingBag className="h-5 w-5 md:h-6 md:w-6" />
             {totalItems > 0 && (
@@ -168,14 +191,35 @@ export function Header() {
               <Link
                 to="/produtos"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 font-serif text-xl text-[#3d271d] font-normal hover:bg-[#EFEAE2] transition-colors"
+                className="block px-6 py-4 font-sans text-lg text-foreground font-medium hover:bg-muted transition-colors"
               >
-                Todas as Peças
+                Todos
+              </Link>
+              <Link
+                to="/produtos?category=Conjuntos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 font-sans text-lg text-foreground font-medium hover:bg-muted transition-colors"
+              >
+                Conjuntos
+              </Link>
+              <Link
+                to="/produtos?category=Parte%20de%20Cima"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 font-sans text-lg text-foreground font-medium hover:bg-muted transition-colors"
+              >
+                Tops
+              </Link>
+              <Link
+                to="/produtos?category=Parte%20de%20Baixo"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 font-sans text-lg text-foreground font-medium hover:bg-muted transition-colors"
+              >
+                Bottoms
               </Link>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="novidade" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-serif text-xl text-[#3d271d] font-normal">
-                    Novidade
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline font-sans text-lg text-foreground font-medium">
+                    Coleções
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-2 space-y-4 text-muted-foreground font-medium">

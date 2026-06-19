@@ -1,27 +1,34 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { getProducts, type Product } from '@/services/products'
 import { Loader2 } from 'lucide-react'
+import { ProductCard } from '@/components/ProductCard'
+import { useFavorites } from '@/hooks/use-favorites'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [searchParams] = useSearchParams()
+  const category = searchParams.get('category')
+  const { favorites, toggleFavorite } = useFavorites()
 
   useEffect(() => {
-    getProducts()
+    setIsLoading(true)
+    getProducts(category || undefined)
       .then(setProducts)
       .catch(console.error)
       .finally(() => setIsLoading(false))
-  }, [])
+  }, [category])
 
   return (
     <div className="w-full pt-28 pb-24 min-h-screen bg-background">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in-up">
-          <h1 className="font-serif text-4xl md:text-5xl mb-4 text-[#3d271d]">Todas as Peças</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Explore nossa coleção completa de peças exclusivas, desenvolvidas para inspirar o seu
-            dia a dia.
+          <h1 className="font-sans font-light tracking-tight text-4xl md:text-5xl mb-4 text-foreground">
+            {category ? category : 'Todas as Peças'}
+          </h1>
+          <p className="text-muted-foreground font-sans max-w-2xl mx-auto">
+            Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.
           </p>
         </div>
 
@@ -32,40 +39,12 @@ export default function ProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {products.map((product) => (
-              <div key={product.id} className="group cursor-pointer animate-fade-in">
-                <div className="overflow-hidden bg-cream-dark mb-4 relative aspect-[3/4]">
-                  <Link to={`/product/${product.slug}`}>
-                    <img
-                      src={
-                        product.product_images?.[0]?.url ||
-                        'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
-                      }
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </Link>
-                  {product.is_promotion && (
-                    <div className="absolute top-3 right-3 bg-[#D94F4F] text-white text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 shadow-sm rounded-sm z-10">
-                      Promoção
-                    </div>
-                  )}
-                </div>
-                <div className="text-center pt-2">
-                  <h3 className="font-serif text-xl mb-1">
-                    <Link
-                      to={`/product/${product.slug}`}
-                      className="hover:text-primary/80 transition-colors"
-                    >
-                      {product.name}
-                    </Link>
-                  </h3>
-                  <p className="font-medium text-muted-foreground">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      product.price,
-                    )}
-                  </p>
-                </div>
-              </div>
+              <ProductCard
+                key={product.id}
+                product={product}
+                isFavorite={favorites.has(product.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             ))}
             {products.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground">
