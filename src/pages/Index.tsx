@@ -25,12 +25,13 @@ const Index = () => {
       try {
         const all = await getProducts()
 
-        // Multi-category carousel logic: 2 per category
-        const categories = [...new Set(all.map((p) => p.category).filter(Boolean))]
+        // Multi-category carousel logic: exactly 2 per category where show_in_carousel is true
+        const carouselCandidates = all.filter((p) => p.show_in_carousel === true)
+        const categories = [...new Set(carouselCandidates.map((p) => p.category).filter(Boolean))]
         const categoryCarousel: Product[] = []
 
         categories.forEach((cat) => {
-          const inCat = all.filter((p) => p.category === cat && p.show_in_carousel !== false)
+          const inCat = carouselCandidates.filter((p) => p.category === cat)
           categoryCarousel.push(...inCat.slice(0, 2))
         })
 
@@ -118,9 +119,48 @@ const Index = () => {
         ) : null}
       </section>
 
+      {/* Brand Concept Section 1 */}
+      <section className="py-16 md:py-32 bg-white">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
+            <div className="w-full md:w-1/2 overflow-hidden aspect-[4/5] relative flex items-center justify-center">
+              <img
+                src="https://img.usecurling.com/p/800/1000?q=minimalist%20fashion%20editorial&color=white"
+                alt="Coleção Zahrá"
+                className="w-full h-full object-cover rounded-sm"
+                loading="lazy"
+              />
+            </div>
+            <div className="w-full md:w-1/2 flex flex-col justify-center text-center md:text-left">
+              <p className="text-[#3c6e47] text-xs md:text-sm font-bold tracking-[0.3em] mb-4 uppercase opacity-80">
+                O Novo Clássico
+              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black uppercase tracking-tighter text-[#3c6e47] mb-6 leading-[0.85]">
+                Essência <br /> Zahrá
+              </h2>
+              <div className="w-12 h-1 bg-[#3c6e47] mb-8 mx-auto md:mx-0"></div>
+              <p className="text-base md:text-xl text-muted-foreground leading-relaxed mb-10 font-medium max-w-md mx-auto md:mx-0">
+                Descubra a harmonia perfeita entre o design contemporâneo e o conforto absoluto.
+                Nossas peças são cuidadosamente elaboradas para a mulher que busca elegância e
+                versatilidade em cada detalhe.
+              </p>
+              <div className="flex justify-center md:justify-start">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-[#3c6e47] text-[#3c6e47] hover:bg-[#3c6e47] hover:text-white rounded-none px-10 py-7 uppercase tracking-[0.2em] text-xs font-bold transition-all duration-300"
+                >
+                  <Link to="/produtos">Explorar Coleção</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Dynamic Promo Section */}
       {promoProducts.length > 0 && (
-        <section className="py-16 md:py-24 bg-white px-4 md:px-8 max-w-7xl mx-auto">
+        <section className="py-16 md:py-24 bg-[#FCFAF8] px-4 md:px-8 max-w-7xl mx-auto">
           <div className="mb-12 md:mb-16 text-center">
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-[#3c6e47] mb-4">
               Promoções
@@ -139,7 +179,7 @@ const Index = () => {
 
       {/* Dynamic Featured Section */}
       {featuredProducts.length > 0 && (
-        <section className="py-16 md:py-24 bg-[#FCFAF8] px-4 md:px-8 max-w-7xl mx-auto">
+        <section className="py-16 md:py-24 bg-white px-4 md:px-8 max-w-7xl mx-auto">
           <div className="mb-12 md:mb-16 text-center">
             <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-[#3c6e47] mb-4">
               Destaques

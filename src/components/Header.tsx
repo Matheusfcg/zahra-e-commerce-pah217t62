@@ -133,6 +133,14 @@ export function Header() {
 
         {/* Bottom row: Links (Desktop) */}
         <nav className="hidden md:flex flex-wrap items-center justify-center gap-x-10 gap-y-2 pb-4">
+          {isAdmin && (
+            <Link
+              to="/admin/upload"
+              className="text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#3c6e47] hover:opacity-70 transition-opacity whitespace-nowrap"
+            >
+              ADMINISTRADOR
+            </Link>
+          )}
           {navLinks.map((link) => (
             <Link
               key={link.name}
