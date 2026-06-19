@@ -52,16 +52,9 @@ export function Header() {
   }, [location.pathname, location.search, location.hash])
 
   const navLinks = [
-    { name: 'NEW IN', path: '/produtos' },
-    { name: 'COLLECTIONS', path: '/#colecao' },
-    { name: 'CONFECÇÃO SOFFI', path: '/produtos' },
+    { name: 'CONJUNTOS', path: '/produtos?category=Conjuntos' },
     { name: 'PARTES DE CIMA', path: '/produtos?category=Parte%20de%20Cima' },
     { name: 'PARTES DE BAIXO', path: '/produtos?category=Parte%20de%20Baixo' },
-    { name: 'PEÇA ÚNICA', path: '/produtos?category=Peça%20Única' },
-    { name: 'CASACOS', path: '/produtos?category=Casacos' },
-    { name: 'CONJUNTOS', path: '/produtos?category=Conjuntos' },
-    { name: 'ACESSÓRIOS', path: '/produtos?category=Acessórios' },
-    { name: 'SALE', path: '/#promocao', className: 'text-[#D94F4F]' },
   ]
 
   return (
@@ -138,7 +131,7 @@ export function Header() {
         </div>
 
         {/* Bottom row: Links (Desktop) */}
-        <nav className="hidden md:flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pb-4">
+        <nav className="hidden md:flex flex-wrap items-center justify-center gap-x-10 gap-y-2 pb-4">
           {navLinks.map((link) => (
             <Link
               key={link.name}
