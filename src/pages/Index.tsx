@@ -2,13 +2,6 @@ import { Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getProducts, type Product } from '@/services/products'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel'
 import { ProductCard } from '@/components/ProductCard'
 
 const Index = () => {
@@ -21,10 +14,7 @@ const Index = () => {
       try {
         const all = await getProducts()
 
-        // Hero: Grab top products for the high-impact carousel
-        setHeroProducts(all.slice(0, 6))
-
-        // Exclude basics for remaining sections
+        // Exclude basics for hero and curated
         const nonBasics = all.filter(
           (p) =>
             !p.name.toLowerCase().includes('t-shirt') &&
@@ -35,8 +25,11 @@ const Index = () => {
             !p.slug?.toLowerCase().includes('basico'),
         )
 
-        // Curated Grid: Mixed prices, remaining products
-        const curated = nonBasics.slice(0, 8)
+        // Hero: Grab top 2 products for the 3-column layout
+        setHeroProducts(nonBasics.slice(0, 2))
+
+        // Curated Grid: Remaining products
+        const curated = nonBasics.slice(2, 10)
         setCuratedProducts(curated)
       } catch (error) {
         console.error(error)
@@ -48,6 +41,9 @@ const Index = () => {
     fetchData()
   }, [])
 
+  const heroLeft = heroProducts[0]
+  const heroRight = heroProducts[1]
+
   return (
     <div className="w-full pt-[80px] md:pt-[120px] pb-0 bg-[#FAFAFA]">
       {isLoading ? (
@@ -56,54 +52,67 @@ const Index = () => {
         </div>
       ) : (
         <>
-          {/* Hero Carousel Section */}
-          <section className="relative w-full max-w-[1600px] mx-auto min-h-[60vh] flex flex-col lg:flex-row items-center pt-8 pb-16 lg:pb-24">
-            <div className="w-full lg:w-1/3 px-8 lg:px-16 z-10 mb-12 lg:mb-0 text-center lg:text-left">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-sans tracking-tighter text-[#8A8888] leading-[0.9] font-medium mix-blend-multiply">
-                sua nova
-                <br className="hidden lg:block" /> jaqueta
-                <br className="hidden lg:block" /> favorita
-                <br className="hidden lg:block" /> está aqui
+          {/* Three-Column Hero Section */}
+          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 min-h-[75vh] lg:min-h-[85vh] bg-[#FAFAFA]">
+            {/* Left Image */}
+            <Link
+              to={heroLeft ? `/product/${heroLeft.slug}` : '/produtos'}
+              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-1 lg:order-1"
+            >
+              <img
+                src={
+                  heroLeft?.product_images?.[0]?.url ||
+                  'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2'
+                }
+                alt={heroLeft?.name || 'Coleção Elegance'}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-500" />
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20">
+                  {heroLeft ? 'Ver Peça' : 'Ver Coleção'}
+                </span>
+              </div>
+            </Link>
+
+            {/* Central Legend */}
+            <div className="flex flex-col items-center justify-center p-12 lg:p-16 text-center bg-[#F4F1ED] order-2 lg:order-2 min-h-[40vh] lg:min-h-0 border-y lg:border-y-0 lg:border-x border-[#E5E0D8]">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-6 uppercase tracking-[0.1em] leading-tight">
+                Essência <br className="hidden lg:block" /> da <br className="hidden lg:block" />{' '}
+                Elegância
               </h1>
-            </div>
-            <div className="w-full lg:w-2/3 px-4 md:px-12 lg:pr-16">
-              <Carousel
-                opts={{
-                  align: 'start',
-                  loop: true,
-                }}
-                className="w-full"
+              <p className="text-[#5C4B4B] text-sm md:text-base mb-8 max-w-[280px] lg:max-w-xs tracking-wide">
+                Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza
+                natural.
+              </p>
+              <Link
+                to="/produtos"
+                className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F4F1ED] transition-colors"
               >
-                <CarouselContent className="-ml-4">
-                  {heroProducts.map((product) => (
-                    <CarouselItem key={product.id} className="pl-4 basis-full sm:basis-1/2">
-                      <Link to={`/product/${product.slug}`} className="block group">
-                        <div className="relative aspect-[4/5] overflow-hidden bg-white shadow-sm">
-                          <img
-                            src={
-                              product.product_images?.[0]?.url ||
-                              'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=black&dpr=2'
-                            }
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="mt-5 text-center px-4">
-                          <h3 className="font-serif text-lg text-[#2D0B0B]">{product.name}</h3>
-                          <p className="text-xs text-gray-500 uppercase tracking-widest mt-2 border-b border-gray-300 pb-1 inline-block">
-                            Conheça a Peça
-                          </p>
-                        </div>
-                      </Link>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <div className="hidden lg:block">
-                  <CarouselPrevious className="-left-6 border-none bg-transparent hover:bg-transparent text-[#8A8888] hover:text-[#2D0B0B] scale-150 transition-colors" />
-                  <CarouselNext className="-right-6 border-none bg-transparent hover:bg-transparent text-[#8A8888] hover:text-[#2D0B0B] scale-150 transition-colors" />
-                </div>
-              </Carousel>
+                Explorar Coleção
+              </Link>
             </div>
+
+            {/* Right Image */}
+            <Link
+              to={heroRight ? `/product/${heroRight.slug}` : '/produtos'}
+              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-3 lg:order-3"
+            >
+              <img
+                src={
+                  heroRight?.product_images?.[0]?.url ||
+                  'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2'
+                }
+                alt={heroRight?.name || 'Coleção Sofisticada'}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-500" />
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20">
+                  {heroRight ? 'Ver Peça' : 'Ver Coleção'}
+                </span>
+              </div>
+            </Link>
           </section>
 
           {/* Split-Screen Banner Section */}
