@@ -1,18 +1,33 @@
 import { Link } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Star, ShieldCheck, Leaf } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getProducts, type Product } from '@/services/products'
 import { ProductCard } from '@/components/ProductCard'
+import { supabase } from '@/lib/supabase/client'
 
 const Index = () => {
   const [heroProducts, setHeroProducts] = useState<Product[]>([])
   const [curatedProducts, setCuratedProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [siteContent, setSiteContent] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const all = await getProducts()
+        const [productsData, contentResponse] = await Promise.all([
+          getProducts(),
+          supabase.from('site_content').select('*'),
+        ])
+
+        if (contentResponse.data) {
+          const contentMap = contentResponse.data.reduce(
+            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
+            {} as Record<string, string>,
+          )
+          setSiteContent(contentMap)
+        }
+
+        const all = productsData || []
 
         // Exclude basics for hero and curated
         const nonBasics = all.filter(
@@ -44,6 +59,8 @@ const Index = () => {
   const heroLeft = heroProducts[0]
   const heroRight = heroProducts[1]
 
+  const getText = (key: string, fallback: string) => siteContent[key] || fallback
+
   return (
     <div className="w-full pt-[80px] md:pt-[120px] pb-0 bg-[#FAFAFA]">
       {isLoading ? (
@@ -53,11 +70,11 @@ const Index = () => {
       ) : (
         <>
           {/* Three-Column Hero Section */}
-          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 min-h-[75vh] lg:min-h-[85vh] bg-[#FAFAFA]">
+          <section className="w-full flex flex-col lg:grid lg:grid-cols-3 min-h-[75vh] lg:min-h-[85vh] bg-[#F9F8F6]">
             {/* Left Image */}
             <Link
               to={heroLeft ? `/product/${heroLeft.slug}` : '/produtos'}
-              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-1 lg:order-1"
+              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-1 lg:order-1 bg-[#F9F8F6]"
             >
               <img
                 src={
@@ -65,38 +82,46 @@ const Index = () => {
                   'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2'
                 }
                 alt={heroLeft?.name || 'Coleção Elegance'}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20">
+                <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
                   {heroLeft ? 'Ver Peça' : 'Ver Coleção'}
                 </span>
               </div>
             </Link>
 
             {/* Central Legend */}
-            <div className="flex flex-col items-center justify-center p-12 lg:p-16 text-center bg-[#F4F1ED] order-2 lg:order-2 min-h-[40vh] lg:min-h-0 border-y lg:border-y-0 lg:border-x border-[#E5E0D8]">
+            <div className="flex flex-col items-center justify-center p-12 lg:p-16 text-center bg-[#F9F8F6] order-2 lg:order-2 min-h-[40vh] lg:min-h-0 relative z-10">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#2D0B0B] mb-6 uppercase tracking-[0.1em] leading-tight">
-                Essência <br className="hidden lg:block" /> da <br className="hidden lg:block" />{' '}
-                Elegância
+                {getText('hero_title', 'Essência da Elegância')
+                  .split('\n')
+                  .map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
               </h1>
               <p className="text-[#5C4B4B] text-sm md:text-base mb-8 max-w-[280px] lg:max-w-xs tracking-wide">
-                Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza
-                natural.
+                {getText(
+                  'hero_description',
+                  'Descubra nossa nova coleção. Peças exclusivas pensadas para evidenciar a sua beleza natural.',
+                )}
               </p>
               <Link
                 to="/produtos"
-                className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F4F1ED] transition-colors"
+                className="border border-[#2D0B0B] text-[#2D0B0B] px-8 py-3 text-xs uppercase tracking-[0.2em] font-medium hover:bg-[#2D0B0B] hover:text-[#F9F8F6] transition-colors"
               >
-                Explorar Coleção
+                {getText('hero_button', 'Explorar Coleção')}
               </Link>
             </div>
 
             {/* Right Image */}
             <Link
               to={heroRight ? `/product/${heroRight.slug}` : '/produtos'}
-              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-3 lg:order-3"
+              className="group relative w-full h-[50vh] lg:h-auto overflow-hidden block order-3 lg:order-3 bg-[#F9F8F6]"
             >
               <img
                 src={
@@ -104,58 +129,63 @@ const Index = () => {
                   'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2'
                 }
                 alt={heroRight?.name || 'Coleção Sofisticada'}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-500" />
+              <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-500" />
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-center w-full z-10 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20">
+                <span className="text-[#F9F8F6] border border-[#F9F8F6] px-8 py-2 text-xs uppercase tracking-[0.2em] font-medium backdrop-blur-sm bg-black/20 hover:bg-white hover:text-[#2D0B0B] transition-colors">
                   {heroRight ? 'Ver Peça' : 'Ver Coleção'}
                 </span>
               </div>
             </Link>
           </section>
 
-          {/* Split-Screen Banner Section */}
-          <section className="w-full flex flex-col md:flex-row min-h-[60vh] lg:min-h-[80vh]">
-            <Link
-              to="/produtos?q=vestido"
-              className="group relative w-full md:w-1/2 overflow-hidden block aspect-[4/5] md:aspect-auto"
-            >
-              <img
-                src="https://img.usecurling.com/p/1200/1600?q=elegant%20woman%20forest%20dress&dpr=2"
-                alt="Vestido Longo Elegance"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-500" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg max-w-[80%]">
-                  VESTIDO LONGO ELEGANCE
-                </h2>
-                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-10 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
-                  DESCUBRA
-                </span>
+          {/* Values Section */}
+          <section className="w-full py-20 md:py-28 bg-[#F9F8F6] px-4 md:px-8 border-t border-[#E5E0D8]">
+            <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
+                  <Star className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
+                  {getText('values_1_title', 'Design Autoral')}
+                </h3>
+                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
+                  {getText(
+                    'values_1_desc',
+                    'Peças exclusivas desenhadas no Brasil com foco no minimalismo atemporal.',
+                  )}
+                </p>
               </div>
-            </Link>
-
-            <Link
-              to="/produtos?q=conjunto"
-              className="group relative w-full md:w-1/2 overflow-hidden block aspect-[4/5] md:aspect-auto"
-            >
-              <img
-                src="https://img.usecurling.com/p/1200/1600?q=woman%20tailoring%20vintage%20workshop&dpr=2"
-                alt="Conjunto Alfaiataria"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-500" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-[#F4F1ED] mb-6 uppercase tracking-widest drop-shadow-lg max-w-[80%]">
-                  CONJUNTO ALFAIATARIA
-                </h2>
-                <span className="text-[#F4F1ED] border border-[#F4F1ED] px-10 py-3 text-xs uppercase tracking-[0.3em] font-medium transition-colors hover:bg-[#F4F1ED] hover:text-[#2D0B0B]">
-                  DESCUBRA
-                </span>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
+                  <ShieldCheck className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
+                  {getText('values_2_title', 'Qualidade Premium')}
+                </h3>
+                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
+                  {getText(
+                    'values_2_desc',
+                    'Seleção rigorosa de materiais para garantir durabilidade e sofisticação.',
+                  )}
+                </p>
               </div>
-            </Link>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
+                  <Leaf className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
+                </div>
+                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
+                  {getText('values_3_title', 'Sustentabilidade')}
+                </h3>
+                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
+                  {getText(
+                    'values_3_desc',
+                    'Compromisso com o meio ambiente utilizando couro vegano de alta tecnologia.',
+                  )}
+                </p>
+              </div>
+            </div>
           </section>
 
           {/* Curated Product Grid */}
