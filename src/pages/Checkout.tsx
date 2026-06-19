@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
 import { generatePixPayload } from '@/lib/pix'
+import { supabase } from '@/lib/supabase/client'
 
 const Checkout = () => {
   const { items, subtotal } = useCart()
   const { session } = useAuth()
-  const shipping = items.length > 0 ? 35.0 : 0
+  const shipping = 0
   const total = subtotal + shipping
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -22,9 +23,28 @@ const Checkout = () => {
   const [pixPayload, setPixPayload] = useState('')
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
   const [pixGenerated, setPixGenerated] = useState(false)
+  const [profile, setProfile] = useState<{
+    full_name: string | null
+    document_number: string | null
+    phone: string | null
+  } | null>(null)
 
   const userEmail = session?.user?.email
+  const userId = session?.user?.id
   const displayEmail = userEmail || guestEmail || 'Convidado'
+
+  useEffect(() => {
+    if (userId) {
+      supabase
+        .from('user_profiles')
+        .select('full_name, document_number, phone')
+        .eq('id', userId)
+        .single()
+        .then(({ data }) => {
+          if (data) setProfile(data)
+        })
+    }
+  }, [userId])
 
   useEffect(() => {
     if (userEmail && step === 1) {
@@ -87,6 +107,12 @@ const Checkout = () => {
                   {userEmail ? (
                     <div className="space-y-4">
                       <p className="text-sm font-medium">Você está logado como: {userEmail}</p>
+                      {profile?.full_name && (
+                        <p className="text-sm text-muted-foreground">Nome: {profile.full_name}</p>
+                      )}
+                      {profile?.phone && (
+                        <p className="text-sm text-muted-foreground">Telefone: {profile.phone}</p>
+                      )}
                       <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(2)}>
                         Continuar para Entrega
                       </Button>
@@ -278,7 +304,9 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Frete</span>
-                  <span>R$ {shipping.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-green-600 font-medium">
+                    {shipping === 0 ? 'Grátis' : `R$ ${shipping.toFixed(2).replace('.', ',')}`}
+                  </span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between text-base font-medium">

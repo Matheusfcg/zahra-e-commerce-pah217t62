@@ -36,12 +36,7 @@ const Index = () => {
         const uniqueTopStock: Product[] = []
         const topStockNames = new Set<string>()
         for (const p of top) {
-          if (
-            !topStockNames.has(p.name) &&
-            !p.name.toLowerCase().includes('cowntry') &&
-            !p.name.toLowerCase().includes('basica') &&
-            !p.name.toLowerCase().includes('básica')
-          ) {
+          if (!topStockNames.has(p.name)) {
             topStockNames.add(p.name)
             uniqueTopStock.push(p)
           }
@@ -49,13 +44,7 @@ const Index = () => {
 
         const uniquePromo: Product[] = []
         const promoNames = new Set<string>()
-        for (const p of all.filter(
-          (p) =>
-            p.is_promotion &&
-            !p.name.toLowerCase().includes('cowntry') &&
-            !p.name.toLowerCase().includes('basica') &&
-            !p.name.toLowerCase().includes('básica'),
-        )) {
+        for (const p of all.filter((p) => p.is_promotion)) {
           if (!promoNames.has(p.name)) {
             promoNames.add(p.name)
             uniquePromo.push(p)
@@ -70,14 +59,7 @@ const Index = () => {
         // Showcase product is the second top stock or fallback to next available
         setShowcaseProduct(uniqueTopStock[1] || all[1] || null)
 
-        setMixedCollection(
-          mixed.filter(
-            (p) =>
-              !p.name.toLowerCase().includes('cowntry') &&
-              !p.name.toLowerCase().includes('basica') &&
-              !p.name.toLowerCase().includes('básica'),
-          ),
-        )
+        setMixedCollection(mixed)
         setTopStock(uniqueTopStock)
       } catch (error) {
         console.error(error)
