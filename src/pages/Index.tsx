@@ -6,6 +6,8 @@ import { getProducts, type Product } from '@/services/products'
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel'
 import Autoplay from 'embla-carousel-autoplay'
 import { ProductCard } from '@/components/ProductCard'
+import imgBrand1 from '@/assets/image-048b7.png'
+import imgBrand2 from '@/assets/image-43b69.png'
 
 const getPrimaryImageUrl = (images?: Product['product_images']) => {
   if (!images || images.length === 0) return ''
@@ -125,7 +127,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row items-center gap-12 md:gap-24">
             <div className="w-full md:w-1/2 overflow-hidden aspect-[4/5] relative flex items-center justify-center">
               <img
-                src="https://img.usecurling.com/p/800/1000?q=minimalist%20fashion%20editorial&color=white"
+                src={imgBrand1}
                 alt="Coleção Zahrá"
                 className="w-full h-full object-cover rounded-sm"
                 loading="lazy"
@@ -151,6 +153,45 @@ const Index = () => {
                   className="border-[#3c6e47] text-[#3c6e47] hover:bg-[#3c6e47] hover:text-white rounded-none px-10 py-7 uppercase tracking-[0.2em] text-xs font-bold transition-all duration-300"
                 >
                   <Link to="/produtos">Explorar Coleção</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Concept Section 2 (Restored) */}
+      <section className="py-16 md:py-32 bg-[#FCFAF8]">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="flex flex-col md:flex-row-reverse items-center gap-12 md:gap-24">
+            <div className="w-full md:w-1/2 overflow-hidden aspect-[4/5] relative flex items-center justify-center">
+              <img
+                src={imgBrand2}
+                alt="Coleção Exclusiva"
+                className="w-full h-full object-cover rounded-sm"
+                loading="lazy"
+              />
+            </div>
+            <div className="w-full md:w-1/2 flex flex-col justify-center text-center md:text-left">
+              <p className="text-[#3c6e47] text-xs md:text-sm font-bold tracking-[0.3em] mb-4 uppercase opacity-80">
+                Design Exclusivo
+              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-7xl font-black uppercase tracking-tighter text-[#3c6e47] mb-6 leading-[0.85]">
+                Sofisticação <br /> Atemporal
+              </h2>
+              <div className="w-12 h-1 bg-[#3c6e47] mb-8 mx-auto md:mx-0"></div>
+              <p className="text-base md:text-xl text-muted-foreground leading-relaxed mb-10 font-medium max-w-md mx-auto md:mx-0">
+                Nossas coleções refletem um compromisso inabalável com a qualidade e o caimento
+                perfeito. Sinta a diferença de vestir uma peça que foi feita pensando em realçar a
+                sua beleza natural.
+              </p>
+              <div className="flex justify-center md:justify-start">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-[#3c6e47] text-[#3c6e47] hover:bg-[#3c6e47] hover:text-white rounded-none px-10 py-7 uppercase tracking-[0.2em] text-xs font-bold transition-all duration-300 bg-transparent"
+                >
+                  <Link to="/produtos?category=Conjuntos">Ver Conjuntos</Link>
                 </Button>
               </div>
             </div>
