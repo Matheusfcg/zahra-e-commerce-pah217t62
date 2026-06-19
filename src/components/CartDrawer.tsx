@@ -5,9 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useCartProductImages } from '@/hooks/use-cart-images'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel'
 
 export function CartDrawer() {
   const { isDrawerOpen, closeDrawer, items, updateQuantity, removeFromCart, subtotal } = useCart()
+  const imagesMap = useCartProductImages(items)
   const navigate = useNavigate()
 
   const handleCheckout = () => {
@@ -33,64 +42,92 @@ export function CartDrawer() {
             </div>
           ) : (
             <div className="space-y-6">
-              {items.map((item) => (
-                <div key={`${item.id}-${item.color}-${item.size}`} className="flex gap-4">
-                  <div className="h-28 w-24 bg-muted overflow-hidden flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium text-sm">{item.name}</h4>
+              {items.map((item) => {
+                const itemImages = imagesMap[`${item.id}-${item.color}`] || [item.image]
+                return (
+                  <div key={`${item.id}-${item.color}-${item.size}`} className="flex gap-4">
+                    <div className="h-28 w-24 bg-muted flex-shrink-0 group relative">
+                      <Carousel opts={{ loop: true, align: 'start' }} className="w-full h-full">
+                        <CarouselContent className="-ml-0 h-full">
+                          {itemImages.map((img, i) => (
+                            <CarouselItem key={i} className="pl-0 basis-full h-full">
+                              <img
+                                src={img}
+                                alt={`${item.name} ${i + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        {itemImages.length > 1 && (
+                          <>
+                            <CarouselPrevious className="left-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
+                            <CarouselNext className="right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
+                          </>
+                        )}
+                      </Carousel>
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-medium text-sm">{item.name}</h4>
+                          <button
+                            onClick={() => removeFromCart(item.id, item.color, item.size)}
+                            className="text-muted-foreground hover:text-primary"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Cor: {item.color} | Tam: {item.size}
+                        </p>
+                        <p className="font-medium mt-2">
+                          R$ {item.price.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                      <div className="flex items-center border w-max">
                         <button
-                          onClick={() => removeFromCart(item.id, item.color, item.size)}
-                          className="text-muted-foreground hover:text-primary"
+                          onClick={() =>
+                            updateQuantity(item.id, item.color, item.size, item.quantity - 1)
+                          }
+                          className="p-2 hover:bg-muted transition-colors"
                         >
-                          <X className="h-4 w-4" />
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="w-8 text-center text-sm">{item.quantity}</span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.id, item.color, item.size, item.quantity + 1)
+                          }
+                          className="p-2 hover:bg-muted transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
                         </button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Cor: {item.color} | Tam: {item.size}
-                      </p>
-                      <p className="font-medium mt-2">
-                        R$ {item.price.toFixed(2).replace('.', ',')}
-                      </p>
-                    </div>
-                    <div className="flex items-center border w-max">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.color, item.size, item.quantity - 1)
-                        }
-                        className="p-2 hover:bg-muted transition-colors"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="w-8 text-center text-sm">{item.quantity}</span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.color, item.size, item.quantity + 1)
-                        }
-                        className="p-2 hover:bg-muted transition-colors"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </ScrollArea>
 
         {items.length > 0 && (
           <div className="p-6 bg-background border-t space-y-4">
-            <div className="flex justify-between items-center text-lg font-medium">
-              <span>Subtotal</span>
-              <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Frete</span>
+                <span className="text-green-600 font-medium">Grátis</span>
+              </div>
+              <div className="flex justify-between items-center text-lg font-medium pt-2 border-t mt-2">
+                <span>Total</span>
+                <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Frete e impostos calculados no checkout.
-            </p>
             <Button className="w-full rounded-none h-12 text-base" onClick={handleCheckout}>
               Finalizar Compra
             </Button>

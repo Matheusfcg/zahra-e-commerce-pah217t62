@@ -10,6 +10,14 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
 import { generatePixPayload } from '@/lib/pix'
 import { supabase } from '@/lib/supabase/client'
+import { useCartProductImages } from '@/hooks/use-cart-images'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel'
 
 const Checkout = () => {
   const { items, subtotal } = useCart()
@@ -32,6 +40,8 @@ const Checkout = () => {
   const userEmail = session?.user?.email
   const userId = session?.user?.id
   const displayEmail = userEmail || guestEmail || 'Convidado'
+
+  const imagesMap = useCartProductImages(items)
 
   useEffect(() => {
     if (userId) {
@@ -273,26 +283,43 @@ const Checkout = () => {
               <h3 className="font-serif text-xl mb-6">Resumo do Pedido</h3>
 
               <div className="space-y-4 mb-6">
-                {items.map((item) => (
-                  <div key={`${item.id}-${item.color}-${item.size}`} className="flex gap-4">
-                    <div className="h-20 w-16 bg-muted">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
+                {items.map((item) => {
+                  const itemImages = imagesMap[`${item.id}-${item.color}`] || [item.image]
+                  return (
+                    <div key={`${item.id}-${item.color}-${item.size}`} className="flex gap-4">
+                      <div className="h-24 w-20 bg-muted flex-shrink-0 group relative">
+                        <Carousel opts={{ loop: true, align: 'start' }} className="w-full h-full">
+                          <CarouselContent className="-ml-0 h-full">
+                            {itemImages.map((img, i) => (
+                              <CarouselItem key={i} className="pl-0 basis-full h-full">
+                                <img
+                                  src={img}
+                                  alt={`${item.name} ${i + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          {itemImages.length > 1 && (
+                            <>
+                              <CarouselPrevious className="left-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
+                              <CarouselNext className="right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0" />
+                            </>
+                          )}
+                        </Carousel>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Cor: {item.color} | Tam: {item.size} | Qtd: {item.quantity}
+                        </p>
+                        <p className="text-sm font-medium mt-1">
+                          R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Cor: {item.color} | Tam: {item.size} | Qtd: {item.quantity}
-                      </p>
-                      <p className="text-sm font-medium mt-1">
-                        R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <Separator className="mb-6" />
