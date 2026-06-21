@@ -196,6 +196,7 @@ export default function AdminUpload() {
 
   const labelMap: Record<string, string> = {
     curated_title: 'TÍTULO DA CURADORIA',
+    delivery_banner_text: 'TEXTO DO BANNER DE ENTREGA',
     footer_about: 'RODAPÉ - SOBRE',
     footer_copyright: 'RODAPÉ - COPYRIGHT',
     footer_whatsapp: 'RODAPÉ - WHATSAPP',
@@ -205,12 +206,6 @@ export default function AdminUpload() {
     hero_right_image: 'IMAGEM DIREITA DO HERO',
     hero_title: 'TÍTULO DA SEÇÃO (PRINCIPAL/HERO)',
     main_title: 'TÍTULO DA SEÇÃO (TODAS AS PEÇAS)',
-    values_1_title: 'TÍTULO DO VALOR 1',
-    values_1_desc: 'DESCRIÇÃO DO VALOR 1',
-    values_2_title: 'TÍTULO DO VALOR 2',
-    values_2_desc: 'DESCRIÇÃO DO VALOR 2',
-    values_3_title: 'TÍTULO DO VALOR 3',
-    values_3_desc: 'DESCRIÇÃO DO VALOR 3',
     sets_title: 'TÍTULO DA SEÇÃO (CONJUNTOS)',
     sets_description: 'DESCRIÇÃO DA CATEGORIA (CONJUNTOS)',
     tops_title: 'TÍTULO DA SEÇÃO (PARTES DE CIMA)',
@@ -223,6 +218,7 @@ export default function AdminUpload() {
     return siteContent
       .filter((item) => {
         const key = item.section_key
+        if (key.startsWith('values_')) return false
         if (category === 'sets') return ['sets_title', 'sets_description'].includes(key)
         if (category === 'tops') return ['tops_title', 'tops_description'].includes(key)
         if (category === 'bottoms') return ['bottoms_title', 'bottoms_description'].includes(key)

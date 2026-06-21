@@ -10,8 +10,6 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, isFavorite = false, onToggleFavorite }: ProductCardProps) {
-  const installmentValue = product.price / 6
-
   return (
     <div className="group flex flex-col gap-3 animate-fade-in">
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary/10">
@@ -63,13 +61,6 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
             product.price,
           )}
-        </span>
-        <span className="font-sans text-[11px] text-[#5A5858] mt-1 tracking-wide">
-          6 x de{' '}
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-            installmentValue,
-          )}{' '}
-          sem juros
         </span>
       </div>
     </div>

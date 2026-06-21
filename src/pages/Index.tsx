@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Loader2, Star, ShieldCheck, Leaf } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import Autoplay from 'embla-carousel-autoplay'
 import { getProducts, type Product } from '@/services/products'
@@ -169,51 +169,33 @@ const Index = () => {
             </div>
           </section>
 
-          {/* Values Section */}
-          <section className="w-full py-20 md:py-28 bg-[#F9F8F6] px-4 md:px-8 border-t border-[#E5E0D8]">
-            <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
-                  <Star className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
-                  {getText('values_1_title', 'Design Autoral')}
-                </h3>
-                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
-                  {getText(
-                    'values_1_desc',
-                    'Peças exclusivas desenhadas no Brasil com foco no minimalismo atemporal.',
-                  )}
-                </p>
+          {/* Delivery Banner */}
+          <section className="w-full py-16 bg-[#F9F8F6] border-t border-[#E5E0D8]">
+            <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-center gap-6 text-center">
+              <div className="flex items-center justify-center text-[#2D0B0B]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 17h4V5H6v6" />
+                  <path d="M14 17h2.5a1 1 0 0 0 1-1v-4.5l-3.5-3.5H14" />
+                  <circle cx="8" cy="17" r="2" />
+                  <circle cx="16" cy="17" r="2" />
+                  <path d="M2 13h4" />
+                  <path d="M1 9h5" />
+                  <path d="M3 5h3" />
+                </svg>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
-                  <ShieldCheck className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
-                  {getText('values_2_title', 'Qualidade Premium')}
-                </h3>
-                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
-                  {getText(
-                    'values_2_desc',
-                    'Seleção rigorosa de materiais para garantir durabilidade e sofisticação.',
-                  )}
-                </p>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
-                  <Leaf className="w-6 h-6 text-[#2D0B0B]" strokeWidth={1.5} />
-                </div>
-                <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B] mb-4">
-                  {getText('values_3_title', 'Sustentabilidade')}
-                </h3>
-                <p className="text-[#5C4B4B] text-sm md:text-base max-w-[280px]">
-                  {getText(
-                    'values_3_desc',
-                    'Compromisso com o meio ambiente utilizando couro vegano de alta tecnologia.',
-                  )}
-                </p>
-              </div>
+              <h3 className="font-serif text-xl md:text-2xl text-[#2D0B0B]">
+                {getText('delivery_banner_text', 'Entregamos para todo Brasil')}
+              </h3>
             </div>
           </section>
 
