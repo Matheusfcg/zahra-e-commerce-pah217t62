@@ -93,10 +93,10 @@ export default function SiteContentTab() {
                 value={c}
                 onChange={(e) => {
                   const nc = [...categories]
-                  nc[i] = e.target.value.toUpperCase()
+                  nc[i] = e.target.value
                   setCategories(nc)
                 }}
-                className="uppercase font-medium tracking-wide"
+                className="font-medium tracking-wide"
               />
               <Button
                 variant="destructive"
@@ -111,7 +111,7 @@ export default function SiteContentTab() {
             <Button
               variant="outline"
               className="w-full mb-4"
-              onClick={() => setCategories([...categories, 'NOVA CATEGORIA'])}
+              onClick={() => setCategories([...categories, 'Nova Categoria'])}
             >
               <Plus className="w-4 h-4 mr-2" /> Adicionar Categoria
             </Button>

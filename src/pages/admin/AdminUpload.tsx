@@ -374,10 +374,11 @@ export default function AdminUpload() {
       <Tabs defaultValue="products" className="w-full">
         <TabsList className="mb-8">
           <TabsTrigger value="products">Produtos</TabsTrigger>
-          <TabsTrigger value="content">Conteúdo do Site</TabsTrigger>
+          <TabsTrigger value="texts">Textos do Site</TabsTrigger>
+          <TabsTrigger value="categories">Categorias & Pix</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="content">
+        <TabsContent value="categories">
           {(() => {
             const Comp = (window as any).SiteContentTabComponent
             return Comp ? (
@@ -468,7 +469,7 @@ export default function AdminUpload() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Preço</TableHead>
                     <TableHead>Imagens</TableHead>
-                    <TableHead className="text-center">Exibição (Home)</TableHead>
+                    <TableHead className="text-center">Exibição na Home</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -519,7 +520,7 @@ export default function AdminUpload() {
           )}
         </TabsContent>
 
-        <TabsContent value="content">
+        <TabsContent value="texts">
           <Card>
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#8B4513] bg-[#1a0f0f] shrink-0">

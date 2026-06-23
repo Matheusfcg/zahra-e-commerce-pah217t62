@@ -405,7 +405,7 @@ export function ProductForm({
           disabled={uploading}
         />
         <Label htmlFor="featured" className="cursor-pointer font-medium text-foreground">
-          Escolha a foto para exibição
+          Escolha a foto para exibição (Home)
         </Label>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

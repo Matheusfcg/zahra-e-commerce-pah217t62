@@ -184,20 +184,6 @@ const Checkout = () => {
     })
   }
 
-  if (pixGenerated) {
-    const PixModal = (window as any).PixModalComponent
-    if (PixModal) {
-      return (
-        <PixModal
-          pixPayload={pixPayload}
-          total={total}
-          copyPixKey={copyPixKey}
-          pixDetails={pixDetails}
-        />
-      )
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background pt-20 pb-24">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -362,16 +348,18 @@ const Checkout = () => {
                     </div>
                   ) : pixGenerated ? (
                     <div className="space-y-6 flex flex-col items-center py-4 animate-fade-in">
-                      <p className="font-medium text-lg">Escaneie o QR Code abaixo</p>
+                      <p className="font-medium text-lg text-center">
+                        Abra o aplicativo do seu banco e escaneie o QR Code para pagar
+                      </p>
                       <div className="bg-white p-4 rounded-lg border">
                         <img
-                          src={`https://quickchart.io/qr?size=250&text=${encodeURIComponent(pixPayload)}`}
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixPayload)}`}
                           alt="PIX QR Code"
-                          className="w-48 h-48"
+                          className="w-48 h-48 mix-blend-multiply"
                         />
                       </div>
                       <div className="w-full max-w-sm space-y-2">
-                        <Label>Ou copie a chave PIX Copia e Cola:</Label>
+                        <Label>Ou copie o código Pix:</Label>
                         <div className="flex gap-2">
                           <Input value={pixPayload} readOnly className="font-mono text-xs" />
                           <Button variant="outline" onClick={copyPixKey} title="Copiar">
