@@ -37,6 +37,8 @@ const Checkout = () => {
     institution: 'InfinitePay',
     formattedKey: '64.278.774/0001-61',
   })
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+  const [pixError, setPixError] = useState(false)
   const [profile, setProfile] = useState<{
     full_name: string | null
     document_number: string | null
@@ -100,7 +102,29 @@ const Checkout = () => {
       return
     }
 
+    const pixKey = '64278774000161'
+    const merchantName = 'ELLEN CRISTINA'
+    const merchantCity = 'Sao Paulo'
+    const formattedKey = '64.278.774/0001-61'
+
+    if (createdOrderId && pixPayload) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('SHOW_PIX_MODAL', {
+            detail: { payload: pixPayload, pixKey: formattedKey, merchantName },
+          }),
+        )
+      }
+      return
+    }
+
     setIsGeneratingPix(true)
+    setPixError(false)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('START_PIX_FLOW'))
+    }
+
     try {
       // Create Order
       const customerName =
@@ -116,13 +140,15 @@ const Checkout = () => {
           customer_email: customerEmail,
           customer_phone: customerPhone,
           total_amount: total,
-          status: 'pending_payment',
+          status: 'pending',
           payment_method: 'pix',
         })
         .select()
         .single()
 
       if (orderError) throw orderError
+
+      setCreatedOrderId(order.id)
 
       // Insert Items
       const orderItems = items.map((item: any) => ({
@@ -144,10 +170,6 @@ const Checkout = () => {
         .catch((err) => console.error('Edge function trigger error:', err))
 
       // Update UI for PIX Flow
-      let pixKey = pixDetails.key || '64278774000161'
-      let merchantName = pixDetails.name || 'ELLEN CRISTINA'
-      let merchantCity = 'Sao Paulo'
-
       const payload = generatePixPayload({
         pixKey,
         merchantName,
@@ -160,12 +182,16 @@ const Checkout = () => {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('SHOW_PIX_MODAL', {
-            detail: { payload, pixKey: pixDetails.formattedKey || pixKey, merchantName },
+            detail: { payload, pixKey: formattedKey, merchantName },
           }),
         )
       }
     } catch (error: any) {
       console.error(error)
+      setPixError(true)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('PIX_ERROR'))
+      }
       toast({
         title: 'Erro ao gerar Pix',
         description: error.message || 'Falha ao processar o pedido. Tente novamente.',
@@ -175,6 +201,26 @@ const Checkout = () => {
       setIsGeneratingPix(false)
     }
   }
+
+  useEffect(() => {
+    const handleRetryPix = () => {
+      handleGeneratePix()
+    }
+    window.addEventListener('RETRY_PIX_FLOW', handleRetryPix)
+    return () => window.removeEventListener('RETRY_PIX_FLOW', handleRetryPix)
+  }, [
+    items,
+    subtotal,
+    total,
+    profile,
+    firstName,
+    lastName,
+    phone,
+    guestEmail,
+    paymentMethod,
+    createdOrderId,
+    pixPayload,
+  ])
 
   const copyPixKey = () => {
     navigator.clipboard.writeText(pixPayload)
@@ -338,7 +384,7 @@ const Checkout = () => {
                         className="w-full rounded-none h-14 text-lg bg-[#25D366] hover:bg-[#128C7E] text-white"
                       >
                         <a
-                          href="https://whatsapp.com/dl/"
+                          href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20para%20finalizar%20minha%20compra%20com%20cart%C3%A3o%20de%20cr%C3%A9dito."
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -379,13 +425,24 @@ const Checkout = () => {
                       <p className="text-sm text-muted-foreground">
                         Chave Pix será gerada com o valor exato da compra.
                       </p>
+
+                      {pixError && (
+                        <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">
+                          Houve um erro ao gerar seu pedido. Por favor, tente novamente.
+                        </div>
+                      )}
+
                       <Button
                         className="w-full rounded-none h-14 text-lg flex items-center justify-center gap-2"
                         onClick={handleGeneratePix}
                         disabled={isGeneratingPix}
                       >
                         <Lock className="h-4 w-4" />
-                        {isGeneratingPix ? 'Processando...' : 'Finalizar Compra'}
+                        {isGeneratingPix
+                          ? 'Processando...'
+                          : pixError
+                            ? 'Tentar novamente'
+                            : 'Finalizar Compra'}
                       </Button>
                     </div>
                   )}
