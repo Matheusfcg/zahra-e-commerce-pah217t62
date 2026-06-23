@@ -46,6 +46,7 @@ export function ProductForm({
   const [isFeatured, setIsFeatured] = useState(false)
   const [category, setCategory] = useState('')
 
+  const [categoriesList, setCategoriesList] = useState<string[]>([])
   const [existingImages, setExistingImages] = useState<any[]>([])
   const [existingColors, setExistingColors] = useState<any[]>([])
   const [newColors, setNewColors] = useState<{ name: string; hex_value: string }[]>([])
@@ -103,6 +104,23 @@ export function ProductForm({
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from('site_content')
+        .select('content_value')
+        .eq('section_key', 'homepage_categories')
+        .single()
+      if (data?.content_value) {
+        try {
+          const parsed = JSON.parse(data.content_value)
+          if (Array.isArray(parsed)) setCategoriesList(parsed)
+        } catch {
+          /* intentionally ignored */
+        }
+      }
+    }
+    fetchCategories()
+
     if (product) {
       setName(product.name || '')
       setSlug(product.slug || '')
@@ -398,10 +416,20 @@ export function ProductForm({
               <SelectValue placeholder="Selecione a categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Conjuntos">Conjuntos</SelectItem>
-              <SelectItem value="Parte de Cima">Parte de Cima</SelectItem>
-              <SelectItem value="Parte de Baixo">Parte de Baixo</SelectItem>
-              <SelectItem value="Acessórios">Acessórios</SelectItem>
+              {categoriesList.length > 0 ? (
+                categoriesList.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="Conjuntos">Conjuntos</SelectItem>
+                  <SelectItem value="Partes de Cima">Partes de Cima</SelectItem>
+                  <SelectItem value="Partes de Baixo">Partes de Baixo</SelectItem>
+                  <SelectItem value="Acessórios">Acessórios</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

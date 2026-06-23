@@ -468,7 +468,7 @@ export default function AdminUpload() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Preço</TableHead>
                     <TableHead>Imagens</TableHead>
-                    <TableHead className="text-center">Destaque</TableHead>
+                    <TableHead className="text-center">Exibição (Home)</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -32,7 +32,7 @@ const Checkout = () => {
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
   const [pixGenerated, setPixGenerated] = useState(false)
   const [pixDetails, setPixDetails] = useState({
-    name: 'ELLEN CRISTINA',
+    name: '64.278.774 ELLEN CRISTINA',
     key: '64278774000161',
     institution: 'InfinitePay',
     formattedKey: '64.278.774/0001-61',
@@ -144,25 +144,9 @@ const Checkout = () => {
         .catch((err) => console.error('Edge function trigger error:', err))
 
       // Update UI for PIX Flow
-      const { data: pixData } = await supabase
-        .from('site_content')
-        .select('content_value')
-        .eq('section_key', 'pix_config')
-        .maybeSingle()
-      let pixKey = '64278774000161'
-      let merchantName = 'ELLEN CRISTINA'
+      let pixKey = pixDetails.key || '64278774000161'
+      let merchantName = pixDetails.name || '64.278.774 ELLEN CRISTINA'
       let merchantCity = 'Sao Paulo'
-
-      if (pixData?.content_value) {
-        try {
-          const parsed = JSON.parse(pixData.content_value)
-          if (parsed.chave) pixKey = parsed.chave
-          if (parsed.nome) merchantName = parsed.nome
-          if (parsed.merchantCity) merchantCity = parsed.merchantCity
-        } catch {
-          /* intentionally ignored */
-        }
-      }
 
       const payload = generatePixPayload({
         pixKey,

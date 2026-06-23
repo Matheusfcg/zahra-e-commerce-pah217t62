@@ -8,7 +8,12 @@ import { Trash2, Plus, GripVertical } from 'lucide-react'
 
 export default function SiteContentTab() {
   const [categories, setCategories] = useState<string[]>([])
-  const [pix, setPix] = useState({ name: '', key: '', institution: '', formattedKey: '' })
+  const [pix, setPix] = useState({
+    name: '64.278.774 ELLEN CRISTINA',
+    key: '64278774000161',
+    institution: 'InfinitePay',
+    formattedKey: '64.278.774/0001-61',
+  })
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -130,7 +135,7 @@ export default function SiteContentTab() {
             <Input
               value={pix.name}
               onChange={(e) => setPix({ ...pix, name: e.target.value })}
-              placeholder="Ex: ELLEN CRISTINA"
+              placeholder="Ex: 64.278.774 ELLEN CRISTINA"
               className="uppercase"
             />
           </div>
