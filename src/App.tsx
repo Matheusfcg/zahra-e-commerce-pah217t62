@@ -15,7 +15,7 @@ import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 import { AdminRoute } from './components/AdminRoute'
 import SiteContentTab from './components/admin/SiteContentTab'
-import PixModal from './components/PixModal'
+import { PixModal } from './components/PixModal'
 
 if (typeof window !== 'undefined') {
   ;(window as any).SiteContentTabComponent = SiteContentTab
