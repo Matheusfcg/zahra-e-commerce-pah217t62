@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Loader2, Truck, RefreshCcw, ShieldCheck, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getProducts, getFeaturedProducts, type Product } from '@/services/products'
+import {
+  getProducts,
+  getFeaturedProducts,
+  getCarouselProducts,
+  type Product,
+} from '@/services/products'
 
 const appCategories = [
   'Conjuntos',
@@ -16,18 +21,30 @@ const appCategories = [
 const Index = () => {
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [carouselProducts, setCarouselProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsData, featuredData] = await Promise.all([
+        const [productsData, featuredData, carouselData] = await Promise.all([
           getProducts(),
           getFeaturedProducts(),
+          getCarouselProducts(),
         ])
 
         const all = productsData || []
         setFeaturedProducts(featuredData || [])
+
+        let carousel = carouselData || []
+        if (carousel.length < 4) {
+          const needed = 4 - carousel.length
+          const additional = all
+            .filter((p) => !carousel.find((c) => c.id === p.id))
+            .slice(0, needed)
+          carousel = [...carousel, ...additional]
+        }
+        setCarouselProducts(carousel.slice(0, 4))
 
         // Extract Category Images for Session 2
         const catImages: Record<string, string> = {}
@@ -100,6 +117,55 @@ const Index = () => {
                     </Link>
                   )
                 })}
+              </div>
+            </section>
+          )}
+
+          {/* Essência da Elegância Banner */}
+          {carouselProducts.length > 0 && (
+            <section className="py-20 md:py-28 bg-[#F9F8F6] border-b border-[#E5E0D8]">
+              <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+                <div className="text-center mb-16">
+                  <h2 className="text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] text-[#2D0B0B]">
+                    Essência da Elegância
+                  </h2>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                  {carouselProducts.map((item) => {
+                    const imageUrl =
+                      item.product_images?.[0]?.url ||
+                      `https://img.usecurling.com/p/600/800?q=elegance&seed=${item.id}`
+                    return (
+                      <Link
+                        to={`/product/${item.slug}`}
+                        key={item.id}
+                        className="group flex flex-col items-center"
+                      >
+                        <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted mb-4">
+                          <img
+                            src={imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                          {item.is_promotion && (
+                            <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded-sm z-10">
+                              Sale
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="text-xs md:text-sm font-medium text-[#2D0B0B] text-center uppercase tracking-wider mb-2 line-clamp-1">
+                          {item.name}
+                        </h3>
+                        <p className="text-xs md:text-sm font-semibold text-muted-foreground">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(item.price)}
+                        </p>
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             </section>
           )}
