@@ -32,7 +32,7 @@ const Checkout = () => {
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
   const [pixGenerated, setPixGenerated] = useState(false)
   const [pixDetails, setPixDetails] = useState({
-    name: '64.278.774 ELLEN CRISTINA',
+    name: 'ELLEN CRISTINA',
     key: '64278774000161',
     institution: 'InfinitePay',
     formattedKey: '64.278.774/0001-61',
@@ -145,7 +145,7 @@ const Checkout = () => {
 
       // Update UI for PIX Flow
       let pixKey = pixDetails.key || '64278774000161'
-      let merchantName = pixDetails.name || '64.278.774 ELLEN CRISTINA'
+      let merchantName = pixDetails.name || 'ELLEN CRISTINA'
       let merchantCity = 'Sao Paulo'
 
       const payload = generatePixPayload({
@@ -164,11 +164,12 @@ const Checkout = () => {
           }),
         )
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
       toast({
-        title: 'Erro',
-        description: 'Falha ao processar o pedido. Tente novamente.',
+        title: 'Erro ao gerar Pix',
+        description:
+          error.message || 'Falha ao processar o pedido. Verifique seus dados e tente novamente.',
         variant: 'destructive',
       })
     } finally {

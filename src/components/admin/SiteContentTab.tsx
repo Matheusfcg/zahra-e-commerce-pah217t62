@@ -9,7 +9,7 @@ import { Trash2, Plus, GripVertical } from 'lucide-react'
 export default function SiteContentTab() {
   const [categories, setCategories] = useState<string[]>([])
   const [pix, setPix] = useState({
-    name: '64.278.774 ELLEN CRISTINA',
+    name: 'ELLEN CRISTINA',
     key: '64278774000161',
     institution: 'InfinitePay',
     formattedKey: '64.278.774/0001-61',
@@ -101,7 +101,24 @@ export default function SiteContentTab() {
               <Button
                 variant="destructive"
                 size="icon"
-                onClick={() => setCategories(categories.filter((_, idx) => idx !== i))}
+                onClick={async () => {
+                  const categoryName = c
+                  const { supabase } = await import('@/lib/supabase/client')
+                  const { count } = await supabase
+                    .from('products')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('category', categoryName)
+                  if (count && count > 0) {
+                    if (
+                      !window.confirm(
+                        `Atenção: Existem ${count} produto(s) vinculados à categoria "${categoryName}". Tem certeza que deseja excluí-la?`,
+                      )
+                    ) {
+                      return
+                    }
+                  }
+                  setCategories(categories.filter((_, idx) => idx !== i))
+                }}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -135,7 +152,7 @@ export default function SiteContentTab() {
             <Input
               value={pix.name}
               onChange={(e) => setPix({ ...pix, name: e.target.value })}
-              placeholder="Ex: 64.278.774 ELLEN CRISTINA"
+              placeholder="Ex: ELLEN CRISTINA"
               className="uppercase"
             />
           </div>
