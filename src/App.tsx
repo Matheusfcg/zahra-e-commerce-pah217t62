@@ -8,6 +8,7 @@ import Product from './pages/Product'
 import ProductsPage from './pages/Products'
 import Checkout from './pages/Checkout'
 import Favorites from './pages/Favorites'
+import TrocaDevolucao from './pages/TrocaDevolucao'
 import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
 import Layout from './components/Layout'
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/product/:id" element={<Product />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/favoritos" element={<Favorites />} />
+            <Route path="/troca-e-devolucao" element={<TrocaDevolucao />} />
             <Route
               path="/admin/upload"
               element={

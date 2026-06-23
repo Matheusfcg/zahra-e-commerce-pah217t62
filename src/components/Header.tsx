@@ -1,16 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import {
-  Search,
-  ShoppingBag,
-  Menu,
-  User,
-  Phone,
-  Mail,
-  Instagram,
-  Heart,
-  ChevronDown,
-} from 'lucide-react'
+import { Search, ShoppingBag, Menu, User, Phone, Mail, Instagram, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -20,6 +10,15 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,17 +26,22 @@ import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import logoZahra from '../assets/logozahra-e51d5.png'
 
+const appCategories = [
+  'Conjuntos',
+  'Macaquinhos',
+  'Blusas e Bodies',
+  'Saias',
+  'Calças',
+  'Malhas',
+  'Básicos',
+]
+
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { totalItems, openDrawer } = useCart()
   const location = useLocation()
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [tabNames, setTabNames] = useState({
-    conjuntos: 'CONJUNTOS',
-    partesDeCima: 'PARTES DE CIMA',
-    partesDeBaixo: 'PARTES DE BAIXO',
-  })
 
   useEffect(() => {
     if (user) {
@@ -53,94 +57,111 @@ export function Header() {
   }, [user])
 
   useEffect(() => {
-    supabase
-      .from('site_content')
-      .select('*')
-      .in('section_key', [
-        'tab_name_conjuntos',
-        'tab_name_partes_de_cima',
-        'tab_name_partes_de_baixo',
-      ])
-      .then(({ data }) => {
-        if (data) {
-          const names = {
-            conjuntos: 'CONJUNTOS',
-            partesDeCima: 'PARTES DE CIMA',
-            partesDeBaixo: 'PARTES DE BAIXO',
-          }
-          data.forEach((item) => {
-            if (item.section_key === 'tab_name_conjuntos' && item.content_value)
-              names.conjuntos = item.content_value.toUpperCase()
-            if (item.section_key === 'tab_name_partes_de_cima' && item.content_value)
-              names.partesDeCima = item.content_value.toUpperCase()
-            if (item.section_key === 'tab_name_partes_de_baixo' && item.content_value)
-              names.partesDeBaixo = item.content_value.toUpperCase()
-          })
-          setTabNames(names)
-        }
-      })
-  }, [])
-
-  useEffect(() => {
     setMobileMenuOpen(false)
   }, [location.pathname, location.search, location.hash])
-
-  const navLinks = [
-    { name: tabNames.conjuntos, path: '/produtos?category=Conjuntos' },
-    { name: tabNames.partesDeCima, path: '/produtos?category=Parte%20de%20Cima' },
-    { name: tabNames.partesDeBaixo, path: '/produtos?category=Parte%20de%20Baixo' },
-  ]
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-background text-foreground shadow-sm transition-colors duration-300">
       <div className="container mx-auto px-4">
-        {/* Top row */}
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Left: Search (Desktop) / Menu (Mobile) */}
-          <div className="flex-1 md:w-1/3 flex items-center justify-start gap-2">
-            <div className="hidden md:block relative w-full max-w-[220px]">
-              <Input
-                placeholder="Buscar"
-                className="pl-4 pr-10 rounded-none h-8 border border-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent text-xs"
-              />
-              <Search className="absolute right-3 top-2 h-4 w-4 text-muted-foreground" />
-            </div>
+        <div className="flex items-center justify-between h-20 md:h-24">
+          {/* Left: Nav Links (Desktop) / Mobile Menu (Mobile) */}
+          <div className="flex-1 flex items-center justify-start gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden text-current hover:bg-transparent -ml-2"
+              className="lg:hidden text-current hover:bg-transparent -ml-2"
             >
               <Menu className="h-6 w-6" />
             </Button>
-            <button className="md:hidden hover:opacity-70 transition-opacity ml-2">
+
+            <div className="hidden lg:block">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link to="/" className={navigationMenuTriggerStyle()}>
+                        INÍCIO
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="uppercase">
+                      Compre agora
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[240px] gap-1 p-4 bg-white">
+                        {appCategories.map((cat) => (
+                          <li key={cat}>
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to={`/produtos?category=${encodeURIComponent(cat)}`}
+                                className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                              >
+                                {cat}
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link to="/troca-e-devolucao" className={navigationMenuTriggerStyle()}>
+                        TROCA E DEVOLUÇÃO
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <a
+                        href="mailto:saczharabrasil@gmail.com"
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        FALE CONOSCO
+                      </a>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {isAdmin && (
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          to="/admin/upload"
+                          className={cn(navigationMenuTriggerStyle(), 'text-[#3c6e47] font-bold')}
+                        >
+                          ADMIN
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  )}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+          </div>
+
+          {/* Center: Actions */}
+          <div className="flex-1 flex justify-center items-center gap-4 md:gap-6">
+            <div className="hidden md:block relative w-full max-w-[200px]">
+              <Input
+                placeholder="Buscar"
+                className="pl-4 pr-10 rounded-none h-9 border border-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent text-xs"
+              />
+              <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
+            <button className="md:hidden hover:opacity-70 transition-opacity">
               <Search className="h-5 w-5" />
             </button>
-          </div>
 
-          {/* Center: Logo */}
-          <div className="flex-1 md:w-1/3 flex justify-center">
-            <Link to="/" className="inline-block">
-              <img
-                src={logoZahra}
-                alt="Zahrá Brazil"
-                className="h-[28px] md:h-[38px] object-contain hover:scale-105 transition-all duration-300"
-                style={{ imageRendering: 'high-quality' }}
-              />
-            </Link>
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex-1 md:w-1/3 flex justify-end items-center gap-4 md:gap-6">
             <div className="hidden lg:block">
               <ProfileMenu
-                renderTrigger={(user, profile) => (
+                renderTrigger={() => (
                   <button className="flex items-center gap-2 px-2 py-2 hover:opacity-70 transition-opacity">
-                    <User className="h-4 w-4" />
-                    <span className="text-[10px] uppercase tracking-widest font-semibold whitespace-nowrap">
-                      {user ? profile?.full_name?.split(' ')[0] || 'Minha conta' : 'Minha conta'}
-                    </span>
-                    <ChevronDown className="h-3 w-3" />
+                    <User className="h-5 w-5" />
                   </button>
                 )}
               />
@@ -162,31 +183,19 @@ export function Header() {
               )}
             </button>
           </div>
-        </div>
 
-        {/* Bottom row: Links (Desktop) */}
-        <nav className="hidden md:flex flex-wrap items-center justify-center gap-x-10 gap-y-2 pb-4">
-          {isAdmin && (
-            <Link
-              to="/admin/upload"
-              className="text-[10px] lg:text-[11px] uppercase tracking-wider font-bold text-[#3c6e47] hover:opacity-70 transition-opacity whitespace-nowrap"
-            >
-              ADMINISTRADOR
+          {/* Right: Logo */}
+          <div className="flex-1 flex justify-end items-center">
+            <Link to="/" className="inline-block ml-4">
+              <img
+                src={logoZahra}
+                alt="Zahrá Brazil"
+                className="h-[40px] md:h-[60px] object-contain hover:scale-105 transition-all duration-300"
+                style={{ imageRendering: 'high-quality' }}
+              />
             </Link>
-          )}
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className={cn(
-                'text-[10px] lg:text-[11px] uppercase tracking-wider font-medium hover:opacity-70 transition-opacity whitespace-nowrap',
-                link.className,
-              )}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </nav>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Menu Sheet */}
@@ -228,22 +237,54 @@ export function Header() {
 
             {/* Nav Links */}
             <div className="flex-1 overflow-y-auto py-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider',
-                    link.className,
-                  )}
-                >
-                  {link.name}
-                </Link>
-              ))}
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+              >
+                Início
+              </Link>
+
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="compre-agora" className="border-b-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider">
+                    Compre agora
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col bg-muted/30 py-2">
+                      {appCategories.map((cat) => (
+                        <Link
+                          key={cat}
+                          to={`/produtos?category=${encodeURIComponent(cat)}`}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="px-8 py-3 text-[13px] hover:bg-muted transition-colors uppercase tracking-wider font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          {cat}
+                        </Link>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              <Link
+                to="/troca-e-devolucao"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+              >
+                Troca e devolução
+              </Link>
+
+              <a
+                href="mailto:saczharabrasil@gmail.com"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+              >
+                Fale conosco
+              </a>
 
               <Accordion type="single" collapsible className="w-full mt-4">
-                <AccordionItem value="atendimento" className="border-b-0">
+                <AccordionItem value="atendimento" className="border-b-0 border-t">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider">
                     Atendimento
                   </AccordionTrigger>
@@ -255,15 +296,13 @@ export function Header() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Phone className="h-4 w-4" />
-                        (11) 93416-0219
+                        <Phone className="h-4 w-4" /> (11) 93416-0219
                       </a>
                       <a
                         href="mailto:saczharabrasil@gmail.com"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Mail className="h-4 w-4" />
-                        saczharabrasil@gmail.com
+                        <Mail className="h-4 w-4" /> saczharabrasil@gmail.com
                       </a>
                       <a
                         href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"
@@ -271,8 +310,7 @@ export function Header() {
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Instagram className="h-4 w-4" />
-                        @zahra__brasil
+                        <Instagram className="h-4 w-4" /> @zahra__brasil
                       </a>
                     </div>
                   </AccordionContent>
@@ -284,7 +322,7 @@ export function Header() {
                   <Link
                     to="/admin/upload"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-6 py-4 text-sm font-medium uppercase tracking-wider hover:bg-muted transition-colors"
+                    className="block px-6 py-4 text-sm font-bold text-[#3c6e47] uppercase tracking-wider hover:bg-muted transition-colors"
                   >
                     Administrador
                   </Link>
