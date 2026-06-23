@@ -123,6 +123,16 @@ export default function AdminUpload() {
     else toast.success('Login realizado com sucesso')
   }
 
+  const handleToggleFeatured = async (id: string, is_featured: boolean) => {
+    const { error } = await supabase.from('products').update({ is_featured }).eq('id', id)
+    if (error) {
+      toast.error('Erro ao atualizar destaque: ' + error.message)
+    } else {
+      toast.success('Destaque atualizado!')
+      fetchProducts()
+    }
+  }
+
   const handleDelete = async () => {
     if (!productToDelete) return
     setIsDeleting(true)
@@ -444,6 +454,7 @@ export default function AdminUpload() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Preço</TableHead>
                     <TableHead>Imagens</TableHead>
+                    <TableHead className="text-center">Destaque</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -455,6 +466,14 @@ export default function AdminUpload() {
                       </TableCell>
                       <TableCell>R$ {product.price?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>{product.product_images?.length || 0}</TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex justify-center">
+                          <Switch
+                            checked={!!product.is_featured}
+                            onCheckedChange={(checked) => handleToggleFeatured(product.id, checked)}
+                          />
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button

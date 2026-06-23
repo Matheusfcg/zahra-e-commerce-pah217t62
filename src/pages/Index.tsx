@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Loader2, Truck, RefreshCcw, ShieldCheck, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getProducts } from '@/services/products'
+import { getProducts, getFeaturedProducts, type Product } from '@/services/products'
 
 const appCategories = [
   'Conjuntos',
@@ -13,23 +13,21 @@ const appCategories = [
   'Básicos',
 ]
 
-const heroProducts = [
-  { name: 'Macaquinho Luna', price: 150, query: 'fashion jumpsuit' },
-  { name: 'Maxi Renda', price: 150, query: 'fashion lace dress' },
-  { name: 'Trijunto Malibu', price: 120, query: 'fashion set' },
-  { name: 'Blusa assimetrica', price: 95, query: 'fashion asymmetrical blouse' },
-]
-
 const Index = () => {
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsData] = await Promise.all([getProducts()])
+        const [productsData, featuredData] = await Promise.all([
+          getProducts(),
+          getFeaturedProducts(),
+        ])
 
         const all = productsData || []
+        setFeaturedProducts(featuredData || [])
 
         // Extract Category Images for Session 2
         const catImages: Record<string, string> = {}
@@ -66,29 +64,45 @@ const Index = () => {
       ) : (
         <>
           {/* New 4-column Hero Banner */}
-          <section className="w-full bg-white pb-10 border-b border-[#E5E0D8]">
-            <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-1 px-1">
-              {heroProducts.map((item, i) => (
-                <div key={i} className="flex flex-col group cursor-pointer">
-                  <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
-                    <img
-                      src={`https://img.usecurling.com/p/600/800?q=${encodeURIComponent(item.query)}&seed=${i + 10}`}
-                      alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="mt-4 text-center pb-2 px-2">
-                    <h3 className="text-xs md:text-sm font-medium text-[#2D0B0B] capitalize">
-                      {item.name}
-                    </h3>
-                    <p className="text-xs md:text-sm text-muted-foreground mt-1 font-semibold">
-                      R$ {item.price.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          {featuredProducts.length > 0 && (
+            <section className="w-full bg-white pb-10 border-b border-[#E5E0D8]">
+              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-1 px-1">
+                {featuredProducts.map((item) => {
+                  const imageUrl =
+                    item.product_images?.[0]?.url ||
+                    `https://img.usecurling.com/p/600/800?q=fashion&seed=${item.id}`
+                  return (
+                    <Link
+                      to={`/product/${item.slug}`}
+                      key={item.id}
+                      className="flex flex-col group cursor-pointer"
+                    >
+                      <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
+                        <img
+                          src={imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        {item.is_promotion && (
+                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded-sm z-10">
+                            Sale
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-4 text-center pb-2 px-2">
+                        <h3 className="text-xs md:text-sm font-medium text-[#2D0B0B] capitalize">
+                          {item.name}
+                        </h3>
+                        <p className="text-xs md:text-sm text-muted-foreground mt-1 font-semibold">
+                          R$ {item.price.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Session 2: Categories Grid */}
           <section className="py-20 md:py-28 bg-white border-b border-[#E5E0D8]">
