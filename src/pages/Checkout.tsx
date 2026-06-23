@@ -160,7 +160,7 @@ const Checkout = () => {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('SHOW_PIX_MODAL', {
-            detail: { payload, pixKey, merchantName },
+            detail: { payload, pixKey: pixDetails.formattedKey || pixKey, merchantName },
           }),
         )
       }
@@ -168,8 +168,7 @@ const Checkout = () => {
       console.error(error)
       toast({
         title: 'Erro ao gerar Pix',
-        description:
-          error.message || 'Falha ao processar o pedido. Verifique seus dados e tente novamente.',
+        description: error.message || 'Falha ao processar o pedido. Tente novamente.',
         variant: 'destructive',
       })
     } finally {
@@ -349,6 +348,9 @@ const Checkout = () => {
                     </div>
                   ) : pixGenerated ? (
                     <div className="space-y-6 flex flex-col items-center py-4 animate-fade-in">
+                      <div className="bg-green-50 text-green-700 p-4 rounded-lg w-full text-center mb-2 font-medium">
+                        Pedido criado com sucesso!
+                      </div>
                       <p className="font-medium text-lg text-center">
                         Abra o aplicativo do seu banco e escaneie o QR Code para pagar
                       </p>
@@ -383,7 +385,7 @@ const Checkout = () => {
                         disabled={isGeneratingPix}
                       >
                         <Lock className="h-4 w-4" />
-                        {isGeneratingPix ? 'Gerando...' : 'Finalizar Pedido com Pix'}
+                        {isGeneratingPix ? 'Processando...' : 'Finalizar Compra'}
                       </Button>
                     </div>
                   )}

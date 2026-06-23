@@ -61,7 +61,11 @@ export function PixModal() {
         <p className="text-black font-semibold text-lg text-center uppercase tracking-wide">
           {details.merchantName}
         </p>
-        <p className="text-black font-medium text-md text-center mt-1">{details.pixKey}</p>
+        <p className="text-black font-medium text-md text-center mt-1">
+          {details.pixKey?.includes('/') || details.pixKey?.length === 14
+            ? `CNPJ: ${details.pixKey}`
+            : details.pixKey}
+        </p>
 
         <div className="flex items-center justify-center gap-2 mt-6 mb-4">
           <div className="flex items-center gap-2">
