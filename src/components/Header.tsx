@@ -63,108 +63,19 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-background text-foreground shadow-sm transition-colors duration-300">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20 md:h-24 relative">
-          {/* Left: Mobile Menu + Desktop Nav */}
-          <div className="flex items-center gap-4 lg:flex-1">
+        <div className="flex items-center justify-between h-20 md:h-24 relative gap-4">
+          {/* Left: Mobile Menu + Logo */}
+          <div className="flex items-center gap-2 lg:gap-6 lg:flex-1 justify-start">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden text-current hover:bg-transparent -ml-2"
+              className="lg:hidden text-current hover:bg-transparent -ml-2 shrink-0"
             >
               <Menu className="h-6 w-6" />
             </Button>
 
-            <div className="hidden lg:flex justify-start">
-              <NavigationMenu>
-                <NavigationMenuList className="space-x-1 xl:space-x-4">
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to="/"
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'bg-transparent hover:bg-transparent',
-                        )}
-                      >
-                        Inicio
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to="/troca-e-devolucao"
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'bg-transparent hover:bg-transparent',
-                        )}
-                      >
-                        Troca e devolução
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-transparent">
-                      Compre agora
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
-                        {appCategories.map((cat) => (
-                          <li key={cat}>
-                            <NavigationMenuLink asChild>
-                              <Link
-                                to={`/produtos?category=${encodeURIComponent(cat)}`}
-                                className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
-                              >
-                                {cat}
-                              </Link>
-                            </NavigationMenuLink>
-                          </li>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <a
-                        href="mailto:saczharabrasil@gmail.com"
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'bg-transparent hover:bg-transparent',
-                        )}
-                      >
-                        Fale conosco
-                      </a>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {isAdmin && (
-                    <NavigationMenuItem>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          to="/admin/upload"
-                          className={cn(
-                            navigationMenuTriggerStyle(),
-                            'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent',
-                          )}
-                        >
-                          ADMIN
-                        </Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-                  )}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
-          </div>
-
-          {/* Center: Logo */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link to="/" className="inline-block">
+            <Link to="/" className="inline-block shrink-0">
               <img
                 src={logoZahra}
                 alt="Zahrá Brazil"
@@ -172,6 +83,93 @@ export function Header() {
                 style={{ imageRendering: 'high-quality' }}
               />
             </Link>
+          </div>
+
+          {/* Center: Desktop Nav */}
+          <div className="hidden lg:flex justify-center lg:flex-[2]">
+            <NavigationMenu>
+              <NavigationMenuList className="space-x-1 xl:space-x-4">
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Inicio
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/troca-e-devolucao"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Troca e devolução
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent">
+                    Compre agora
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
+                      {appCategories.map((cat) => (
+                        <li key={cat}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={`/produtos?category=${encodeURIComponent(cat)}`}
+                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            >
+                              {cat}
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <a
+                      href="mailto:saczharabrasil@gmail.com"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Fale conosco
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                {isAdmin && (
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/admin/upload"
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent',
+                        )}
+                      >
+                        ADMIN
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                )}
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
 
           {/* Right: Actions */}
