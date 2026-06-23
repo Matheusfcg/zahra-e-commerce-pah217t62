@@ -81,45 +81,7 @@ const Index = () => {
       ) : (
         <>
           {/* New 4-column Hero Banner */}
-          {featuredProducts.length > 0 && (
-            <section className="w-full bg-white pb-10 border-b border-[#E5E0D8]">
-              <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-1 px-1">
-                {featuredProducts.map((item) => {
-                  const imageUrl =
-                    item.product_images?.[0]?.url ||
-                    `https://img.usecurling.com/p/600/800?q=fashion&seed=${item.id}`
-                  return (
-                    <Link
-                      to={`/product/${item.slug}`}
-                      key={item.id}
-                      className="flex flex-col group cursor-pointer"
-                    >
-                      <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted">
-                        <img
-                          src={imageUrl}
-                          alt={item.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        {item.is_promotion && (
-                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded-sm z-10">
-                            Sale
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4 text-center pb-2 px-2">
-                        <h3 className="text-xs md:text-sm font-medium text-[#2D0B0B] capitalize">
-                          {item.name}
-                        </h3>
-                        <p className="text-xs md:text-sm text-muted-foreground mt-1 font-semibold">
-                          R$ {item.price.toFixed(2).replace('.', ',')}
-                        </p>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </section>
-          )}
+          {featuredProducts.length > 0 && null}
 
           {/* Essência da Elegância Banner */}
           {carouselProducts.length > 0 && (
