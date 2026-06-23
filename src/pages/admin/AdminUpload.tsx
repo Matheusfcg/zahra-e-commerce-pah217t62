@@ -34,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
 import { ProductForm } from '@/components/admin/ProductForm'
 
 export default function AdminUpload() {
