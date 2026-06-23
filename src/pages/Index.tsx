@@ -8,17 +8,18 @@ import {
   type Product,
 } from '@/services/products'
 
-const appCategories = [
-  'Conjuntos',
-  'Macaquinhos',
-  'Blusas e Bodies',
-  'Saias',
-  'Calças',
-  'Malhas',
-  'Básicos',
+const defaultCategories = [
+  'CONJUNTOS',
+  'MACAQUINHOS',
+  'BLUSAS E BODIES',
+  'SAIAS',
+  'CALÇAS',
+  'MALHAS',
+  'BÁSICOS',
 ]
 
 const Index = () => {
+  const [categories, setCategories] = useState<string[]>(defaultCategories)
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [carouselProducts, setCarouselProducts] = useState<Product[]>([])
@@ -27,11 +28,27 @@ const Index = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsData, featuredData, carouselData] = await Promise.all([
+        const { supabase } = await import('@/lib/supabase/client')
+        const [productsData, featuredData, carouselData, contentData] = await Promise.all([
           getProducts(),
           getFeaturedProducts(),
           getCarouselProducts(),
+          supabase
+            .from('site_content')
+            .select('*')
+            .eq('section_key', 'homepage_categories')
+            .single(),
         ])
+
+        let loadedCategories = defaultCategories
+        if (contentData.data && contentData.data.content_value) {
+          try {
+            loadedCategories = JSON.parse(contentData.data.content_value)
+            setCategories(loadedCategories)
+          } catch {
+            /* intentionally ignored */
+          }
+        }
 
         const all = productsData || []
         setFeaturedProducts(featuredData || [])
@@ -48,7 +65,7 @@ const Index = () => {
 
         // Extract Category Images for Session 2
         const catImages: Record<string, string> = {}
-        for (const cat of appCategories) {
+        for (const cat of loadedCategories) {
           const catProduct = all.find(
             (p) =>
               p.category?.toLowerCase() === cat.toLowerCase() ||
@@ -81,7 +98,36 @@ const Index = () => {
       ) : (
         <>
           {/* New 4-column Hero Banner */}
-          {featuredProducts.length > 0 && null}
+          {featuredProducts.length > 0 && (
+            <section className="bg-white w-full">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
+                {featuredProducts.slice(0, 4).map((item) => {
+                  const imageUrl =
+                    item.product_images?.[0]?.url ||
+                    `https://img.usecurling.com/p/600/800?q=fashion&seed=${item.id}`
+                  return (
+                    <Link
+                      to={`/product/${item.slug}`}
+                      key={item.id}
+                      className="group block relative overflow-hidden aspect-[3/4]"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                      <div className="absolute bottom-6 left-4 right-4 text-center">
+                        <h3 className="text-white font-serif text-sm md:text-lg tracking-[0.1em] drop-shadow-md uppercase">
+                          {item.name}
+                        </h3>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Essência da Elegância Banner */}
           {carouselProducts.length > 0 && (
@@ -141,7 +187,7 @@ const Index = () => {
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {appCategories.map((cat) => (
+                {categories.map((cat) => (
                   <Link
                     key={cat}
                     to={`/produtos?category=${encodeURIComponent(cat)}`}

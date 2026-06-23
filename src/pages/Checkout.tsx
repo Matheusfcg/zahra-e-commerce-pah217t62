@@ -31,6 +31,12 @@ const Checkout = () => {
   const [pixPayload, setPixPayload] = useState('')
   const [isGeneratingPix, setIsGeneratingPix] = useState(false)
   const [pixGenerated, setPixGenerated] = useState(false)
+  const [pixDetails, setPixDetails] = useState({
+    name: 'ELLEN CRISTINA',
+    key: '64278774000161',
+    institution: 'InfinitePay',
+    formattedKey: '64.278.774/0001-61',
+  })
   const [profile, setProfile] = useState<{
     full_name: string | null
     document_number: string | null
@@ -61,6 +67,24 @@ const Checkout = () => {
       setStep(2)
     }
   }, [userEmail, step])
+
+  useEffect(() => {
+    supabase
+      .from('site_content')
+      .select('*')
+      .eq('section_key', 'pix_details')
+      .single()
+      .then(({ data }) => {
+        if (data && data.content_value) {
+          try {
+            const parsed = JSON.parse(data.content_value)
+            setPixDetails((prev) => ({ ...prev, ...parsed }))
+          } catch {
+            /* intentionally ignored */
+          }
+        }
+      })
+  }, [])
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -120,14 +144,42 @@ const Checkout = () => {
         .catch((err) => console.error('Edge function trigger error:', err))
 
       // Update UI for PIX Flow
+      const { data: pixData } = await supabase
+        .from('site_content')
+        .select('content_value')
+        .eq('section_key', 'pix_config')
+        .maybeSingle()
+      let pixKey = '64278774000161'
+      let merchantName = 'ELLEN CRISTINA'
+      let merchantCity = 'Sao Paulo'
+
+      if (pixData?.content_value) {
+        try {
+          const parsed = JSON.parse(pixData.content_value)
+          if (parsed.chave) pixKey = parsed.chave
+          if (parsed.nome) merchantName = parsed.nome
+          if (parsed.merchantCity) merchantCity = parsed.merchantCity
+        } catch {
+          /* intentionally ignored */
+        }
+      }
+
       const payload = generatePixPayload({
-        pixKey: 'contato@zahrabrasil.com.br',
-        merchantName: 'Zahra Brasil',
-        merchantCity: 'Sao Paulo',
+        pixKey,
+        merchantName,
+        merchantCity,
         amount: total,
       })
       setPixPayload(payload)
       setPixGenerated(true)
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('SHOW_PIX_MODAL', {
+            detail: { payload, pixKey, merchantName },
+          }),
+        )
+      }
     } catch (error) {
       console.error(error)
       toast({
@@ -146,6 +198,20 @@ const Checkout = () => {
       title: 'Copiado!',
       description: 'Chave PIX copiada para a área de transferência.',
     })
+  }
+
+  if (pixGenerated) {
+    const PixModal = (window as any).PixModalComponent
+    if (PixModal) {
+      return (
+        <PixModal
+          pixPayload={pixPayload}
+          total={total}
+          copyPixKey={copyPixKey}
+          pixDetails={pixDetails}
+        />
+      )
+    }
   }
 
   return (

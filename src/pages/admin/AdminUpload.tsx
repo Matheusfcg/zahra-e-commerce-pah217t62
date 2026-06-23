@@ -377,6 +377,19 @@ export default function AdminUpload() {
           <TabsTrigger value="content">Conteúdo do Site</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="content">
+          {(() => {
+            const Comp = (window as any).SiteContentTabComponent
+            return Comp ? (
+              <Comp />
+            ) : (
+              <div className="py-12 text-center text-muted-foreground border rounded-lg bg-muted/10 mt-6">
+                Carregando gerenciador de conteúdo...
+              </div>
+            )
+          })()}
+        </TabsContent>
+
         <TabsContent value="products">
           <div className="mb-6 flex justify-end">
             <Button

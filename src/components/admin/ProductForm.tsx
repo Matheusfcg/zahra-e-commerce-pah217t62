@@ -387,10 +387,9 @@ export function ProductForm({
           disabled={uploading}
         />
         <Label htmlFor="featured" className="cursor-pointer font-medium text-foreground">
-          Marcar como Peça em Destaque (Ganhará um selo especial no site)
+          Escolha a foto para exibição
         </Label>
       </div>
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Categoria</Label>

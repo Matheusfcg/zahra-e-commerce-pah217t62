@@ -14,6 +14,13 @@ import AdminUpload from './pages/admin/AdminUpload'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 import { AdminRoute } from './components/AdminRoute'
+import SiteContentTab from './components/admin/SiteContentTab'
+import PixModal from './components/PixModal'
+
+if (typeof window !== 'undefined') {
+  ;(window as any).SiteContentTabComponent = SiteContentTab
+  ;(window as any).PixModalComponent = PixModal
+}
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -21,6 +28,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <PixModal />
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
