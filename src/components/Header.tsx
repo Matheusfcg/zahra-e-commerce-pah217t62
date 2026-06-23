@@ -64,8 +64,8 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-40 bg-background text-foreground shadow-sm transition-colors duration-300">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 md:h-24">
-          {/* Left: Nav Links (Desktop) / Mobile Menu (Mobile) */}
-          <div className="flex-1 flex items-center justify-start gap-4">
+          {/* Left: Mobile Menu + Logo */}
+          <div className="flex items-center gap-4 lg:w-1/4">
             <Button
               variant="ghost"
               size="icon"
@@ -74,79 +74,106 @@ export function Header() {
             >
               <Menu className="h-6 w-6" />
             </Button>
-
-            <div className="hidden lg:block">
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link to="/" className={navigationMenuTriggerStyle()}>
-                        INÍCIO
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="uppercase">
-                      Compre agora
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid w-[240px] gap-1 p-4 bg-white">
-                        {appCategories.map((cat) => (
-                          <li key={cat}>
-                            <NavigationMenuLink asChild>
-                              <Link
-                                to={`/produtos?category=${encodeURIComponent(cat)}`}
-                                className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
-                              >
-                                {cat}
-                              </Link>
-                            </NavigationMenuLink>
-                          </li>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link to="/troca-e-devolucao" className={navigationMenuTriggerStyle()}>
-                        TROCA E DEVOLUÇÃO
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <a
-                        href="mailto:saczharabrasil@gmail.com"
-                        className={navigationMenuTriggerStyle()}
-                      >
-                        FALE CONOSCO
-                      </a>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {isAdmin && (
-                    <NavigationMenuItem>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          to="/admin/upload"
-                          className={cn(navigationMenuTriggerStyle(), 'text-[#3c6e47] font-bold')}
-                        >
-                          ADMIN
-                        </Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-                  )}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
+            <Link to="/" className="inline-block">
+              <img
+                src={logoZahra}
+                alt="Zahrá Brazil"
+                className="h-[35px] md:h-[45px] object-contain hover:scale-105 transition-all duration-300"
+                style={{ imageRendering: 'high-quality' }}
+              />
+            </Link>
           </div>
 
-          {/* Center: Actions */}
-          <div className="flex-1 flex justify-center items-center gap-4 md:gap-6">
-            <div className="hidden md:block relative w-full max-w-[200px]">
+          {/* Center: Desktop Nav */}
+          <div className="hidden lg:flex flex-1 justify-center">
+            <NavigationMenu>
+              <NavigationMenuList className="space-x-1 xl:space-x-4">
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Inicio
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      to="/troca-e-devolucao"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Troca e devolução
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent">
+                    Compre agora
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
+                      {appCategories.map((cat) => (
+                        <li key={cat}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={`/produtos?category=${encodeURIComponent(cat)}`}
+                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            >
+                              {cat}
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <a
+                      href="mailto:saczharabrasil@gmail.com"
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'bg-transparent hover:bg-transparent',
+                      )}
+                    >
+                      Fale conosco
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                {isAdmin && (
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/admin/upload"
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent',
+                        )}
+                      >
+                        ADMIN
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                )}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center justify-end gap-3 md:gap-5 lg:w-1/4">
+            <div className="hidden md:block relative w-full max-w-[150px] xl:max-w-[180px]">
               <Input
                 placeholder="Buscar"
                 className="pl-4 pr-10 rounded-none h-9 border border-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent text-xs"
@@ -160,40 +187,28 @@ export function Header() {
             <div className="hidden lg:block">
               <ProfileMenu
                 renderTrigger={() => (
-                  <button className="flex items-center gap-2 px-2 py-2 hover:opacity-70 transition-opacity">
-                    <User className="h-5 w-5" />
+                  <button className="flex items-center gap-2 px-1 py-2 hover:opacity-70 transition-opacity">
+                    <User className="h-5 w-5 md:h-[20px] md:w-[20px]" />
                   </button>
                 )}
               />
             </div>
 
             <Link to="/favoritos" className="hover:opacity-70 transition-opacity hidden md:block">
-              <Heart className="h-5 w-5 md:h-[22px] md:w-[22px]" />
+              <Heart className="h-5 w-5 md:h-[20px] md:w-[20px]" />
             </Link>
 
             <button
               onClick={openDrawer}
               className="relative hover:opacity-70 transition-opacity flex items-center"
             >
-              <ShoppingBag className="h-5 w-5 md:h-[22px] md:w-[22px]" />
+              <ShoppingBag className="h-5 w-5 md:h-[20px] md:w-[20px]" />
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-foreground text-background text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
             </button>
-          </div>
-
-          {/* Right: Logo */}
-          <div className="flex-1 flex justify-end items-center">
-            <Link to="/" className="inline-block ml-4">
-              <img
-                src={logoZahra}
-                alt="Zahrá Brazil"
-                className="h-[40px] md:h-[60px] object-contain hover:scale-105 transition-all duration-300"
-                style={{ imageRendering: 'high-quality' }}
-              />
-            </Link>
           </div>
         </div>
       </div>

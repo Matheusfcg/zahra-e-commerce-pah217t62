@@ -1,8 +1,40 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { Loader2 } from 'lucide-react'
+DO $$
+DECLARE
+  new_user_id uuid;
+BEGIN
+  -- Seed user (idempotent: skip if email already exists)
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'brsolutiontransport@gmail.com') THEN
+    new_user_id := gen_random_uuid();
+    INSERT INTO auth.users (
+      id, instance_id, email, encrypted_password, email_confirmed_at,
+      created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+      is_super_admin, role, aud,
+      confirmation_token, recovery_token, email_change_token_new,
+      email_change, email_change_token_current,
+      phone, phone_change, phone_change_token, reauthentication_token
+    ) VALUES (
+      new_user_id,
+      '00000000-0000-0000-0000-000000000000',
+      'brsolutiontransport@gmail.com',
+      crypt('Skip@Pass', gen_salt('bf')),
+      NOW(), NOW(), NOW(),
+      '{"provider": "email", "providers": ["email"]}',
+      '{"name": "Admin"}',
+      false, 'authenticated', 'authenticated',
+      '', '', '', '', '',
+      NULL, '', '', ''
+    );
 
-const fallbackContent = `**Política de Trocas e Devoluções**
+    INSERT INTO public.user_profiles (id, full_name, is_admin)
+    VALUES (new_user_id, 'Admin', true)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $$;
+
+INSERT INTO public.site_content (section_key, content_value, updated_at)
+VALUES (
+  'exchange_policy',
+  '**Política de Trocas e Devoluções**
 
 **Prazo para Solicitação**
 As solicitações de troca deverão ser realizadas no prazo máximo de 7 (sete) dias úteis contados a partir da data de recebimento do produto.
@@ -35,65 +67,8 @@ O estorno será solicitado à administradora do cartão de crédito após a apro
 
 **Disposições Finais**
 Ao solicitar a troca ou devolução de um produto, o cliente declara estar ciente e de acordo com os termos desta Política de Trocas e Devoluções.
-Esta política não afasta nem limita os direitos assegurados ao consumidor pela legislação vigente, especialmente aqueles previstos no Código de Defesa do Consumidor.`
-
-const formatPolicy = (text: string) => {
-  let html = text.replace(
-    /\*\*(.*?)\*\*/g,
-    '<strong class="text-[#2D0B0B] font-serif text-lg mt-6 mb-2 block border-b border-muted/30 pb-2">$1</strong>',
-  )
-  html = html.replace(
-    /(https:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium">$1</a>',
-  )
-  return html
-}
-
-export default function TrocaDevolucao() {
-  const [content, setContent] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    const fetchPolicy = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_content')
-          .select('content_value')
-          .eq('section_key', 'exchange_policy')
-          .single()
-
-        if (data && data.content_value) {
-          setContent(data.content_value)
-        } else {
-          setContent(fallbackContent)
-        }
-      } catch (err) {
-        setContent(fallbackContent)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchPolicy()
-  }, [])
-
-  return (
-    <div className="w-full pt-[100px] md:pt-[140px] pb-24 bg-[#FAFAFA] min-h-screen">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <h1 className="text-2xl md:text-4xl font-serif text-[#2D0B0B] mb-10 text-center uppercase tracking-[0.1em]">
-          Trocas e Devoluções
-        </h1>
-
-        <div className="bg-white p-6 md:p-10 shadow-sm border border-muted/50 rounded-sm text-[#333] text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-[#2D0B0B]" />
-            </div>
-          ) : (
-            <div dangerouslySetInnerHTML={{ __html: formatPolicy(content) }} />
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+Esta política não afasta nem limita os direitos assegurados ao consumidor pela legislação vigente, especialmente aqueles previstos no Código de Defesa do Consumidor.',
+  NOW()
+)
+ON CONFLICT (section_key) DO UPDATE 
+SET content_value = EXCLUDED.content_value, updated_at = NOW();
