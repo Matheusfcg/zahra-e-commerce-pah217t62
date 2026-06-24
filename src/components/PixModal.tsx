@@ -61,7 +61,7 @@ export function PixModal() {
   }
 
   const handleRetry = () => {
-    window.dispatchEvent(new CustomEvent('RETRY_PIX_FLOW'))
+    setOpen(false)
   }
 
   return (
@@ -72,14 +72,14 @@ export function PixModal() {
             Pague com Pix
           </DialogTitle>
           <DialogDescription className="text-center text-gray-500 mb-4 sr-only">
-            Pague com Pix
+            Pague com Pix para finalizar seu pedido
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4 w-full">
-            <Loader2 className="w-12 h-12 text-primary animate-spin" />
-            <p className="text-gray-500 font-medium">Gerando QR Code...</p>
+            <Loader2 className="w-12 h-12 text-black animate-spin" />
+            <p className="text-gray-500 font-medium">Processando seu pedido...</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-6 w-full">
@@ -87,7 +87,7 @@ export function PixModal() {
             <div className="text-center">
               <p className="text-lg font-semibold text-gray-900 mb-2">Erro na geração</p>
               <p className="text-sm text-gray-500">
-                Não foi possível gerar o código Pix.
+                Não foi possível gerar o código Pix e salvar seu pedido.
                 <br />
                 Por favor, tente novamente.
               </p>
@@ -100,68 +100,69 @@ export function PixModal() {
             </Button>
           </div>
         ) : details ? (
-          <>
-            <div className="bg-white p-2 rounded-xl w-64 h-64 flex items-center justify-center mb-6 overflow-hidden">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(details.payload)}`}
-                alt="QR Code PIX"
-                className="w-full h-full object-contain mix-blend-multiply"
-              />
-            </div>
-
-            <p className="text-gray-500 text-sm mb-4 text-center mt-[-10px]">
-              Abra o aplicativo do seu banco e escaneie
-              <br />o QR Code para pagar
-            </p>
-
-            <p className="text-gray-500 text-sm mb-1 text-center">Transferir Pix para:</p>
-            <p className="text-black font-semibold text-lg text-center uppercase tracking-wide">
-              {details.merchantName}
-            </p>
-            <p className="text-black font-medium text-md text-center mt-1">
-              {details.pixKey?.includes('/') || details.pixKey?.length === 14
-                ? `CNPJ: ${details.pixKey}`
-                : details.pixKey}
-            </p>
-
-            <div className="w-full mt-6 mb-2">
-              <p className="text-sm text-gray-500 font-medium mb-2">Pix Copia e Cola:</p>
-              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
-                <code className="text-xs text-gray-600 break-all line-clamp-2 overflow-hidden w-full">
-                  {details.payload}
-                </code>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleCopy}
-              className="w-full mt-4 bg-black text-white hover:bg-gray-800 rounded-full h-12 text-lg font-medium"
-            >
-              {copied ? (
-                <CheckCircle2 className="w-5 h-5 mr-2" />
+          <div className="flex flex-col items-center w-full space-y-6">
+            <div className="bg-gray-50 p-4 rounded-xl w-full flex justify-center border border-gray-100">
+              {details.qrCodeUrl ? (
+                <img
+                  src={details.qrCodeUrl}
+                  alt="QR Code Pix"
+                  className="w-48 h-48 mix-blend-multiply"
+                />
               ) : (
-                <Copy className="w-5 h-5 mr-2" />
+                <div className="w-48 h-48 bg-gray-200 animate-pulse rounded-lg"></div>
               )}
-              {copied ? 'Copiado!' : 'Copiar código Pix'}
-            </Button>
+            </div>
 
-            <div className="flex items-center justify-center gap-2 mt-4 opacity-70">
-              <div className="flex items-center gap-2">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                >
-                  <circle cx="12" cy="12" r="9" stroke="black" strokeWidth="4" />
-                  <circle cx="12" cy="12" r="4" fill="#8bc34a" />
-                </svg>
-                <span className="font-bold text-lg tracking-tight text-black">
-                  infinite<span className="font-semibold">pay</span>
+            <div className="w-full space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Beneficiário</span>
+                <span className="font-semibold text-gray-900">ELLEN CRISTINA</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Chave Pix (CNPJ)</span>
+                <span className="font-semibold text-gray-900">64.278.774/0001-61</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Valor</span>
+                <span className="font-bold text-gray-900">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    details.amount || 0,
+                  )}
                 </span>
               </div>
             </div>
-          </>
+
+            <div className="w-full space-y-2">
+              <p className="text-sm font-medium text-gray-700 text-center">Pix Copia e Cola</p>
+              <div className="flex items-center space-x-2">
+                <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg p-3 overflow-hidden shadow-inner">
+                  <p className="text-xs text-gray-500 truncate select-all font-mono">
+                    {details.payload}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCopy}
+                  className={`shrink-0 h-[42px] px-4 transition-all duration-300 ${copied ? 'bg-green-500 hover:bg-green-600' : 'bg-black hover:bg-gray-800'}`}
+                >
+                  {copied ? (
+                    <CheckCircle2 className="w-5 h-5 text-white" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-white" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="w-full pt-2">
+              <Button
+                variant="outline"
+                className="w-full rounded-full h-12 text-lg"
+                onClick={() => setOpen(false)}
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
         ) : null}
       </DialogContent>
     </Dialog>

@@ -71,6 +71,47 @@ const Checkout = () => {
   }, [userEmail, step])
 
   useEffect(() => {
+    // Dynamically fix WhatsApp links to prevent ERR_BLOCKED_BY_RESPONSE
+    const fixWhatsAppLinks = () => {
+      const links = document.querySelectorAll('a[href*="api.whatsapp.com"]')
+      links.forEach((link) => {
+        const href = link.getAttribute('href') || ''
+        if (href.includes('api.whatsapp.com')) {
+          try {
+            const urlString = href.startsWith('http') ? href : `https://${href}`
+            const url = new URL(urlString)
+            let phone = url.searchParams.get('phone')
+            const text =
+              url.searchParams.get('text') || 'Olá, preciso de ajuda para finalizar minha compra'
+
+            if (!phone) {
+              const match = href.match(/phone=([0-9]+)/)
+              if (match) phone = match[1]
+            }
+
+            if (phone) {
+              link.setAttribute('href', `https://wa.me/${phone}?text=${encodeURIComponent(text)}`)
+              link.setAttribute('target', '_blank')
+              link.setAttribute('rel', 'noopener noreferrer')
+            }
+          } catch (e) {
+            const newHref = href
+              .replace('api.whatsapp.com/send/?phone=', 'wa.me/')
+              .replace('api.whatsapp.com/send?phone=', 'wa.me/')
+            link.setAttribute('href', newHref)
+          }
+        }
+      })
+    }
+
+    fixWhatsAppLinks()
+    const observer = new MutationObserver(fixWhatsAppLinks)
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    return () => observer.disconnect()
+  }, [step])
+
+  useEffect(() => {
     supabase
       .from('site_content')
       .select('*')
@@ -93,6 +134,85 @@ const Checkout = () => {
   const [phone, setPhone] = useState('')
 
   const handleGeneratePix = async () => {
+    if (items.length === 0) {
+      toast({
+        title: 'Carrinho vazio',
+        description: 'Adicione produtos antes de finalizar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsGeneratingPix(true)
+    window.dispatchEvent(new CustomEvent('START_PIX_FLOW'))
+
+    try {
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: userId || null,
+          customer_email: displayEmail,
+          customer_name: `${firstName} ${lastName}`.trim() || profile?.full_name || 'Cliente',
+          customer_phone: phone || profile?.phone || '',
+          total_amount: total,
+          status: 'pending',
+          payment_method: 'pix',
+        })
+        .select('id')
+        .single()
+
+      if (orderError) throw orderError
+      const orderId = orderData.id
+
+      const orderItems = items.map((item) => ({
+        order_id: orderId,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_at_purchase: item.product.price,
+      }))
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsError) throw itemsError
+
+      setCreatedOrderId(orderId)
+
+      const payload = generatePixPayload({
+        pixKey: pixDetails.key,
+        merchantName: pixDetails.name,
+        merchantCity: pixDetails.institution,
+        amount: total,
+        txId: orderId.substring(0, 25).replace(/-/g, ''),
+      })
+
+      setPixPayload(payload)
+      setPixGenerated(true)
+
+      window.dispatchEvent(
+        new CustomEvent('SHOW_PIX_MODAL', {
+          detail: {
+            payload,
+            amount: total,
+            key: pixDetails.formattedKey,
+            name: pixDetails.name,
+            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(payload)}`,
+          },
+        }),
+      )
+    } catch (error) {
+      console.error('Error generating order:', error)
+      toast({
+        title: 'Erro ao processar',
+        description: 'Não foi possível gerar o pedido. Tente novamente.',
+        variant: 'destructive',
+      })
+      window.dispatchEvent(new CustomEvent('PIX_ERROR'))
+    } finally {
+      setIsGeneratingPix(false)
+    }
+  }
+
+  // Wrapper for remaining original function code to maintain valid file syntax
+  const _oldHandleGeneratePix = async () => {
     if (items.length === 0) {
       toast({
         title: 'Carrinho vazio',
