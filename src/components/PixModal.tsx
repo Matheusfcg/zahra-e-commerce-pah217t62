@@ -124,20 +124,12 @@ export function PixModal() {
                 : details.pixKey}
             </p>
 
-            <div className="flex items-center justify-center gap-2 mt-6 mb-4">
-              <div className="flex items-center gap-2">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-6 h-6"
-                >
-                  <circle cx="12" cy="12" r="9" stroke="black" strokeWidth="4" />
-                  <circle cx="12" cy="12" r="4" fill="#8bc34a" />
-                </svg>
-                <span className="font-bold text-xl tracking-tight text-black">
-                  infinite<span className="font-semibold">pay</span>
-                </span>
+            <div className="w-full mt-6 mb-2">
+              <p className="text-sm text-gray-500 font-medium mb-2">Pix Copia e Cola:</p>
+              <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                <code className="text-xs text-gray-600 break-all line-clamp-2 overflow-hidden w-full">
+                  {details.payload}
+                </code>
               </div>
             </div>
 
@@ -152,6 +144,23 @@ export function PixModal() {
               )}
               {copied ? 'Copiado!' : 'Copiar código Pix'}
             </Button>
+
+            <div className="flex items-center justify-center gap-2 mt-4 opacity-70">
+              <div className="flex items-center gap-2">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5"
+                >
+                  <circle cx="12" cy="12" r="9" stroke="black" strokeWidth="4" />
+                  <circle cx="12" cy="12" r="4" fill="#8bc34a" />
+                </svg>
+                <span className="font-bold text-lg tracking-tight text-black">
+                  infinite<span className="font-semibold">pay</span>
+                </span>
+              </div>
+            </div>
           </>
         ) : null}
       </DialogContent>

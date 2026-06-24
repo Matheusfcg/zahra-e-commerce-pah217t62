@@ -102,10 +102,10 @@ const Checkout = () => {
       return
     }
 
-    const pixKey = '64278774000161'
-    const merchantName = 'ELLEN CRISTINA'
-    const merchantCity = 'Sao Paulo'
-    const formattedKey = '64.278.774/0001-61'
+    const pixKey = pixDetails.key || '64278774000161'
+    const merchantName = pixDetails.name || 'ELLEN CRISTINA'
+    const merchantCity = 'SAO PAULO'
+    const formattedKey = pixDetails.formattedKey || '64.278.774/0001-61'
 
     if (createdOrderId && pixPayload) {
       if (typeof window !== 'undefined') {
@@ -153,9 +153,9 @@ const Checkout = () => {
       // Insert Items
       const orderItems = items.map((item: any) => ({
         order_id: order.id,
-        product_id: item.product.id,
+        product_id: item.id,
         quantity: item.quantity,
-        price_at_purchase: item.product.price,
+        price_at_purchase: item.price,
       }))
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
@@ -380,16 +380,19 @@ const Checkout = () => {
                     <div className="space-y-4 text-center py-6">
                       <p className="text-lg font-medium mb-4">Conclua sua compra em crédito aqui</p>
                       <Button
-                        asChild
                         className="w-full rounded-none h-14 text-lg bg-[#25D366] hover:bg-[#128C7E] text-white"
+                        onClick={() => {
+                          window.open(
+                            'https://wa.me/5511995831518?text=' +
+                              encodeURIComponent(
+                                'Olá, preciso de ajuda para finalizar minha compra',
+                              ),
+                            '_blank',
+                            'noopener,noreferrer',
+                          )
+                        }}
                       >
-                        <a
-                          href="https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20para%20finalizar%20minha%20compra%20com%20cart%C3%A3o%20de%20cr%C3%A9dito."
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Falar com Atendimento
-                        </a>
+                        Falar com Atendimento
                       </Button>
                     </div>
                   ) : pixGenerated ? (
