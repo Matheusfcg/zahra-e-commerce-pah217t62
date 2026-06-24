@@ -157,12 +157,8 @@ export default function Index() {
                 to={`/produtos?category=${encodeURIComponent(item.value)}`}
                 className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
               >
-                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-[#f9f9f9] mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border shadow-sm">
-                  <img
-                    src={item.image}
-                    alt={item.label}
-                    className="w-[95%] h-[95%] object-contain mix-blend-multiply"
-                  />
+                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
+                  <img src={item.image} alt={item.label} className="w-full h-full object-cover" />
                 </div>
                 <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
                   {item.label}

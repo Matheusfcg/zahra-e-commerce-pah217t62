@@ -74,14 +74,30 @@ export default function AdminUpload() {
     if (data) {
       const existingKeys = new Set(data.map((d) => d.section_key))
       const requiredKeys = [
-        { key: 'main_title', value: 'Todas as Peças' },
-        { key: 'sets_title', value: 'Conjuntos' },
-        { key: 'tops_title', value: 'Partes de Cima' },
-        { key: 'bottoms_title', value: 'Partes de Baixo' },
-        { key: 'tab_name_principal', value: 'Principal' },
-        { key: 'tab_name_conjuntos', value: 'Conjuntos' },
-        { key: 'tab_name_partes_de_cima', value: 'Partes de Cima' },
-        { key: 'tab_name_partes_de_baixo', value: 'Partes de Baixo' },
+        { key: 'hero_banner_1', value: '' },
+        { key: 'hero_banner_2', value: '' },
+        { key: 'hero_banner_3', value: '' },
+        { key: 'hero_banner_4', value: '' },
+        { key: 'category_1_label', value: 'Blusas/Bodys' },
+        { key: 'category_1_image', value: '' },
+        { key: 'category_1_title', value: 'Blusas/Bodys' },
+        { key: 'category_1_desc', value: 'Descubra nossa coleção de blusas e bodys.' },
+        { key: 'category_2_label', value: 'Conjuntos' },
+        { key: 'category_2_image', value: '' },
+        { key: 'category_2_title', value: 'Conjuntos' },
+        { key: 'category_2_desc', value: 'Descubra nossa coleção de conjuntos elegantes.' },
+        { key: 'category_3_label', value: 'Partes de baixo' },
+        { key: 'category_3_image', value: '' },
+        { key: 'category_3_title', value: 'Partes de Baixo' },
+        { key: 'category_3_desc', value: 'Descubra nossa coleção de partes de baixo.' },
+        { key: 'category_4_label', value: 'Macaquinho' },
+        { key: 'category_4_image', value: '' },
+        { key: 'category_4_title', value: 'Macaquinho' },
+        { key: 'category_4_desc', value: 'Descubra nossa coleção de macaquinhos.' },
+        { key: 'category_5_label', value: 'Jeans' },
+        { key: 'category_5_image', value: '' },
+        { key: 'category_5_title', value: 'Jeans' },
+        { key: 'category_5_desc', value: 'Descubra nossa coleção de jeans.' },
       ]
 
       const mergedData = [...data]
@@ -206,47 +222,44 @@ export default function AdminUpload() {
   }
 
   const labelMap: Record<string, string> = {
-    curated_title: 'TÍTULO DA CURADORIA',
-    delivery_banner_text: 'TEXTO DO BANNER DE ENTREGA',
-    footer_about: 'RODAPÉ - SOBRE',
-    footer_copyright: 'RODAPÉ - COPYRIGHT',
-    footer_whatsapp: 'RODAPÉ - WHATSAPP',
-    hero_button: 'BOTÃO DO HERO',
-    hero_description: 'DESCRIÇÃO DO HERO',
-    hero_left_image: 'IMAGEM ESQUERDA DO HERO',
-    hero_right_image: 'IMAGEM DIREITA DO HERO',
-    hero_title: 'TÍTULO DA SEÇÃO (PRINCIPAL/HERO)',
-    main_title: 'TÍTULO DA SEÇÃO (TODAS AS PEÇAS)',
-    sets_title: 'TÍTULO DA SEÇÃO (CONJUNTOS)',
-    sets_description: 'DESCRIÇÃO DA CATEGORIA (CONJUNTOS)',
-    tops_title: 'TÍTULO DA SEÇÃO (PARTES DE CIMA)',
-    tops_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE CIMA)',
-    bottoms_title: 'TÍTULO DA SEÇÃO (PARTES DE BAIXO)',
-    bottoms_description: 'DESCRIÇÃO DA CATEGORIA (PARTES DE BAIXO)',
+    hero_banner_1: 'IMAGEM HERO 1',
+    hero_banner_2: 'IMAGEM HERO 2',
+    hero_banner_3: 'IMAGEM HERO 3',
+    hero_banner_4: 'IMAGEM HERO 4',
+    category_1_label: 'RÓTULO DA CATEGORIA (BLUSAS/BODYS)',
+    category_1_image: 'IMAGEM DA CATEGORIA (BLUSAS/BODYS)',
+    category_1_title: 'TÍTULO DA SEÇÃO (BLUSAS/BODYS)',
+    category_1_desc: 'DESCRIÇÃO DA CATEGORIA (BLUSAS/BODYS)',
+    category_2_label: 'RÓTULO DA CATEGORIA (CONJUNTOS)',
+    category_2_image: 'IMAGEM DA CATEGORIA (CONJUNTOS)',
+    category_2_title: 'TÍTULO DA SEÇÃO (CONJUNTOS)',
+    category_2_desc: 'DESCRIÇÃO DA CATEGORIA (CONJUNTOS)',
+    category_3_label: 'RÓTULO DA CATEGORIA (PARTES DE BAIXO)',
+    category_3_image: 'IMAGEM DA CATEGORIA (PARTES DE BAIXO)',
+    category_3_title: 'TÍTULO DA SEÇÃO (PARTES DE BAIXO)',
+    category_3_desc: 'DESCRIÇÃO DA CATEGORIA (PARTES DE BAIXO)',
+    category_4_label: 'RÓTULO DA CATEGORIA (MACAQUINHO)',
+    category_4_image: 'IMAGEM DA CATEGORIA (MACAQUINHO)',
+    category_4_title: 'TÍTULO DA SEÇÃO (MACAQUINHO)',
+    category_4_desc: 'DESCRIÇÃO DA CATEGORIA (MACAQUINHO)',
+    category_5_label: 'RÓTULO DA CATEGORIA (JEANS)',
+    category_5_image: 'IMAGEM DA CATEGORIA (JEANS)',
+    category_5_title: 'TÍTULO DA SEÇÃO (JEANS)',
+    category_5_desc: 'DESCRIÇÃO DA CATEGORIA (JEANS)',
   }
 
   const getFieldsForCategory = (category: string) => {
     return siteContent
       .filter((item) => {
         const key = item.section_key
-        if (key.startsWith('values_')) return false
-        if (category === 'sets') return ['sets_title', 'sets_description'].includes(key)
-        if (category === 'tops') return ['tops_title', 'tops_description'].includes(key)
-        if (category === 'bottoms') return ['bottoms_title', 'bottoms_description'].includes(key)
-        return ![
-          'sets_title',
-          'sets_description',
-          'tops_title',
-          'tops_description',
-          'bottoms_title',
-          'bottoms_description',
-          'hero_carousel_1',
-          'hero_carousel_2',
-          'hero_carousel_3',
-          'hero_carousel_4',
-          'hero_carousel_5',
-          'hero_carousel_6',
-        ].includes(key)
+        if (category === 'main')
+          return ['hero_banner_1', 'hero_banner_2', 'hero_banner_3', 'hero_banner_4'].includes(key)
+        if (category === 'cat1') return key.startsWith('category_1_')
+        if (category === 'cat2') return key.startsWith('category_2_')
+        if (category === 'cat3') return key.startsWith('category_3_')
+        if (category === 'cat4') return key.startsWith('category_4_')
+        if (category === 'cat5') return key.startsWith('category_5_')
+        return false
       })
       .sort((a, b) => {
         const labelA = labelMap[a.section_key] || a.section_key
@@ -540,21 +553,29 @@ export default function AdminUpload() {
                     <TabsTrigger value="main" className="flex-1 sm:flex-none">
                       Opção Principal
                     </TabsTrigger>
-                    <TabsTrigger value="sets" className="flex-1 sm:flex-none">
+                    <TabsTrigger value="cat1" className="flex-1 sm:flex-none">
+                      Blusas/Bodys
+                    </TabsTrigger>
+                    <TabsTrigger value="cat2" className="flex-1 sm:flex-none">
                       Conjuntos
                     </TabsTrigger>
-                    <TabsTrigger value="tops" className="flex-1 sm:flex-none">
-                      Partes de Cima
-                    </TabsTrigger>
-                    <TabsTrigger value="bottoms" className="flex-1 sm:flex-none">
+                    <TabsTrigger value="cat3" className="flex-1 sm:flex-none">
                       Partes de Baixo
+                    </TabsTrigger>
+                    <TabsTrigger value="cat4" className="flex-1 sm:flex-none">
+                      Macaquinho
+                    </TabsTrigger>
+                    <TabsTrigger value="cat5" className="flex-1 sm:flex-none">
+                      Jeans
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="main">{renderContentGroup('main')}</TabsContent>
-                  <TabsContent value="sets">{renderContentGroup('sets')}</TabsContent>
-                  <TabsContent value="tops">{renderContentGroup('tops')}</TabsContent>
-                  <TabsContent value="bottoms">{renderContentGroup('bottoms')}</TabsContent>
+                  <TabsContent value="cat1">{renderContentGroup('cat1')}</TabsContent>
+                  <TabsContent value="cat2">{renderContentGroup('cat2')}</TabsContent>
+                  <TabsContent value="cat3">{renderContentGroup('cat3')}</TabsContent>
+                  <TabsContent value="cat4">{renderContentGroup('cat4')}</TabsContent>
+                  <TabsContent value="cat5">{renderContentGroup('cat5')}</TabsContent>
                 </Tabs>
 
                 <div className="pt-6 border-t flex justify-end">
