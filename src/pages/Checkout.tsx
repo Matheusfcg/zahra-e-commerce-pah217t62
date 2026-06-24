@@ -143,85 +143,6 @@ const Checkout = () => {
       return
     }
 
-    setIsGeneratingPix(true)
-    window.dispatchEvent(new CustomEvent('START_PIX_FLOW'))
-
-    try {
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: userId || null,
-          customer_email: displayEmail,
-          customer_name: `${firstName} ${lastName}`.trim() || profile?.full_name || 'Cliente',
-          customer_phone: phone || profile?.phone || '',
-          total_amount: total,
-          status: 'pending',
-          payment_method: 'pix',
-        })
-        .select('id')
-        .single()
-
-      if (orderError) throw orderError
-      const orderId = orderData.id
-
-      const orderItems = items.map((item) => ({
-        order_id: orderId,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price_at_purchase: item.product.price,
-      }))
-
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (itemsError) throw itemsError
-
-      setCreatedOrderId(orderId)
-
-      const payload = generatePixPayload({
-        pixKey: pixDetails.key,
-        merchantName: pixDetails.name,
-        merchantCity: pixDetails.institution,
-        amount: total,
-        txId: orderId.substring(0, 25).replace(/-/g, ''),
-      })
-
-      setPixPayload(payload)
-      setPixGenerated(true)
-
-      window.dispatchEvent(
-        new CustomEvent('SHOW_PIX_MODAL', {
-          detail: {
-            payload,
-            amount: total,
-            key: pixDetails.formattedKey,
-            name: pixDetails.name,
-            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(payload)}`,
-          },
-        }),
-      )
-    } catch (error) {
-      console.error('Error generating order:', error)
-      toast({
-        title: 'Erro ao processar',
-        description: 'Não foi possível gerar o pedido. Tente novamente.',
-        variant: 'destructive',
-      })
-      window.dispatchEvent(new CustomEvent('PIX_ERROR'))
-    } finally {
-      setIsGeneratingPix(false)
-    }
-  }
-
-  // Wrapper for remaining original function code to maintain valid file syntax
-  const _oldHandleGeneratePix = async () => {
-    if (items.length === 0) {
-      toast({
-        title: 'Carrinho vazio',
-        description: 'Adicione produtos antes de finalizar.',
-        variant: 'destructive',
-      })
-      return
-    }
-
     const pixKey = pixDetails.key || '64278774000161'
     const merchantName = pixDetails.name || 'ELLEN CRISTINA'
     const merchantCity = 'SAO PAULO'
@@ -231,7 +152,7 @@ const Checkout = () => {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('SHOW_PIX_MODAL', {
-            detail: { payload: pixPayload, pixKey: formattedKey, merchantName },
+            detail: { payload: pixPayload, pixKey: formattedKey, merchantName, amount: total },
           }),
         )
       }
@@ -302,7 +223,7 @@ const Checkout = () => {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('SHOW_PIX_MODAL', {
-            detail: { payload, pixKey: formattedKey, merchantName },
+            detail: { payload, pixKey: formattedKey, merchantName, amount: total },
           }),
         )
       }
@@ -500,19 +421,16 @@ const Checkout = () => {
                     <div className="space-y-4 text-center py-6">
                       <p className="text-lg font-medium mb-4">Conclua sua compra em crédito aqui</p>
                       <Button
+                        asChild
                         className="w-full rounded-none h-14 text-lg bg-[#25D366] hover:bg-[#128C7E] text-white"
-                        onClick={() => {
-                          window.open(
-                            'https://wa.me/5511995831518?text=' +
-                              encodeURIComponent(
-                                'Olá, preciso de ajuda para finalizar minha compra',
-                              ),
-                            '_blank',
-                            'noopener,noreferrer',
-                          )
-                        }}
                       >
-                        Falar com Atendimento
+                        <a
+                          href={`https://wa.me/5511995831518?text=${encodeURIComponent('Olá, preciso de ajuda para finalizar minha compra')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Falar com Atendente
+                        </a>
                       </Button>
                     </div>
                   ) : pixGenerated ? (

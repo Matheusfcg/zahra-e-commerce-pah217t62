@@ -102,9 +102,9 @@ export function PixModal() {
         ) : details ? (
           <div className="flex flex-col items-center w-full space-y-6">
             <div className="bg-gray-50 p-4 rounded-xl w-full flex justify-center border border-gray-100">
-              {details.qrCodeUrl ? (
+              {details.payload ? (
                 <img
-                  src={details.qrCodeUrl}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(details.payload)}`}
                   alt="QR Code Pix"
                   className="w-48 h-48 mix-blend-multiply"
                 />
@@ -116,11 +116,15 @@ export function PixModal() {
             <div className="w-full space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Beneficiário</span>
-                <span className="font-semibold text-gray-900">ELLEN CRISTINA</span>
+                <span className="font-semibold text-gray-900">
+                  {details.merchantName || 'ELLEN CRISTINA'}
+                </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500">Chave Pix (CNPJ)</span>
-                <span className="font-semibold text-gray-900">64.278.774/0001-61</span>
+                <span className="text-gray-500">Chave Pix</span>
+                <span className="font-semibold text-gray-900">
+                  {details.pixKey || '64.278.774/0001-61'}
+                </span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Valor</span>
