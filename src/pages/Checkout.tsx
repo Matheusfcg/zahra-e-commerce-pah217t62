@@ -425,7 +425,7 @@ const Checkout = () => {
                         className="w-full rounded-none h-14 text-lg bg-[#25D366] hover:bg-[#128C7E] text-white"
                       >
                         <a
-                          href={`https://wa.me/5511995831518?text=${encodeURIComponent('Olá, preciso de ajuda para finalizar minha compra')}`}
+                          href="https://wa.me/5511995831518?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20para%20finalizar%20minha%20compra"
                           target="_blank"
                           rel="noopener noreferrer"
                         >

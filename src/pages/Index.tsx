@@ -8,18 +8,15 @@ import {
   type Product,
 } from '@/services/products'
 
-const defaultCategories = [
-  'CONJUNTOS',
-  'MACAQUINHOS',
-  'BLUSAS E BODIES',
-  'SAIAS',
-  'CALÇAS',
-  'MALHAS',
-  'BÁSICOS',
+const categoryNavItems = [
+  { label: 'Blusas / Bodys', value: 'Blusas e Bodies' },
+  { label: 'Conjuntos', value: 'Conjuntos' },
+  { label: 'Partes de baixo', value: 'Partes de Baixo' },
+  { label: 'Macaquinho', value: 'Macaquinhos' },
+  { label: 'Jeans', value: 'Jeans' },
 ]
 
 const Index = () => {
-  const [categories, setCategories] = useState<string[]>(defaultCategories)
   const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [carouselProducts, setCarouselProducts] = useState<Product[]>([])
@@ -29,26 +26,11 @@ const Index = () => {
     const fetchData = async () => {
       try {
         const { supabase } = await import('@/lib/supabase/client')
-        const [productsData, featuredData, carouselData, contentData] = await Promise.all([
+        const [productsData, featuredData, carouselData] = await Promise.all([
           getProducts(),
           getFeaturedProducts(),
           getCarouselProducts(),
-          supabase
-            .from('site_content')
-            .select('*')
-            .eq('section_key', 'homepage_categories')
-            .single(),
         ])
-
-        let loadedCategories = defaultCategories
-        if (contentData.data && contentData.data.content_value) {
-          try {
-            loadedCategories = JSON.parse(contentData.data.content_value)
-            setCategories(loadedCategories)
-          } catch {
-            /* intentionally ignored */
-          }
-        }
 
         const all = productsData || []
         setFeaturedProducts(featuredData || [])
@@ -65,7 +47,8 @@ const Index = () => {
 
         // Extract Category Images for Session 2
         const catImages: Record<string, string> = {}
-        for (const cat of loadedCategories) {
+        for (const item of categoryNavItems) {
+          const cat = item.value
           const catProduct = all.find(
             (p) =>
               p.category?.toLowerCase() === cat.toLowerCase() ||
@@ -75,7 +58,7 @@ const Index = () => {
             catImages[cat] = catProduct.product_images[0].url
           } else {
             catImages[cat] =
-              `https://img.usecurling.com/p/600/800?q=${encodeURIComponent(cat + ' fashion')}&seed=${cat.length}`
+              `https://img.usecurling.com/p/400/400?q=${encodeURIComponent(cat + ' clothing isolated')}&color=white&seed=${cat.length}`
           }
         }
         setCategoryImages(catImages)
@@ -100,80 +83,61 @@ const Index = () => {
           {/* New 4-column Hero Banner */}
           {featuredProducts.length > 0 && <section className="bg-white w-full"></section>}
 
-          {/* Essência da Elegância Banner */}
+          {/* Lookbook Banner */}
           {carouselProducts.length > 0 && (
-            <section className="py-20 md:py-28 bg-[#F9F8F6] border-b border-[#E5E0D8]">
-              <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-                <div className="text-center mb-16">
-                  <h2 className="text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] text-[#2D0B0B]">
-                    Essência da Elegância
-                  </h2>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                  {carouselProducts.map((item) => {
-                    const imageUrl =
-                      item.product_images?.[0]?.url ||
-                      `https://img.usecurling.com/p/600/800?q=elegance&seed=${item.id}`
-                    return (
-                      <Link
-                        to={`/product/${item.slug}`}
-                        key={item.id}
-                        className="group flex flex-col items-center"
-                      >
-                        <div className="relative w-full aspect-[3/4] overflow-hidden bg-muted mb-4">
-                          <img
-                            src={imageUrl}
-                            alt={item.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                          {item.is_promotion && (
-                            <div className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded-sm z-10">
-                              Sale
-                            </div>
-                          )}
-                        </div>
-                        <h3 className="text-xs md:text-sm font-medium text-[#2D0B0B] text-center uppercase tracking-wider mb-2 line-clamp-1">
-                          {item.name}
-                        </h3>
-                        <p className="text-xs md:text-sm font-semibold text-muted-foreground">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }).format(item.price)}
-                        </p>
-                      </Link>
-                    )
-                  })}
-                </div>
+            <section className="relative w-full bg-[#F9F8F6] border-b border-[#E5E0D8] overflow-hidden">
+              <div className="flex flex-wrap md:flex-nowrap w-full">
+                {carouselProducts.slice(0, 4).map((item) => {
+                  const imageUrl =
+                    item.product_images?.[0]?.url ||
+                    `https://img.usecurling.com/p/600/800?q=elegance&seed=${item.id}`
+                  return (
+                    <div
+                      key={item.id}
+                      className="w-1/2 md:w-1/4 relative group overflow-hidden aspect-[3/4] md:aspect-[2/3]"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <Link to="/produtos" className="pointer-events-auto">
+                  <button className="bg-[#2D0B0B] hover:bg-[#1A0606] text-white px-8 py-4 text-sm md:text-base font-medium tracking-widest uppercase transition-all duration-300 shadow-2xl hover:scale-105 border border-[#2D0B0B]/20 rounded-none">
+                    Ver lançamento
+                  </button>
+                </Link>
               </div>
             </section>
           )}
 
-          {/* Session 2: Categories Grid */}
-          <section className="py-20 md:py-28 bg-white border-b border-[#E5E0D8]">
-            <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-              <div className="text-center mb-16">
-                <h2 className="text-2xl md:text-3xl font-serif uppercase tracking-[0.2em] text-[#2D0B0B]">
-                  Compre por Categoria
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {categories.map((cat) => (
+          {/* Session 2: Categories Grid (Updated Circular) */}
+          <section className="py-16 md:py-24 bg-[#FAFAFA] border-b border-[#E5E0D8]">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
+              <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-6 md:gap-12 pb-8 justify-start md:justify-center items-center">
+                {categoryNavItems.map((item) => (
                   <Link
-                    key={cat}
-                    to={`/produtos?category=${encodeURIComponent(cat)}`}
-                    className="group relative block overflow-hidden aspect-[3/4] bg-muted shadow-sm"
+                    key={item.value}
+                    to={`/produtos?category=${encodeURIComponent(item.value)}`}
+                    className="group flex flex-col items-center snap-center shrink-0 w-[120px] md:w-[160px] lg:w-[180px]"
                   >
-                    <img
-                      src={categoryImages[cat]}
-                      alt={cat}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center p-4 text-center">
-                      <span className="text-white font-serif text-lg md:text-2xl tracking-[0.1em] uppercase drop-shadow-md">
-                        {cat}
-                      </span>
+                    <div className="w-[120px] h-[120px] md:w-[160px] md:h-[160px] lg:w-[180px] lg:h-[180px] rounded-full overflow-hidden bg-white shadow-sm mb-4 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-[#E5E0D8]/50">
+                      <img
+                        src={categoryImages[item.value]}
+                        alt={item.label}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+                    <span
+                      className="text-2xl md:text-3xl text-[#2D0B0B] whitespace-nowrap tracking-wide"
+                      style={{ fontFamily: "'Caveat', cursive", fontWeight: 600 }}
+                    >
+                      {item.label}
+                    </span>
                   </Link>
                 ))}
               </div>

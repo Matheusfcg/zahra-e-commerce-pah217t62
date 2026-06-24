@@ -21,20 +21,10 @@ import {
 } from '@/components/ui/navigation-menu'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
-import logoZahra from '../assets/logozahra-e51d5.png'
 
-const appCategories = [
-  'Conjuntos',
-  'Macaquinhos',
-  'Blusas e Bodies',
-  'Saias',
-  'Calças',
-  'Malhas',
-  'Básicos',
-]
+const appCategories = ['Conjuntos', 'Macaquinhos', 'Blusas e Bodies', 'Partes de Baixo', 'Jeans']
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -61,7 +51,7 @@ export function Header() {
   }, [location.pathname, location.search, location.hash])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background text-foreground shadow-sm transition-colors duration-300">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-[#FAFAFA] text-foreground shadow-sm transition-colors duration-300">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 md:h-24 relative gap-4">
           {/* Left: Mobile Menu + Logo */}
@@ -76,26 +66,23 @@ export function Header() {
             </Button>
 
             <Link to="/" className="inline-block shrink-0">
-              <img
-                src={logoZahra}
-                alt="Zahrá Brazil"
-                className="h-[35px] md:h-[45px] object-contain hover:scale-105 transition-all duration-300"
-                style={{ imageRendering: 'high-quality' }}
-              />
+              <span className="font-serif text-3xl md:text-4xl tracking-[0.15em] text-[#2D0B0B] hover:opacity-80 transition-opacity">
+                ZAHRÁ
+              </span>
             </Link>
           </div>
 
           {/* Center: Desktop Nav */}
           <div className="hidden lg:flex justify-center lg:flex-[2]">
             <NavigationMenu>
-              <NavigationMenuList className="space-x-1 xl:space-x-4">
+              <NavigationMenuList className="space-x-1 xl:space-x-6">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <Link
                       to="/"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent',
+                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
                       )}
                     >
                       Inicio
@@ -109,7 +96,7 @@ export function Header() {
                       to="/troca-e-devolucao"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent',
+                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
                       )}
                     >
                       Troca e devolução
@@ -118,7 +105,7 @@ export function Header() {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent">
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]">
                     Compre agora
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -145,7 +132,7 @@ export function Header() {
                       href="mailto:saczharabrasil@gmail.com"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent',
+                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
                       )}
                     >
                       Fale conosco
@@ -173,43 +160,41 @@ export function Header() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center justify-end gap-3 md:gap-5 lg:flex-1">
-            <div className="hidden md:block relative w-full max-w-[150px] xl:max-w-[180px]">
-              <Input
-                placeholder="Buscar"
-                className="pl-4 pr-10 rounded-none h-9 border border-muted-foreground/30 focus-visible:ring-1 focus-visible:ring-foreground bg-transparent text-xs"
-              />
-              <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            </div>
-            <button className="md:hidden hover:opacity-70 transition-opacity">
-              <Search className="h-5 w-5" />
-            </button>
+          <div className="flex items-center justify-end lg:flex-1">
+            <div className="flex items-center gap-3 md:gap-5 bg-muted/40 md:bg-muted/30 px-3 py-2 rounded-lg">
+              <button className="hover:opacity-70 transition-opacity flex items-center">
+                <Search className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
+              </button>
 
-            <div className="hidden lg:block">
-              <ProfileMenu
-                renderTrigger={() => (
-                  <button className="flex items-center gap-2 px-1 py-2 hover:opacity-70 transition-opacity">
-                    <User className="h-5 w-5 md:h-[20px] md:w-[20px]" />
-                  </button>
+              <div className="hidden lg:block">
+                <ProfileMenu
+                  renderTrigger={() => (
+                    <button className="flex items-center hover:opacity-70 transition-opacity">
+                      <User className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
+                    </button>
+                  )}
+                />
+              </div>
+
+              <Link
+                to="/favoritos"
+                className="hover:opacity-70 transition-opacity hidden md:block flex items-center"
+              >
+                <Heart className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
+              </Link>
+
+              <button
+                onClick={openDrawer}
+                className="relative hover:opacity-70 transition-opacity flex items-center"
+              >
+                <ShoppingBag className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#2D0B0B] text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+                    {totalItems}
+                  </span>
                 )}
-              />
+              </button>
             </div>
-
-            <Link to="/favoritos" className="hover:opacity-70 transition-opacity hidden md:block">
-              <Heart className="h-5 w-5 md:h-[20px] md:w-[20px]" />
-            </Link>
-
-            <button
-              onClick={openDrawer}
-              className="relative hover:opacity-70 transition-opacity flex items-center"
-            >
-              <ShoppingBag className="h-5 w-5 md:h-[20px] md:w-[20px]" />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-foreground text-background text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
-            </button>
           </div>
         </div>
       </div>
@@ -228,7 +213,7 @@ export function Header() {
               <ProfileMenu
                 renderTrigger={(user, profile) => (
                   <button className="flex items-center gap-4 w-full text-left outline-none">
-                    <div className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center flex-shrink-0 text-background">
+                    <div className="w-12 h-12 rounded-full bg-[#2D0B0B] flex items-center justify-center flex-shrink-0 text-white">
                       {profile?.avatar_url ? (
                         <img
                           src={profile.avatar_url}
@@ -240,7 +225,7 @@ export function Header() {
                       )}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-serif text-xl">
+                      <span className="font-serif text-xl text-[#2D0B0B]">
                         {user
                           ? `Olá, ${profile?.full_name?.split(' ')[0] || 'Usuário'}`
                           : 'Entrar / Cadastrar'}
@@ -256,14 +241,14 @@ export function Header() {
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider text-[#2D0B0B]"
               >
                 Início
               </Link>
 
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="compre-agora" className="border-b-0">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider text-[#2D0B0B]">
                     Compre agora
                   </AccordionTrigger>
                   <AccordionContent>
@@ -286,7 +271,7 @@ export function Header() {
               <Link
                 to="/troca-e-devolucao"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider text-[#2D0B0B]"
               >
                 Troca e devolução
               </Link>
@@ -294,14 +279,14 @@ export function Header() {
               <a
                 href="mailto:saczharabrasil@gmail.com"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider"
+                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider text-[#2D0B0B]"
               >
                 Fale conosco
               </a>
 
               <Accordion type="single" collapsible className="w-full mt-4">
                 <AccordionItem value="atendimento" className="border-b-0 border-t">
-                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider text-[#2D0B0B]">
                     Atendimento
                   </AccordionTrigger>
                   <AccordionContent>
