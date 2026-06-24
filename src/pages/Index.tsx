@@ -75,7 +75,7 @@ export default function Index() {
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
       <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden">
-        <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-[2px] no-scrollbar">
+        <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
           {dynamicHeroBannerImages.map((imageUrl, index) => (
             <Link
               to="/produtos"
@@ -102,7 +102,7 @@ export default function Index() {
                 to={`/produtos?category=${encodeURIComponent(item.value)}`}
                 className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
               >
-                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white border border-gray-50 mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center shadow-sm">
+                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-[#f9f9f9] mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
                   <img
                     src={item.image}
                     alt={item.label}
