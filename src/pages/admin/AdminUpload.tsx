@@ -551,7 +551,7 @@ export default function AdminUpload() {
                 <Tabs defaultValue="main" className="w-full">
                   <TabsList className="mb-6 flex-wrap h-auto">
                     <TabsTrigger value="main" className="flex-1 sm:flex-none">
-                      Opção Principal
+                      Banner Principal
                     </TabsTrigger>
                     <TabsTrigger value="cat1" className="flex-1 sm:flex-none">
                       Blusas/Bodys

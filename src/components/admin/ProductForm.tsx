@@ -1,23 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
-import {
-  Loader2,
-  UploadCloud,
-  X,
-  ImageIcon,
-  Trash2,
-  Plus,
-  ArrowLeft,
-  ArrowRight,
-} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -25,706 +12,427 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from 'sonner'
+import { Loader2, ArrowLeft, ArrowRight, Trash2, Plus } from 'lucide-react'
 
-export function ProductForm({
-  product,
-  onSuccess,
-  onCancel,
-}: {
+interface ProductFormProps {
   product?: any
   onSuccess: () => void
   onCancel: () => void
-}) {
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [price, setPrice] = useState(0)
-  const [quantity, setQuantity] = useState(0)
-  const [desc, setDesc] = useState('')
-  const [comp, setComp] = useState('')
-  const [meas, setMeas] = useState('')
-  const [isPromotion, setIsPromotion] = useState(false)
-  const [isFeatured, setIsFeatured] = useState(false)
-  const [category, setCategory] = useState('')
+}
 
-  const [categoriesList, setCategoriesList] = useState<string[]>([])
-  const [existingImages, setExistingImages] = useState<any[]>([])
-  const [existingColors, setExistingColors] = useState<any[]>([])
-  const [newColors, setNewColors] = useState<{ name: string; hex_value: string }[]>([])
-  const [colorsToDelete, setColorsToDelete] = useState<string[]>([])
-  const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
+export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    price: '',
+    quantity: '0',
+    description: '',
+    composition: '',
+    measurements: '',
+    category: '',
+    is_promotion: false,
+    is_featured: false,
+    show_in_carousel: false,
+  })
 
-  const [colorInputName, setColorInputName] = useState('')
-  const [colorInputHex, setColorInputHex] = useState('#000000')
-  const [showAddColor, setShowAddColor] = useState(false)
-
-  const PT_COLORS: Record<string, string> = {
-    amarelo: '#FFFF00',
-    azul: '#0000FF',
-    branco: '#FFFFFF',
-    preto: '#000000',
-    vermelho: '#FF0000',
-    verde: '#008000',
-    cinza: '#808080',
-    rosa: '#FFC0CB',
-    roxo: '#800080',
-    marrom: '#A52A2A',
-    laranja: '#FFA500',
-    bege: '#F5F5DC',
-    prata: '#C0C0C0',
-    ouro: '#FFD700',
-    dourado: '#FFD700',
-    vinho: '#800000',
-    marinho: '#000080',
-    ciano: '#00FFFF',
-    magenta: '#FF00FF',
-  }
-
-  const handleColorNameChange = (val: string) => {
-    setColorInputName(val)
-    const normalized = val.trim().toLowerCase()
-    if (PT_COLORS[normalized]) {
-      setColorInputHex(PT_COLORS[normalized])
-    }
-  }
-
-  const handleAddColor = () => {
-    if (!colorInputName.trim()) {
-      toast.error('O nome da cor não pode estar vazio')
-      return
-    }
-    setNewColors((prev) => [...prev, { name: colorInputName.trim(), hex_value: colorInputHex }])
-    setColorInputName('')
-    setColorInputHex('#000000')
-  }
-
-  const [files, setFiles] = useState<File[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [images, setImages] = useState<any[]>([])
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await supabase
-        .from('site_content')
-        .select('content_value')
-        .eq('section_key', 'homepage_categories')
-        .single()
-      if (data?.content_value) {
-        try {
-          const parsed = JSON.parse(data.content_value)
-          if (Array.isArray(parsed)) setCategoriesList(parsed)
-        } catch {
-          /* intentionally ignored */
-        }
-      }
-    }
-    fetchCategories()
-
     if (product) {
-      setName(product.name || '')
-      setSlug(product.slug || '')
-      setPrice(product.price || 0)
-      setQuantity(product.quantity || 0)
-      setDesc(product.description || '')
-      setComp(product.composition || '')
-      setMeas(product.measurements || '')
-      setIsPromotion(product.is_promotion || false)
-      setIsFeatured(product.is_featured || false)
-      setCategory(product.category || '')
-      setExistingImages(
-        [...(product.product_images || [])].sort(
+      setFormData({
+        name: product.name || '',
+        slug: product.slug || '',
+        price: product.price?.toString() || '',
+        quantity: product.quantity?.toString() || '0',
+        description: product.description || '',
+        composition: product.composition || '',
+        measurements: product.measurements || '',
+        category: product.category || '',
+        is_promotion: product.is_promotion || false,
+        is_featured: product.is_featured || false,
+        show_in_carousel: product.show_in_carousel || false,
+      })
+
+      if (product.product_images) {
+        const sortedImages = [...product.product_images].sort(
           (a, b) => (a.display_order || 0) - (b.display_order || 0),
-        ),
-      )
-      setExistingColors(product.product_colors || [])
-      setNewColors([])
-      setColorsToDelete([])
-      setImagesToDelete([])
-      setFiles([])
-      setColorInputName('')
-      setColorInputHex('#000000')
-      setShowAddColor(false)
-    } else {
-      setName('')
-      setSlug('')
-      setPrice(0)
-      setQuantity(0)
-      setDesc('')
-      setComp('')
-      setMeas('')
-      setIsPromotion(false)
-      setIsFeatured(false)
-      setCategory('')
-      setExistingImages([])
-      setExistingColors([])
-      setNewColors([])
-      setColorsToDelete([])
-      setImagesToDelete([])
-      setFiles([])
-      setColorInputName('')
-      setColorInputHex('#000000')
-      setShowAddColor(false)
+        )
+        setImages(sortedImages.map((img) => ({ ...img, _deleted: false })))
+      }
     }
   }, [product])
 
-  const handleName = (v: string) => {
-    setName(v)
-    if (!product) {
-      setSlug(
-        v
-          .toLowerCase()
-          .replace(/[\s_]+/g, '-')
-          .replace(/[^\w-]+/g, ''),
-      )
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (field === 'name' && !product) {
+      const generatedSlug = value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '')
+      setFormData((prev) => ({ ...prev, slug: generatedSlug }))
     }
   }
 
-  const moveImageLeft = (idx: number) => {
-    if (idx === 0) return
-    const newImages = [...existingImages]
-    const temp = newImages[idx]
-    newImages[idx] = newImages[idx - 1]
-    newImages[idx - 1] = temp
-    setExistingImages(newImages)
-  }
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-  const moveImageRight = (idx: number) => {
-    if (idx === existingImages.length - 1) return
-    const newImages = [...existingImages]
-    const temp = newImages[idx]
-    newImages[idx] = newImages[idx + 1]
-    newImages[idx + 1] = temp
-    setExistingImages(newImages)
-  }
+    setUploadingImage(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `products/${fileName}`
 
-  const handleFiles = (newFiles: FileList | null) => {
-    if (newFiles) {
-      setFiles((prev) => [
-        ...prev,
-        ...Array.from(newFiles).filter((f) => f.type.startsWith('image/')),
-      ])
-    }
-  }
-
-  const removeExistingImage = (id: string) => {
-    setImagesToDelete((prev) => [...prev, id])
-    setExistingImages((prev) => prev.filter((img) => img.id !== id))
-  }
-
-  const removeExistingColor = (id: string) => {
-    setColorsToDelete((prev) => [...prev, id])
-    setExistingColors((prev) => prev.filter((c) => c.id !== id))
-  }
-
-  const handleSave = async () => {
-    if (!name || !slug) return toast.error('Nome e slug são obrigatórios')
-    setUploading(true)
-    setProgress(10)
-
-    let productId = product?.id
-
-    if (product) {
-      const { error: prodErr } = await supabase
-        .from('products')
-        .update({
-          name,
-          slug,
-          price,
-          quantity,
-          description: desc || null,
-          composition: comp || null,
-          measurements: meas || null,
-          is_promotion: isPromotion,
-          is_featured: isFeatured,
-          category: category || null,
-        })
-        .eq('id', product.id)
-
-      if (prodErr) {
-        toast.error(`Falha ao atualizar: ${prodErr.message}`)
-        return setUploading(false)
-      }
-    } else {
-      const { data: newProd, error: prodErr } = await supabase
-        .from('products')
-        .insert({
-          name,
-          slug,
-          price,
-          quantity,
-          description: desc || null,
-          composition: comp || null,
-          measurements: meas || null,
-          is_promotion: isPromotion,
-          is_featured: isFeatured,
-          category: category || null,
-        })
-        .select()
-        .single()
-
-      if (prodErr) {
-        toast.error(`Falha ao criar: ${prodErr.message}`)
-        return setUploading(false)
-      }
-      productId = newProd.id
-    }
-
-    if (imagesToDelete.length > 0) {
-      await supabase.from('product_images').delete().in('id', imagesToDelete)
-    }
-
-    if (colorsToDelete.length > 0) {
-      await supabase.from('product_colors').delete().in('id', colorsToDelete)
-    }
-
-    const validNewColors = newColors.filter((c) => c.name.trim() !== '')
-    if (validNewColors.length > 0) {
-      await supabase.from('product_colors').insert(
-        validNewColors.map((c) => ({
-          product_id: productId,
-          name: c.name,
-          hex_value: c.hex_value,
-          image_url: '',
-        })),
-      )
-    }
-
-    setProgress(30)
-
-    let [success, fail] = [0, 0]
-
-    for (let i = 0; i < existingImages.length; i++) {
-      const img = existingImages[i]
-      await supabase
-        .from('product_images')
-        .update({ display_order: i + 1 })
-        .eq('id', img.id)
-    }
-
-    let currentOrder = existingImages.length
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      const ext = file.name.split('.').pop()
-      const fileName = `${productId}-${Date.now()}-${i}.${ext}`
-
-      const { error: upErr } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(fileName, file, { upsert: true })
-      if (upErr) fail++
-      else {
-        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
-        currentOrder++
-        const { error: dbErr } = await supabase.from('product_images').insert({
-          product_id: productId,
-          url: urlData.publicUrl,
-          display_order: currentOrder,
-        })
-        if (dbErr) fail++
-        else success++
+        .upload(filePath, file)
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('product-images').getPublicUrl(filePath)
+
+      const newImage = {
+        id: `temp-${Date.now()}`,
+        url: data.publicUrl,
+        display_order: images.filter((i) => !i._deleted).length,
+        isNew: true,
+        _deleted: false,
       }
-      setProgress(30 + ((i + 1) / files.length) * 70)
-    }
 
-    setUploading(false)
-    if (product) {
-      toast.success('Produto atualizado com sucesso!')
-    } else {
-      if (files.length === 0) toast.success('Produto criado sem imagens')
-      else if (success > 0) toast.success(`Criado e carregado ${success} imagem(ns)`)
-      if (fail > 0) toast.error(`${fail} imagem(ns) falharam`)
+      setImages([...images, newImage])
+      toast.success('Imagem carregada com sucesso!')
+    } catch (err: any) {
+      toast.error('Erro ao fazer upload da imagem: ' + err.message)
+    } finally {
+      setUploadingImage(false)
     }
+  }
 
-    onSuccess()
+  const activeImages = images
+    .filter((img) => !img._deleted)
+    .sort((a, b) => a.display_order - b.display_order)
+
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    if (direction === 'left' && index === 0) return
+    if (direction === 'right' && index === activeImages.length - 1) return
+
+    const targetIndex = direction === 'left' ? index - 1 : index + 1
+
+    const newActive = [...activeImages]
+    const temp = newActive[index]
+    newActive[index] = newActive[targetIndex]
+    newActive[targetIndex] = temp
+
+    // Reassign display_order based on new position
+    const reorderedActive = newActive.map((img, i) => ({ ...img, display_order: i }))
+
+    // Merge back into main images array
+    const newImages = images.map((img) => {
+      if (img._deleted) return img
+      const found = reorderedActive.find((ri) => ri.id === img.id)
+      return found ? found : img
+    })
+
+    setImages(newImages)
+  }
+
+  const removeImage = (idToRemove: string) => {
+    const newImages = images.map((img) => {
+      if (img.id === idToRemove) {
+        return { ...img, _deleted: true }
+      }
+      return img
+    })
+
+    // Re-adjust display_order for remaining active images
+    let counter = 0
+    const finalImages = newImages.map((img) => {
+      if (!img._deleted) {
+        const updated = { ...img, display_order: counter }
+        counter++
+        return updated
+      }
+      return img
+    })
+
+    setImages(finalImages)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      let productId = product?.id
+
+      const productData = {
+        name: formData.name,
+        slug: formData.slug,
+        price: parseFloat(formData.price),
+        quantity: parseInt(formData.quantity, 10),
+        description: formData.description,
+        composition: formData.composition,
+        measurements: formData.measurements,
+        category: formData.category,
+        is_promotion: formData.is_promotion,
+        is_featured: formData.is_featured,
+        show_in_carousel: formData.show_in_carousel,
+      }
+
+      if (productId) {
+        const { error } = await supabase.from('products').update(productData).eq('id', productId)
+        if (error) throw error
+      } else {
+        const { data, error } = await supabase
+          .from('products')
+          .insert([productData])
+          .select()
+          .single()
+        if (error) throw error
+        productId = data.id
+      }
+
+      // Process images
+      for (const img of images) {
+        if (img._deleted) {
+          if (!img.isNew) {
+            await supabase.from('product_images').delete().eq('id', img.id)
+          }
+        } else {
+          if (img.isNew) {
+            await supabase.from('product_images').insert([
+              {
+                product_id: productId,
+                url: img.url,
+                display_order: img.display_order,
+              },
+            ])
+          } else {
+            await supabase
+              .from('product_images')
+              .update({
+                display_order: img.display_order,
+              })
+              .eq('id', img.id)
+          }
+        }
+      }
+
+      toast.success(product ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!')
+      onSuccess()
+    } catch (err: any) {
+      toast.error('Erro ao salvar produto: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="space-y-4 py-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="space-y-8 pb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Nome do Produto *</Label>
+          <Label htmlFor="name">Nome do Produto</Label>
           <Input
-            value={name}
-            onChange={(e) => handleName(e.target.value)}
-            disabled={uploading}
-            placeholder="ex. Vestido Midi"
+            id="name"
+            value={formData.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label>Quantidade *</Label>
+          <Label htmlFor="slug">Slug (URL)</Label>
           <Input
+            id="slug"
+            value={formData.slug}
+            onChange={(e) => handleInputChange('slug', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="price">Preço</Label>
+          <Input
+            id="price"
             type="number"
-            min="0"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-            disabled={uploading}
-            placeholder="0"
+            step="0.01"
+            value={formData.price}
+            onChange={(e) => handleInputChange('price', e.target.value)}
+            required
           />
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Preço (R$)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          min="0"
-          value={price}
-          onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-          disabled={uploading}
-          className="max-w-xs"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Sobre (Descrição)</Label>
-        <Textarea
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-          disabled={uploading}
-          rows={3}
-        />
-      </div>
-
-      <div className="flex items-center space-x-2 rounded-md border p-4 bg-muted/20">
-        <Switch
-          id="promotion"
-          checked={isPromotion}
-          onCheckedChange={setIsPromotion}
-          disabled={uploading}
-        />
-        <Label htmlFor="promotion" className="cursor-pointer font-medium text-foreground">
-          Marcar como Produto em Promoção (Aparecerá na seção Promoção do site)
-        </Label>
-      </div>
-
-      <div className="flex items-center space-x-2 rounded-md border p-4 bg-muted/20 mt-4">
-        <Switch
-          id="featured"
-          checked={isFeatured}
-          onCheckedChange={setIsFeatured}
-          disabled={uploading}
-        />
-        <Label htmlFor="featured" className="cursor-pointer font-medium text-foreground">
-          Escolha a foto para exibição
-        </Label>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Categoria</Label>
-          <Select value={category} onValueChange={setCategory} disabled={uploading}>
+          <Label htmlFor="quantity">Quantidade em Estoque</Label>
+          <Input
+            id="quantity"
+            type="number"
+            value={formData.quantity}
+            onChange={(e) => handleInputChange('quantity', e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="category">Categoria</Label>
+          <Select
+            value={formData.category}
+            onValueChange={(val) => handleInputChange('category', val)}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione a categoria" />
+              <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
             <SelectContent>
-              {categoriesList.length > 0 ? (
-                categoriesList.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))
-              ) : (
-                <>
-                  <SelectItem value="Conjuntos">Conjuntos</SelectItem>
-                  <SelectItem value="Partes de Cima">Partes de Cima</SelectItem>
-                  <SelectItem value="Partes de Baixo">Partes de Baixo</SelectItem>
-                  <SelectItem value="Acessórios">Acessórios</SelectItem>
-                </>
-              )}
+              <SelectItem value="Blusas e Bodies">Blusas/Bodys</SelectItem>
+              <SelectItem value="Conjuntos">Conjuntos</SelectItem>
+              <SelectItem value="Saias">Partes de baixo</SelectItem>
+              <SelectItem value="Macaquinhos">Macaquinho</SelectItem>
+              <SelectItem value="Jeans">Jeans</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label>Composição</Label>
-          <Input
-            value={comp}
-            onChange={(e) => setComp(e.target.value)}
-            disabled={uploading}
-            placeholder="ex. 100% Algodão"
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="description">Descrição</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
           />
         </div>
-        <div className="space-y-2">
-          <Label>Medidas</Label>
-          <Input
-            value={meas}
-            onChange={(e) => setMeas(e.target.value)}
-            disabled={uploading}
-            placeholder="ex. P, M, G"
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="composition">Composição</Label>
+          <Textarea
+            id="composition"
+            value={formData.composition}
+            onChange={(e) => handleInputChange('composition', e.target.value)}
           />
         </div>
-      </div>
-
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <Label>Cores Cadastradas</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAddColor((prev) => !prev)}
-            disabled={uploading}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Cor
-          </Button>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="measurements">Medidas</Label>
+          <Textarea
+            id="measurements"
+            value={formData.measurements}
+            onChange={(e) => handleInputChange('measurements', e.target.value)}
+          />
         </div>
 
-        {existingColors.length === 0 && newColors.length === 0 && !showAddColor && (
-          <div className="text-sm text-muted-foreground italic">Nenhuma cor cadastrada.</div>
-        )}
-
-        {(existingColors.length > 0 || newColors.length > 0) && (
-          <div className="flex flex-wrap gap-2">
-            {existingColors.map((color) => (
-              <div
-                key={color.id}
-                className="group relative flex items-center gap-2 rounded-md border p-2 text-sm"
-              >
-                <div
-                  className="h-4 w-4 rounded-full border"
-                  style={{ backgroundColor: color.hex_value }}
-                />
-                <span>{color.name}</span>
-                <button
-                  type="button"
-                  onClick={() => removeExistingColor(color.id)}
-                  disabled={uploading}
-                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white transition-colors"
-                  title="Remover cor"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            {newColors.map((color, idx) => (
-              <div
-                key={`new-${idx}`}
-                className="group relative flex items-center gap-2 rounded-md border bg-muted/50 p-2 text-sm"
-              >
-                <div
-                  className="h-4 w-4 rounded-full border shadow-sm"
-                  style={{ backgroundColor: color.hex_value }}
-                />
-                <span>{color.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setNewColors(newColors.filter((_, i) => i !== idx))}
-                  disabled={uploading}
-                  className="ml-2 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive hover:text-white transition-colors"
-                  title="Remover nova cor"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showAddColor && (
-          <div className="space-y-3 rounded-md border border-dashed p-3 animate-fade-in-up">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold text-muted-foreground">Novas Cores</Label>
-              <button
-                type="button"
-                onClick={() => setShowAddColor(false)}
-                className="text-muted-foreground hover:text-foreground"
-                title="Fechar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
+        <div className="space-y-2 flex flex-col justify-center">
+          <Label>Opções de Exibição</Label>
+          <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-2">
-              <Input
-                value={colorInputName}
-                onChange={(e) => handleColorNameChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddColor()
-                  }
-                }}
-                placeholder="Nome da Cor (ex: Amarelo)"
-                className="flex-1"
-                disabled={uploading}
+              <Switch
+                checked={formData.is_featured}
+                onCheckedChange={(val) => handleInputChange('is_featured', val)}
+                id="featured"
               />
-              <div className="relative h-10 w-16 overflow-hidden rounded-md border shrink-0">
-                <input
-                  type="color"
-                  value={colorInputHex}
-                  onChange={(e) => setColorInputHex(e.target.value)}
-                  className="absolute -inset-2 h-14 w-20 cursor-pointer"
-                  disabled={uploading}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={handleAddColor}
-                disabled={uploading}
-                className="shrink-0"
-                variant="secondary"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-2 pt-2">
-        <Label>Imagens do Produto</Label>
-
-        {existingImages.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <div className="flex justify-between items-center">
-              <Label className="text-xs text-muted-foreground">
-                Arraste não suportado, use as setas para ordenar as fotos
+              <Label htmlFor="featured" className="font-normal cursor-pointer">
+                Destaque na Home
               </Label>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {existingImages.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className="group relative aspect-square overflow-hidden rounded-md border"
-                >
-                  <img src={img.url} alt="Produto" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        moveImageLeft(idx)
-                      }}
-                      disabled={uploading || idx === 0}
-                      className="p-1.5 bg-white text-black rounded-full hover:bg-gray-200 disabled:opacity-50"
-                      title="Mover para esquerda"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        removeExistingImage(img.id)
-                      }}
-                      disabled={uploading}
-                      className="p-1.5 bg-destructive text-white rounded-full hover:bg-destructive/80"
-                      title="Remover imagem"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        moveImageRight(idx)
-                      }}
-                      disabled={uploading || idx === existingImages.length - 1}
-                      className="p-1.5 bg-white text-black rounded-full hover:bg-gray-200 disabled:opacity-50"
-                      title="Mover para direita"
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.is_promotion}
+                onCheckedChange={(val) => handleInputChange('is_promotion', val)}
+                id="promotion"
+              />
+              <Label htmlFor="promotion" className="font-normal cursor-pointer">
+                Em Promoção
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={formData.show_in_carousel}
+                onCheckedChange={(val) => handleInputChange('show_in_carousel', val)}
+                id="carousel"
+              />
+              <Label htmlFor="carousel" className="font-normal cursor-pointer">
+                Carrossel Home
+              </Label>
             </div>
           </div>
-        )}
-
-        <div
-          className={cn(
-            'rounded-lg border-2 border-dashed p-6 text-center transition-colors',
-            isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
-            uploading ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-muted/50',
-          )}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setIsDragging(true)
-          }}
-          onDragLeave={(e) => {
-            e.preventDefault()
-            setIsDragging(false)
-          }}
-          onDrop={(e) => {
-            e.preventDefault()
-            setIsDragging(false)
-            handleFiles(e.dataTransfer.files)
-          }}
-          onClick={() => !uploading && fileRef.current?.click()}
-        >
-          <UploadCloud className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium">
-            Arraste e solte imagens aqui, ou clique para adicionar novas
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">Suporta JPG, PNG, WEBP</p>
-          <input
-            type="file"
-            ref={fileRef}
-            className="hidden"
-            multiple
-            accept="image/*"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
         </div>
       </div>
 
-      {files.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Novas Imagens ({files.length})</h4>
-            {!uploading && (
-              <Button variant="ghost" size="sm" onClick={() => setFiles([])}>
-                Limpar Tudo
-              </Button>
-            )}
-          </div>
-          <div className="grid max-h-[180px] grid-cols-1 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
-            {files.map((file, i) => (
-              <div key={i} className="group relative flex items-center gap-2 rounded-md border p-2">
-                <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate text-xs">{file.name}</span>
-                {!uploading && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setFiles(files.filter((_, idx) => idx !== i))
-                    }}
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+      <div className="border-t pt-6 mt-6">
+        <h3 className="text-lg font-semibold mb-1">Imagens do Produto</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Arraste não suportado, use as setas para ordenar as fotos
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          {activeImages.map((img, index) => (
+            <div
+              key={img.id}
+              className="relative group border rounded-md overflow-hidden bg-muted/20 aspect-[3/4]"
+            >
+              <img
+                src={img.url}
+                alt={`Produto ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => moveImage(index, 'left')}
+                  disabled={index === 0}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => removeImage(img.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => moveImage(index, 'right')}
+                  disabled={index === activeImages.length - 1}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md">
+                {index + 1}
+              </div>
+            </div>
+          ))}
 
-      {uploading && (
-        <div className="space-y-2 py-2">
-          <div className="flex justify-between text-sm">
-            <span>Salvando alterações...</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} />
+          <Label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer aspect-[3/4] p-4 text-center">
+            {uploadingImage ? (
+              <Loader2 className="h-6 w-6 animate-spin mb-2" />
+            ) : (
+              <Plus className="h-8 w-8 mb-2 text-muted-foreground/70" />
+            )}
+            <span className="text-sm font-medium">Adicionar Foto</span>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+            />
+          </Label>
         </div>
-      )}
+      </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel} disabled={uploading}>
+      <div className="flex justify-end gap-2 border-t pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           Cancelar
         </Button>
-        <Button onClick={handleSave} disabled={uploading}>
-          {uploading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...
-            </>
-          ) : (
-            'Salvar Alterações'
-          )}
+        <Button type="submit" disabled={loading}>
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {product ? 'Salvar Alterações' : 'Criar Produto'}
         </Button>
       </div>
-    </div>
+    </form>
   )
 }
