@@ -277,7 +277,9 @@ export default function AdminUpload() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               {labelMap[item.section_key] || item.section_key.replace(/_/g, ' ')}
             </Label>
-            {item.section_key.includes('image') || item.section_key.includes('carousel') ? (
+            {item.section_key.includes('image') ||
+            item.section_key.includes('banner') ||
+            item.section_key.includes('carousel') ? (
               <div className="flex gap-2">
                 <Input
                   value={item.content_value}
