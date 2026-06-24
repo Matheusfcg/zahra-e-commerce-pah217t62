@@ -2,40 +2,36 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 
-const fallbackContent = `**Política de Trocas e Devoluções**
+const fallbackContent = `**Trocar ou devolver**
 
-**Prazo para Solicitação**
-As solicitações de troca deverão ser realizadas no prazo máximo de 7 (sete) dias úteis contados a partir da data de recebimento do produto.
+**Trocas e Devoluções**
+Todas as solicitações são feitas exclusivamente pelo link: https://lamagieclothes.troque.app.br/
+Não aceitamos trocas de peças promocionais.
 
-**Condições para Aceitação da Troca**
-Para que a solicitação seja analisada, o produto deverá ser devolvido observando integralmente as seguintes condições:
-- Estar sem qualquer indício de uso;
-- Permanecer com a etiqueta original afixada;
-- Ser encaminhado na mesma embalagem em que foi entregue;
-- Não apresentar manchas, sujeiras, odores, avarias ou quaisquer sinais de utilização inadequada.
-A empresa não realizará a troca de produtos que não atendam aos requisitos acima descritos.
+**Prazo**
+Você tem até 7 dias corridos após o recebimento para solicitar troca ou devolução. Em caso de defeito de fabricação, o prazo é de 30 dias.
+Observação: Em compras realizadas com cupom ou promoção, o valor do cupom de troca será referente ao valor pago na compra, e não ao valor original do produto.
 
-**Produtos Promocionais**
-Não serão aceitas solicitações de troca ou devolução de produtos adquiridos em promoção, liquidação, ofertas especiais ou campanhas promocionais, salvo nos casos expressamente previstos na legislação aplicável.
+**Condições**
+A peça deve estar nova, com etiqueta e na embalagem original. Não aceitamos trocas ou devoluções de produtos usados, sujos ou manchados.
+O frete de envio até a gente é por nossa conta. O frete de reenvio da nova peça é de responsabilidade da cliente.
 
-**Solicitação de Troca ou Devolução**
-Para solicitar uma troca ou devolução, o cliente deverá entrar em contato com nossa equipe de suporte por meio do WhatsApp:
-Suporte: https://wa.me/5511934160219
-Após o contato, serão fornecidas as orientações necessárias para o envio do produto e prosseguimento da solicitação.
+**Como Trocar ou Devolver**
+Acesse: https://lamagieclothes.troque.app.br/
+Preencha os dados: número do pedido e tipo de solicitação (troca ou devolução).
+Siga as instruções para envio do produto.
+Após o recebimento e aprovação, o processo será concluído conforme sua escolha.
+Todas as atualizações chegam por e-mail.
 
-**Análise e Aprovação**
-Após o recebimento do produto, será realizada uma vistoria técnica para verificar o cumprimento das condições estabelecidas nesta política.
-A aprovação da troca ou devolução está condicionada ao resultado dessa análise. Caso sejam constatadas divergências, sinais de uso, ausência de etiqueta, embalagem inadequada ou qualquer outra irregularidade, a solicitação poderá ser recusada, sendo o produto devolvido ao cliente.
+**Cupom de Troca**
+O cupom deve ser usado integralmente em uma única compra e é válido por 90 dias a partir do envio por e-mail.
 
 **Reembolso**
-**Compras realizadas via Pix**
-Após a aprovação da devolução, o reembolso será efetuado na mesma conta utilizada para o pagamento, em até 4 (quatro) dias úteis.
-**Compras realizadas via Cartão de Crédito**
-O estorno será solicitado à administradora do cartão de crédito após a aprovação da devolução. O valor será creditado diretamente na fatura do cartão, observando os prazos e procedimentos estabelecidos pela instituição financeira responsável.
+Cartão de Crédito: O estorno é feito diretamente na fatura — parcelado conforme as parcelas, à vista de forma integral. O prazo pode variar conforme a operadora, geralmente em até 10 dias úteis.
+Pix: O valor é devolvido diretamente na sua conta em até 3 dias úteis.
 
-**Disposições Finais**
-Ao solicitar a troca ou devolução de um produto, o cliente declara estar ciente e de acordo com os termos desta Política de Trocas e Devoluções.
-Esta política não afasta nem limita os direitos assegurados ao consumidor pela legislação vigente, especialmente aqueles previstos no Código de Defesa do Consumidor.`
+**Exceções**
+Não realizamos trocas ou devoluções de produtos personalizados ou feitos sob encomenda, como ajustes de comprimento ou modificações de modelagem.`
 
 const formatPolicy = (text: string) => {
   let html = text.replace(

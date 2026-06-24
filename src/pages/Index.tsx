@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
+import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import hero1 from '@/assets/1produto-070e2.png'
 import hero2 from '@/assets/1produto-67ee8.png'
 import hero3 from '@/assets/image-048b7.png'
 import hero4 from '@/assets/image-43b69.png'
+import logo from '@/assets/logozahra-e51d5.png'
 
 const defaultCategoryNavItems = [
   {
     label: 'Blusas/Bodys',
-    value: 'Blusas/Bodys',
+    value: 'Blusas e Bodies',
     image:
       'https://img.usecurling.com/p/400/400?q=brown%20one%20shoulder%20top%20clothing&color=white',
   },
@@ -21,12 +23,12 @@ const defaultCategoryNavItems = [
   },
   {
     label: 'Partes de baixo',
-    value: 'Partes de baixo',
+    value: 'Saias',
     image: 'https://img.usecurling.com/p/400/400?q=black%20mini%20skirt%20clothing&color=white',
   },
   {
     label: 'Macaquinho',
-    value: 'Macaquinho',
+    value: 'Macaquinhos',
     image:
       'https://img.usecurling.com/p/400/400?q=light%20green%20cape%20top%20clothing&color=white',
   },
@@ -74,21 +76,74 @@ export default function Index() {
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
-      <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden">
+      <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden group/banner">
         <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
           {dynamicHeroBannerImages.map((imageUrl, index) => (
-            <Link
-              to="/produtos"
+            <div
               key={index}
-              className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative group overflow-hidden block snap-center md:snap-align-none"
+              className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
             >
               <img
                 src={imageUrl}
                 alt={`Hero Image ${index + 1}`}
-                className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover:scale-105 bg-[#e4dfdb]"
+                className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105 bg-[#e4dfdb]"
               />
-            </Link>
+            </div>
           ))}
+        </div>
+
+        {/* Overlay Button */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <Link
+            to="/produtos"
+            className="pointer-events-auto bg-[#2D0B0B] text-white font-serif uppercase tracking-[0.15em] text-sm md:text-base py-4 px-10 border border-[#2D0B0B] hover:bg-white hover:text-[#2D0B0B] transition-colors duration-300 shadow-lg"
+          >
+            Compre agora
+          </Link>
+        </div>
+
+        {/* Overlay Logo */}
+        <div className="absolute top-1/2 -translate-y-1/2 right-4 md:right-12 pointer-events-none z-10">
+          <img
+            src={logo}
+            alt="Zahra Logo"
+            className="w-[140px] md:w-[240px] object-contain drop-shadow-2xl opacity-90"
+          />
+        </div>
+      </section>
+
+      {/* Section 1.5: Benefits */}
+      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
+        <div className="container mx-auto px-4 max-w-[1200px]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Truck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Entrega para todo o Brasil
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <RefreshCw className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Troca fácil
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <ShieldCheck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Pagamento seguro
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <Clock className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Suporte rápido
+              </span>
+              <span className="text-[11px] md:text-xs text-muted-foreground mt-1 max-w-[200px]">
+                Suporte rápido de segunda à sexta das 09h às 17h.
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -102,7 +157,7 @@ export default function Index() {
                 to={`/produtos?category=${encodeURIComponent(item.value)}`}
                 className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
               >
-                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-[#f9f9f9] mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
+                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-[#f9f9f9] mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border shadow-sm">
                   <img
                     src={item.image}
                     alt={item.label}

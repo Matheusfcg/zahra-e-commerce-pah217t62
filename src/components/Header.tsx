@@ -24,7 +24,16 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 
-const appCategories = ['Blusas/Bodys', 'Conjuntos', 'Partes de baixo', 'Macaquinho', 'Jeans']
+const appCategories = [
+  'Conjuntos',
+  'Macaquinhos',
+  'Blusas e Bodies',
+  'Saias',
+  'Calças',
+  'Malhas',
+  'Básicos',
+  'Jeans',
+]
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

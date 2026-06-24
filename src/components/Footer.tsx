@@ -8,15 +8,15 @@ export function Footer() {
     <footer className="bg-[#FAFAF8] text-foreground border-t border-muted/50 pt-16 pb-8 font-sans">
       <div className="container mx-auto px-4 flex flex-col items-center">
         {/* 1. Newsletter Section */}
-        <div className="text-center mb-16 max-w-2xl w-full px-4">
-          <h3 className="text-2xl md:text-3xl font-serif text-[#3A2222] mb-4 tracking-[0.05em]">
+        <div className="text-center mb-16 max-w-4xl w-full px-4">
+          <h3 className="text-3xl md:text-4xl font-serif text-[#3A2222] mb-4 tracking-[0.05em]">
             Assine a nossa Newsletter e fique por dentro
           </h3>
-          <p className="text-sm md:text-base text-muted-foreground mb-8">
+          <p className="text-base md:text-lg text-muted-foreground mb-8">
             Receba os nossos lançamentos e novidades exclusivas em primeira mão.
           </p>
           <form
-            className="flex flex-col sm:flex-row gap-0 shadow-sm border border-muted/30"
+            className="flex flex-col sm:flex-row gap-0 shadow-sm border border-muted/30 max-w-2xl mx-auto"
             onSubmit={(e) => e.preventDefault()}
           >
             <Input
@@ -95,7 +95,7 @@ export function Footer() {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://www.facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white p-3 rounded-full border border-muted-foreground/20 text-muted-foreground hover:text-[#3A2222] hover:border-[#3A2222] transition-all"
