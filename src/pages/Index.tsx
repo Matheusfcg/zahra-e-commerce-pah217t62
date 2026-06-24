@@ -98,36 +98,7 @@ const Index = () => {
       ) : (
         <>
           {/* New 4-column Hero Banner */}
-          {featuredProducts.length > 0 && (
-            <section className="bg-white w-full">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
-                {featuredProducts.slice(0, 4).map((item) => {
-                  const imageUrl =
-                    item.product_images?.[0]?.url ||
-                    `https://img.usecurling.com/p/600/800?q=fashion&seed=${item.id}`
-                  return (
-                    <Link
-                      to={`/product/${item.slug}`}
-                      key={item.id}
-                      className="group block relative overflow-hidden aspect-[3/4]"
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-                      <div className="absolute bottom-6 left-4 right-4 text-center">
-                        <h3 className="text-white font-serif text-sm md:text-lg tracking-[0.1em] drop-shadow-md uppercase">
-                          {item.name}
-                        </h3>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </section>
-          )}
+          {featuredProducts.length > 0 && <section className="bg-white w-full"></section>}
 
           {/* Essência da Elegância Banner */}
           {carouselProducts.length > 0 && (
