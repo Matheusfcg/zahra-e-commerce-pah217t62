@@ -1,185 +1,122 @@
-import { Link } from 'react-router-dom'
-import { Loader2, Truck, RefreshCcw, ShieldCheck, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import {
-  getProducts,
-  getFeaturedProducts,
-  getCarouselProducts,
-  type Product,
-} from '@/services/products'
+import { Link } from 'react-router-dom'
+import { supabase } from '@/lib/supabase/client'
+import hero1 from '@/assets/1produto-070e2.png'
+import hero2 from '@/assets/1produto-67ee8.png'
+import hero3 from '@/assets/image-048b7.png'
+import hero4 from '@/assets/image-43b69.png'
 
-const categoryNavItems = [
-  { label: 'Blusas / Bodys', value: 'Blusas e Bodies' },
-  { label: 'Conjuntos', value: 'Conjuntos' },
-  { label: 'Partes de baixo', value: 'Partes de Baixo' },
-  { label: 'Macaquinho', value: 'Macaquinhos' },
-  { label: 'Jeans', value: 'Jeans' },
+const defaultCategoryNavItems = [
+  {
+    label: 'Blusas/Bodys',
+    value: 'Blusas/Bodys',
+    image:
+      'https://img.usecurling.com/p/400/400?q=brown%20one%20shoulder%20top%20clothing&color=white',
+  },
+  {
+    label: 'Conjuntos',
+    value: 'Conjuntos',
+    image:
+      'https://img.usecurling.com/p/400/400?q=black%20button-down%20shirt%20shorts%20set&color=white',
+  },
+  {
+    label: 'Partes de baixo',
+    value: 'Partes de baixo',
+    image: 'https://img.usecurling.com/p/400/400?q=black%20mini%20skirt%20clothing&color=white',
+  },
+  {
+    label: 'Macaquinho',
+    value: 'Macaquinho',
+    image:
+      'https://img.usecurling.com/p/400/400?q=light%20green%20cape%20top%20clothing&color=white',
+  },
+  {
+    label: 'Jeans',
+    value: 'Jeans',
+    image: 'https://img.usecurling.com/p/400/400?q=denim%20jumpsuit%20clothing&color=white',
+  },
 ]
 
-const Index = () => {
-  const [categoryImages, setCategoryImages] = useState<Record<string, string>>({})
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
-  const [carouselProducts, setCarouselProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+const heroBannerImages = [hero1, hero2, hero3, hero4]
+
+export default function Index() {
+  const [content, setContent] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { supabase } = await import('@/lib/supabase/client')
-        const [productsData, featuredData, carouselData] = await Promise.all([
-          getProducts(),
-          getFeaturedProducts(),
-          getCarouselProducts(),
-        ])
-
-        const all = productsData || []
-        setFeaturedProducts(featuredData || [])
-
-        let carousel = carouselData || []
-        if (carousel.length < 4) {
-          const needed = 4 - carousel.length
-          const additional = all
-            .filter((p) => !carousel.find((c) => c.id === p.id))
-            .slice(0, needed)
-          carousel = [...carousel, ...additional]
-        }
-        setCarouselProducts(carousel.slice(0, 4))
-
-        // Extract Category Images for Session 2
-        const catImages: Record<string, string> = {}
-        for (const item of categoryNavItems) {
-          const cat = item.value
-          const catProduct = all.find(
-            (p) =>
-              p.category?.toLowerCase() === cat.toLowerCase() ||
-              p.category?.toLowerCase().includes(cat.toLowerCase()),
+    supabase
+      .from('site_content')
+      .select('section_key, content_value')
+      .then(({ data }) => {
+        if (data) {
+          const map = data.reduce(
+            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
+            {} as Record<string, string>,
           )
-          if (catProduct && catProduct.product_images && catProduct.product_images.length > 0) {
-            catImages[cat] = catProduct.product_images[0].url
-          } else {
-            catImages[cat] =
-              `https://img.usecurling.com/p/400/400?q=${encodeURIComponent(cat + ' clothing isolated')}&color=white&seed=${cat.length}`
-          }
+          setContent(map)
         }
-        setCategoryImages(catImages)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
+      })
   }, [])
 
+  const dynamicHeroBannerImages = [
+    content.hero_banner_1 || heroBannerImages[0],
+    content.hero_banner_2 || heroBannerImages[1],
+    content.hero_banner_3 || heroBannerImages[2],
+    content.hero_banner_4 || heroBannerImages[3],
+  ]
+
+  const dynamicCategoryNavItems = defaultCategoryNavItems.map((item, index) => ({
+    ...item,
+    label: content[`category_${index + 1}_label`] || item.label,
+    value: content[`category_${index + 1}_value`] || item.value,
+    image: content[`category_${index + 1}_image`] || item.image,
+  }))
+
   return (
-    <div className="w-full pt-[80px] md:pt-[100px] pb-0 bg-[#FAFAFA]">
-      {isLoading ? (
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#2D0B0B]" />
+    <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
+      {/* Section 1: Hero Banner */}
+      <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden">
+        <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-[2px] no-scrollbar">
+          {dynamicHeroBannerImages.map((imageUrl, index) => (
+            <Link
+              to="/produtos"
+              key={index}
+              className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative group overflow-hidden block snap-center md:snap-align-none"
+            >
+              <img
+                src={imageUrl}
+                alt={`Hero Image ${index + 1}`}
+                className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover:scale-105 bg-[#e4dfdb]"
+              />
+            </Link>
+          ))}
         </div>
-      ) : (
-        <>
-          {/* New 4-column Hero Banner */}
-          {featuredProducts.length > 0 && <section className="bg-white w-full"></section>}
+      </section>
 
-          {/* Lookbook Banner */}
-          {carouselProducts.length > 0 && (
-            <section className="relative w-full bg-[#F9F8F6] border-b border-[#E5E0D8] overflow-hidden">
-              <div className="flex flex-wrap md:flex-nowrap w-full">
-                {carouselProducts.slice(0, 4).map((item) => {
-                  const imageUrl =
-                    item.product_images?.[0]?.url ||
-                    `https://img.usecurling.com/p/600/800?q=elegance&seed=${item.id}`
-                  return (
-                    <div
-                      key={item.id}
-                      className="w-1/2 md:w-1/4 relative group overflow-hidden aspect-[3/4] md:aspect-[2/3]"
-                    >
-                      <img
-                        src={imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <Link to="/produtos" className="pointer-events-auto">
-                  <button className="bg-[#2D0B0B] hover:bg-[#1A0606] text-white px-8 py-4 text-sm md:text-base font-medium tracking-widest uppercase transition-all duration-300 shadow-2xl hover:scale-105 border border-[#2D0B0B]/20 rounded-none">
-                    Ver lançamento
-                  </button>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {/* Session 2: Categories Grid (Updated Circular) */}
-          <section className="py-16 md:py-24 bg-[#FAFAFA] border-b border-[#E5E0D8]">
-            <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
-              <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-6 md:gap-12 pb-8 justify-start md:justify-center items-center">
-                {categoryNavItems.map((item) => (
-                  <Link
-                    key={item.value}
-                    to={`/produtos?category=${encodeURIComponent(item.value)}`}
-                    className="group flex flex-col items-center snap-center shrink-0 w-[120px] md:w-[160px] lg:w-[180px]"
-                  >
-                    <div className="w-[120px] h-[120px] md:w-[160px] md:h-[160px] lg:w-[180px] lg:h-[180px] rounded-full overflow-hidden bg-white shadow-sm mb-4 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-[#E5E0D8]/50">
-                      <img
-                        src={categoryImages[item.value]}
-                        alt={item.label}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span
-                      className="text-2xl md:text-3xl text-[#2D0B0B] whitespace-nowrap tracking-wide"
-                      style={{ fontFamily: "'Caveat', cursive", fontWeight: 600 }}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Session 3: Benefits Banner */}
-          <section className="w-full py-16 bg-[#F9F8F6] border-b border-[#E5E0D8]">
-            <div className="max-w-[1200px] mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-6 text-center">
-              <div className="flex flex-col items-center justify-start text-[#2D0B0B]">
-                <Truck className="h-10 w-10 mb-4 stroke-[1.2]" />
-                <h3 className="font-serif text-lg text-[#2D0B0B] tracking-wide uppercase">
-                  Entrega para todo o Brasil
-                </h3>
-              </div>
-              <div className="flex flex-col items-center justify-start text-[#2D0B0B]">
-                <RefreshCcw className="h-10 w-10 mb-4 stroke-[1.2]" />
-                <h3 className="font-serif text-lg text-[#2D0B0B] tracking-wide uppercase">
-                  Troca fácil
-                </h3>
-              </div>
-              <div className="flex flex-col items-center justify-start text-[#2D0B0B]">
-                <ShieldCheck className="h-10 w-10 mb-4 stroke-[1.2]" />
-                <h3 className="font-serif text-lg text-[#2D0B0B] tracking-wide uppercase">
-                  Pagamento seguro
-                </h3>
-              </div>
-              <div className="flex flex-col items-center justify-start text-[#2D0B0B]">
-                <Clock className="h-10 w-10 mb-4 stroke-[1.2]" />
-                <h3 className="font-serif text-lg text-[#2D0B0B] tracking-wide uppercase mb-2">
-                  Suporte rápido
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px]">
-                  Suporte rápido de segunda à sexta das 09h às 17h.
-                </p>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
+      {/* Section 2: Categories Grid */}
+      <section className="py-12 md:py-20 bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
+          <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
+            {dynamicCategoryNavItems.map((item) => (
+              <Link
+                key={item.value}
+                to={`/produtos?category=${encodeURIComponent(item.value)}`}
+                className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
+              >
+                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white border border-gray-50 mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center shadow-sm">
+                  <img
+                    src={item.image}
+                    alt={item.label}
+                    className="w-[95%] h-[95%] object-contain mix-blend-multiply"
+                  />
+                </div>
+                <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
-
-export default Index

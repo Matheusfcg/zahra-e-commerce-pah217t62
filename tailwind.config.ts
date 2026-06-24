@@ -29,6 +29,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        script: ['"Billy Betty"', '"Great Vibes"', 'cursive'],
       },
       colors: {
         border: 'hsl(var(--border))',

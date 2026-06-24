@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Search, ShoppingBag, Menu, User, Phone, Mail, Instagram, Heart } from 'lucide-react'
+import { ShoppingBag, Menu, User, Phone, Mail, Instagram, Heart, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 
-const appCategories = ['Conjuntos', 'Macaquinhos', 'Blusas e Bodies', 'Partes de Baixo', 'Jeans']
+const appCategories = ['Blusas/Bodys', 'Conjuntos', 'Partes de baixo', 'Macaquinho', 'Jeans']
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -51,11 +51,11 @@ export function Header() {
   }, [location.pathname, location.search, location.hash])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-[#FAFAFA] text-foreground shadow-sm transition-colors duration-300">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-[#FAFAFA] text-foreground shadow-sm transition-colors duration-300 border-b border-gray-100">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 md:h-24 relative gap-4">
           {/* Left: Mobile Menu + Logo */}
-          <div className="flex items-center gap-2 lg:gap-6 lg:flex-1 justify-start">
+          <div className="flex items-center gap-4 lg:flex-1 justify-start">
             <Button
               variant="ghost"
               size="icon"
@@ -65,8 +65,11 @@ export function Header() {
               <Menu className="h-6 w-6" />
             </Button>
 
-            <Link to="/" className="inline-block shrink-0">
-              <span className="font-serif text-3xl md:text-4xl tracking-[0.15em] text-[#2D0B0B] hover:opacity-80 transition-opacity">
+            <Link
+              to="/"
+              className="inline-block shrink-0 flex items-center justify-center h-12 md:h-14"
+            >
+              <span className="font-serif text-3xl md:text-[32px] tracking-[0.15em] text-[#2D0B0B] uppercase">
                 ZAHRÁ
               </span>
             </Link>
@@ -75,14 +78,14 @@ export function Header() {
           {/* Center: Desktop Nav */}
           <div className="hidden lg:flex justify-center lg:flex-[2]">
             <NavigationMenu>
-              <NavigationMenuList className="space-x-1 xl:space-x-6">
+              <NavigationMenuList className="space-x-2 xl:space-x-8">
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <Link
                       to="/"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
+                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
                       )}
                     >
                       Inicio
@@ -96,7 +99,7 @@ export function Header() {
                       to="/troca-e-devolucao"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
+                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
                       )}
                     >
                       Troca e devolução
@@ -105,7 +108,7 @@ export function Header() {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]">
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
                     Compre agora
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -132,7 +135,7 @@ export function Header() {
                       href="mailto:saczharabrasil@gmail.com"
                       className={cn(
                         navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-sm text-[#2D0B0B]',
+                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
                       )}
                     >
                       Fale conosco
@@ -147,7 +150,7 @@ export function Header() {
                         to="/admin/upload"
                         className={cn(
                           navigationMenuTriggerStyle(),
-                          'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent',
+                          'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent text-[15px]',
                         )}
                       >
                         ADMIN
@@ -160,41 +163,39 @@ export function Header() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center justify-end lg:flex-1">
-            <div className="flex items-center gap-3 md:gap-5 bg-muted/40 md:bg-muted/30 px-3 py-2 rounded-lg">
-              <button className="hover:opacity-70 transition-opacity flex items-center">
-                <Search className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
-              </button>
+          <div className="flex items-center justify-end lg:flex-1 gap-6">
+            <button className="hover:opacity-70 transition-opacity hidden md:flex items-center">
+              <Search className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
+            </button>
 
-              <div className="hidden lg:block">
-                <ProfileMenu
-                  renderTrigger={() => (
-                    <button className="flex items-center hover:opacity-70 transition-opacity">
-                      <User className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
-                    </button>
-                  )}
-                />
-              </div>
-
-              <Link
-                to="/favoritos"
-                className="hover:opacity-70 transition-opacity hidden md:block flex items-center"
-              >
-                <Heart className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
-              </Link>
-
-              <button
-                onClick={openDrawer}
-                className="relative hover:opacity-70 transition-opacity flex items-center"
-              >
-                <ShoppingBag className="h-5 w-5 md:h-[20px] md:w-[20px] text-[#2D0B0B]" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#2D0B0B] text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                    {totalItems}
-                  </span>
+            <div className="hidden lg:block">
+              <ProfileMenu
+                renderTrigger={() => (
+                  <button className="flex items-center hover:opacity-70 transition-opacity">
+                    <User className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
+                  </button>
                 )}
-              </button>
+              />
             </div>
+
+            <Link
+              to="/favoritos"
+              className="hover:opacity-70 transition-opacity hidden md:flex items-center"
+            >
+              <Heart className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
+            </Link>
+
+            <button
+              onClick={openDrawer}
+              className="relative hover:opacity-70 transition-opacity flex items-center"
+            >
+              <ShoppingBag className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#2D0B0B] text-white text-[10px] font-bold h-[18px] w-[18px] rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
