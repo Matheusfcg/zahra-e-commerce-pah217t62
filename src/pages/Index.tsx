@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
-import hero1 from '@/assets/1produto-070e2.png'
-import hero2 from '@/assets/1produto-67ee8.png'
-import hero3 from '@/assets/image-048b7.png'
-import hero4 from '@/assets/image-43b69.png'
+import { Skeleton } from '@/components/ui/skeleton'
 import logo from '@/assets/logozahra-e51d5.png'
 
 const defaultCategoryNavItems = [
@@ -39,10 +36,9 @@ const defaultCategoryNavItems = [
   },
 ]
 
-const heroBannerImages = [hero1, hero2, hero3, hero4]
-
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     supabase
@@ -57,14 +53,17 @@ export default function Index() {
           setContent(map)
         }
       })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   const dynamicHeroBannerImages = [
-    content.hero_banner_1 || heroBannerImages[0],
-    content.hero_banner_2 || heroBannerImages[1],
-    content.hero_banner_3 || heroBannerImages[2],
-    content.hero_banner_4 || heroBannerImages[3],
-  ]
+    content.hero_banner_1,
+    content.hero_banner_2,
+    content.hero_banner_3,
+    content.hero_banner_4,
+  ].filter(Boolean) as string[]
 
   const dynamicCategoryNavItems = defaultCategoryNavItems.map((item, index) => ({
     ...item,
@@ -77,20 +76,31 @@ export default function Index() {
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
       <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden group/banner">
-        <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
-          {dynamicHeroBannerImages.map((imageUrl, index) => (
-            <div
-              key={index}
-              className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
-            >
-              <img
-                src={imageUrl}
-                alt={`Hero Image ${index + 1}`}
-                className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105 bg-[#e4dfdb]"
+        {isLoading ? (
+          <div className="flex overflow-hidden w-full h-full gap-1 md:gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton
+                key={i}
+                className="w-[85vw] sm:w-1/2 md:w-1/4 h-full rounded-none shrink-0"
               />
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
+            {dynamicHeroBannerImages.map((imageUrl, index) => (
+              <div
+                key={index}
+                className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
+              >
+                <img
+                  src={imageUrl}
+                  alt={`Hero Image ${index + 1}`}
+                  className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105 bg-[#e4dfdb]"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Overlay Button */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -151,20 +161,34 @@ export default function Index() {
       <section className="py-12 md:py-20 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
           <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
-            {dynamicCategoryNavItems.map((item) => (
-              <Link
-                key={item.value}
-                to={`/produtos?category=${encodeURIComponent(item.value)}`}
-                className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
-              >
-                <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
-                  <img src={item.image} alt={item.label} className="w-full h-full object-cover" />
-                </div>
-                <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
-                  {item.label}
-                </span>
-              </Link>
-            ))}
+            {isLoading
+              ? [1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
+                  >
+                    <Skeleton className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full mb-5" />
+                    <Skeleton className="w-24 h-8" />
+                  </div>
+                ))
+              : dynamicCategoryNavItems.map((item) => (
+                  <Link
+                    key={item.value}
+                    to={`/produtos?category=${encodeURIComponent(item.value)}`}
+                    className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
+                  >
+                    <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
+                      <img
+                        src={item.image}
+                        alt={item.label}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
+                      {item.label}
+                    </span>
+                  </Link>
+                ))}
           </div>
         </div>
       </section>
