@@ -113,41 +113,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Section 1.5: Benefits */}
-      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
-        <div className="container mx-auto px-4 max-w-[1200px]">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <Truck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
-              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
-                Entrega para todo o Brasil
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <RefreshCw className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
-              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
-                Troca fácil
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <ShieldCheck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
-              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
-                Pagamento seguro
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <Clock className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
-              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
-                Suporte rápido
-              </span>
-              <span className="text-[11px] md:text-xs text-muted-foreground mt-1 max-w-[200px]">
-                Suporte rápido de segunda à sexta das 09h às 17h.
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Section 2: Categories Grid */}
       <section className="py-12 md:py-20 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
@@ -180,6 +145,41 @@ export default function Index() {
                     </span>
                   </Link>
                 ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Benefits */}
+      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
+        <div className="container mx-auto px-4 max-w-[1200px]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <Truck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Entrega para todo o Brasil
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <RefreshCw className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Troca fácil
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <ShieldCheck className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Pagamento seguro
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <Clock className="h-7 w-7 text-[#2D0B0B]" strokeWidth={1.5} />
+              <span className="text-xs md:text-sm font-semibold uppercase tracking-wider text-[#2D0B0B]">
+                Suporte rápido
+              </span>
+              <span className="text-[11px] md:text-xs text-muted-foreground mt-1 max-w-[200px]">
+                Suporte rápido de segunda à sexta das 09h às 17h.
+              </span>
+            </div>
           </div>
         </div>
       </section>
