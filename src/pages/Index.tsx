@@ -111,15 +111,6 @@ export default function Index() {
             Compre agora
           </Link>
         </div>
-
-        {/* Overlay Logo */}
-        <div className="absolute top-1/2 -translate-y-1/2 right-4 md:right-12 pointer-events-none z-10">
-          <img
-            src={logo}
-            alt="Zahra Logo"
-            className="w-[140px] md:w-[240px] object-contain drop-shadow-2xl opacity-90"
-          />
-        </div>
       </section>
 
       {/* Section 1.5: Benefits */}
