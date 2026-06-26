@@ -53,12 +53,55 @@ export default function AdminUpload() {
   const [siteContent, setSiteContent] = useState<any[]>([])
   const [savingContent, setSavingContent] = useState(false)
 
+  const [productCategories, setProductCategories] = useState<any[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+
   useEffect(() => {
     if (user) {
       fetchProducts()
       fetchSiteContent()
+      fetchProductCategories()
     }
   }, [user])
+
+  const fetchProductCategories = async () => {
+    const { data, error } = await supabase.from('categories').select('*').order('name')
+    if (data) setProductCategories(data)
+    if (error) toast.error('Erro ao buscar categorias')
+  }
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCategoryName.trim()) return
+
+    setIsCreatingCategory(true)
+    const slug = newCategoryName
+      .toLowerCase()
+      .replace(/[^a-z0-9\u00C0-\u00FF]+/g, '-')
+      .replace(/(^-|-$)+/g, '')
+
+    const { error } = await supabase.from('categories').insert([{ name: newCategoryName, slug }])
+    setIsCreatingCategory(false)
+
+    if (error) {
+      toast.error('Erro ao criar categoria: ' + error.message)
+    } else {
+      toast.success('Categoria criada com sucesso!')
+      setNewCategoryName('')
+      fetchProductCategories()
+    }
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    const { error } = await supabase.from('categories').delete().eq('id', id)
+    if (error) {
+      toast.error('Erro ao excluir categoria: ' + error.message)
+    } else {
+      toast.success('Categoria excluída com sucesso!')
+      fetchProductCategories()
+    }
+  }
 
   const fetchProducts = async () => {
     const { data, error } = await supabase
@@ -394,11 +437,82 @@ export default function AdminUpload() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="mb-8">
+        <TabsList className="mb-8 flex-wrap h-auto gap-2">
           <TabsTrigger value="products">Produtos</TabsTrigger>
+          <TabsTrigger value="product-categories">Categorias</TabsTrigger>
           <TabsTrigger value="texts">Textos do Site</TabsTrigger>
-          <TabsTrigger value="categories">Categorias & Pix</TabsTrigger>
+          <TabsTrigger value="categories">Pix & Outros</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="product-categories">
+          <Card>
+            <CardHeader>
+              <CardTitle>Categorias de Produtos</CardTitle>
+              <CardDescription>
+                Gerencie as categorias disponíveis para os produtos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateCategory} className="flex gap-4 mb-8">
+                <Input
+                  placeholder="Nome da nova categoria..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="max-w-sm"
+                />
+                <Button type="submit" disabled={isCreatingCategory || !newCategoryName.trim()}>
+                  {isCreatingCategory ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Adicionar
+                </Button>
+              </form>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {productCategories.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                          Nenhuma categoria encontrada.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      productCategories.map((cat) => (
+                        <TableRow key={cat.id}>
+                          <TableCell className="font-medium">{cat.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{cat.slug}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+                                  handleDeleteCategory(cat.id)
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="categories">
           {(() => {

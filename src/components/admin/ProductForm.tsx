@@ -48,6 +48,15 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
   const [images, setImages] = useState<any[]>([])
   const [sizes, setSizes] = useState<SizeEntry[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase.from('categories').select('id, name').order('name')
+      if (data) setCategories(data)
+    }
+    fetchCategories()
+  }, [])
 
   useEffect(() => {
     if (product) {
@@ -377,11 +386,16 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Blusas e Bodies">Blusas/Bodys</SelectItem>
-              <SelectItem value="Conjuntos">Conjuntos</SelectItem>
-              <SelectItem value="Saias">Partes de baixo</SelectItem>
-              <SelectItem value="Macaquinhos">Macaquinho</SelectItem>
-              <SelectItem value="Jeans">Jeans</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+              {categories.length === 0 && (
+                <SelectItem value="Nenhuma" disabled>
+                  Nenhuma categoria cadastrada
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
