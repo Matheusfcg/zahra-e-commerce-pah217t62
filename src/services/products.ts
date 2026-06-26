@@ -30,131 +30,138 @@ export type Product = {
   product_images: ProductImage[]
 }
 
-export async function getFeaturedProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .eq('is_featured', true)
-    .order('created_at', { ascending: false })
-    .limit(4)
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const cache = new Map<string, { data: any; timestamp: number }>()
 
-  if (error) throw error
-  return data as Product[]
+export function clearProductsCache() {
+  cache.clear()
+}
+
+async function fetchWithCache<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data
+  }
+  const data = await fetcher()
+  cache.set(key, { data, timestamp: Date.now() })
+  return data
+}
+
+const PRODUCT_SELECT =
+  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order)'
+
+export async function getFeaturedProducts() {
+  return fetchWithCache('featured', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('is_featured', true)
+      .order('created_at', { ascending: false })
+      .limit(4)
+
+    if (error) throw error
+    return data as Product[]
+  })
 }
 
 export async function getProducts(category?: string, isPromotion?: boolean) {
-  let query = supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .order('created_at', { ascending: false })
+  const key = `products-${category || 'all'}-${isPromotion || 'all'}`
+  return fetchWithCache(key, async () => {
+    let query = supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .order('created_at', { ascending: false })
 
-  if (category) {
-    query = query.ilike('category', category)
-  }
+    if (category) {
+      query = query.ilike('category', category)
+    }
 
-  if (isPromotion) {
-    query = query.eq('is_promotion', true)
-  }
+    if (isPromotion) {
+      query = query.eq('is_promotion', true)
+    }
 
-  const { data, error } = await query
+    const { data, error } = await query
 
-  if (error) throw error
-  return data as Product[]
+    if (error) throw error
+    return data as Product[]
+  })
 }
 
 export async function getProductBySlug(slug: string) {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .eq('slug', slug)
-    .single()
+  return fetchWithCache(`product-slug-${slug}`, async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('slug', slug)
+      .single()
 
-  if (error) throw error
-  return data as Product
+    if (error) throw error
+    return data as Product
+  })
 }
 
 export async function getProductByName(name: string) {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .ilike('name', name)
-    .limit(1)
-    .maybeSingle()
+  return fetchWithCache(`product-name-${name}`, async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .ilike('name', name)
+      .limit(1)
+      .maybeSingle()
 
-  if (error) throw error
-  return data as Product | null
+    if (error) throw error
+    return data as Product | null
+  })
 }
 
 export async function getCarouselProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .eq('show_in_carousel', true)
-    .gt('quantity', 0)
-    .order('created_at', { ascending: false })
-    .limit(5)
+  return fetchWithCache('carousel', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('show_in_carousel', true)
+      .gt('quantity', 0)
+      .order('created_at', { ascending: false })
+      .limit(5)
 
-  if (error) throw error
-  return data as Product[]
+    if (error) throw error
+    return data as Product[]
+  })
 }
 
 export async function getMixedCollectionProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(20)
+  return fetchWithCache('mixed-collection', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .order('created_at', { ascending: false })
+      .limit(20)
 
-  if (error) throw error
+    if (error) throw error
 
-  const uniqueProducts: Product[] = []
-  const names = new Set<string>()
+    const uniqueProducts: Product[] = []
+    const names = new Set<string>()
 
-  for (const product of data as Product[]) {
-    if (!names.has(product.name)) {
-      names.add(product.name)
-      uniqueProducts.push(product)
+    for (const product of data as Product[]) {
+      if (!names.has(product.name)) {
+        names.add(product.name)
+        uniqueProducts.push(product)
+      }
     }
-  }
 
-  return uniqueProducts.slice(0, 6)
+    return uniqueProducts.slice(0, 6)
+  })
 }
 
 export async function getTopStockProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_colors (*),
-      product_images (*)
-    `)
-    .order('quantity', { ascending: false })
-    .limit(5)
+  return fetchWithCache('top-stock', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .order('quantity', { ascending: false })
+      .limit(5)
 
-  if (error) throw error
-  return data as Product[]
+    if (error) throw error
+    return data as Product[]
+  })
 }

@@ -9,10 +9,13 @@ export type Favorite = {
   products: Product
 }
 
+const PRODUCT_SELECT =
+  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order)'
+
 export async function getFavorites(userId: string) {
   const { data, error } = await supabase
     .from('user_favorites')
-    .select(`*, products(*, product_colors(*), product_images(*))`)
+    .select(`*, products(${PRODUCT_SELECT})`)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 

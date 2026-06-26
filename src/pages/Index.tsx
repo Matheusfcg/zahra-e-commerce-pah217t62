@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
@@ -41,36 +41,57 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    supabase
-      .from('site_content')
-      .select('section_key, content_value')
-      .then(({ data }) => {
+    const fetchContent = async () => {
+      const cached = sessionStorage.getItem('site_content_cache')
+      if (cached) {
+        try {
+          const { data, timestamp } = JSON.parse(cached)
+          if (Date.now() - timestamp < 1000 * 60 * 5) {
+            setContent(data)
+            setIsLoading(false)
+            return
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      try {
+        const { data } = await supabase.from('site_content').select('section_key, content_value')
         if (data) {
           const map = data.reduce(
             (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
             {} as Record<string, string>,
           )
           setContent(map)
+          sessionStorage.setItem(
+            'site_content_cache',
+            JSON.stringify({ data: map, timestamp: Date.now() }),
+          )
         }
-      })
-      .finally(() => {
+      } finally {
         setIsLoading(false)
-      })
+      }
+    }
+    fetchContent()
   }, [])
 
-  const dynamicHeroBannerImages = [
-    content.hero_banner_1,
-    content.hero_banner_2,
-    content.hero_banner_3,
-    content.hero_banner_4,
-  ].filter(Boolean) as string[]
+  const dynamicHeroBannerImages = useMemo(() => {
+    return [
+      content.hero_banner_1,
+      content.hero_banner_2,
+      content.hero_banner_3,
+      content.hero_banner_4,
+    ].filter(Boolean) as string[]
+  }, [content])
 
-  const dynamicCategoryNavItems = defaultCategoryNavItems.map((item, index) => ({
-    ...item,
-    label: content[`category_${index + 1}_label`] || item.label,
-    value: content[`category_${index + 1}_value`] || item.value,
-    image: content[`category_${index + 1}_image`] || item.image,
-  }))
+  const dynamicCategoryNavItems = useMemo(() => {
+    return defaultCategoryNavItems.map((item, index) => ({
+      ...item,
+      label: content[`category_${index + 1}_label`] || item.label,
+      value: content[`category_${index + 1}_value`] || item.value,
+      image: content[`category_${index + 1}_image`] || item.image,
+    }))
+  }, [content])
 
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
@@ -95,6 +116,9 @@ export default function Index() {
                 <img
                   src={imageUrl}
                   alt={`Hero Image ${index + 1}`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                  decoding="async"
                   className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105 bg-[#e4dfdb]"
                 />
               </div>
@@ -137,6 +161,8 @@ export default function Index() {
                       <img
                         src={item.image}
                         alt={item.label}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>
