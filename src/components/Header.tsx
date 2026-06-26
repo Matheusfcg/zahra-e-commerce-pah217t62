@@ -139,17 +139,35 @@ export function Header() {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <a
-                      href="mailto:saczharabrasil@gmail.com"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
-                      )}
-                    >
-                      Fale conosco
-                    </a>
-                  </NavigationMenuLink>
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
+                    Fale conosco
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
+                      <li>
+                        <NavigationMenuLink asChild>
+                          <a
+                            href="https://wa.me/5511934160219"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                          >
+                            <Phone className="h-4 w-4" /> WhatsApp
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                      <li>
+                        <NavigationMenuLink asChild>
+                          <a
+                            href="mailto:saczharabrasil@gmail.com"
+                            className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                          >
+                            <Mail className="h-4 w-4" /> E-mail
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
                 </NavigationMenuItem>
 
                 {isAdmin && (
@@ -286,18 +304,10 @@ export function Header() {
                 Troca e devolução
               </Link>
 
-              <a
-                href="mailto:saczharabrasil@gmail.com"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 text-sm font-medium hover:bg-muted transition-colors uppercase tracking-wider text-[#2D0B0B]"
-              >
-                Fale conosco
-              </a>
-
-              <Accordion type="single" collapsible className="w-full mt-4">
-                <AccordionItem value="atendimento" className="border-b-0 border-t">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="fale-conosco" className="border-b-0 border-t mt-4">
                   <AccordionTrigger className="px-6 py-4 hover:no-underline text-sm font-medium uppercase tracking-wider text-[#2D0B0B]">
-                    Atendimento
+                    Fale conosco
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col px-6 pb-4 space-y-5 text-sm text-muted-foreground mt-2">
@@ -305,12 +315,14 @@ export function Header() {
                         href="https://wa.me/5511934160219"
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
                         <Phone className="h-4 w-4" /> (11) 93416-0219
                       </a>
                       <a
                         href="mailto:saczharabrasil@gmail.com"
+                        onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
                         <Mail className="h-4 w-4" /> saczharabrasil@gmail.com
@@ -319,6 +331,7 @@ export function Header() {
                         href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
                         <Instagram className="h-4 w-4" /> @zahra__brasil

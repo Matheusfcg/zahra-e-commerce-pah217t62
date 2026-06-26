@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Instagram, Facebook, Mail } from 'lucide-react'
+import { Instagram, Facebook, Mail, Phone } from 'lucide-react'
 
 export function Footer() {
   return (
@@ -65,6 +65,14 @@ export function Footer() {
               Fale Conosco
             </h4>
             <div className="space-y-4 text-sm text-muted-foreground">
+              <a
+                href="https://wa.me/5511934160219"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 hover:text-[#3A2222] transition-colors"
+              >
+                <Phone className="h-4 w-4" /> (11) 93416-0219
+              </a>
               <a
                 href="mailto:saczharabrasil@gmail.com"
                 className="flex items-center justify-center gap-2 hover:text-[#3A2222] transition-colors"
