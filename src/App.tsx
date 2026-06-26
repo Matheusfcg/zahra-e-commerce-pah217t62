@@ -17,12 +17,14 @@ import { AdminRoute } from './components/AdminRoute'
 import { useEffect } from 'react'
 import SiteContentTab from './components/admin/SiteContentTab'
 import { PixModal } from './components/PixModal'
+import { ManageCategories } from './components/admin/ManageCategories'
 
 const APP_CACHE_VERSION = '1.0.1'
 
 if (typeof window !== 'undefined') {
   ;(window as any).SiteContentTabComponent = SiteContentTab
   ;(window as any).PixModalComponent = PixModal
+  ;(window as any).ManageCategoriesComponent = ManageCategories
 }
 
 const App = () => {

@@ -14,14 +14,21 @@ export default function ProductsPage() {
   const promotion = searchParams.get('promotion')
   const { favorites, toggleFavorite } = useFavorites()
   const [siteContent, setSiteContent] = useState<Record<string, string>>({})
+  const [currentCategoryInfo, setCurrentCategoryInfo] = useState<{
+    name: string
+    description: string | null
+  } | null>(null)
 
   useEffect(() => {
     setIsLoading(true)
     Promise.all([
       getProducts(category || undefined, promotion === 'true'),
       supabase.from('site_content').select('*'),
+      category
+        ? supabase.from('categories').select('*').ilike('name', category).maybeSingle()
+        : Promise.resolve({ data: null }),
     ])
-      .then(([productsData, contentResponse]) => {
+      .then(([productsData, contentResponse, categoryResponse]) => {
         setProducts(productsData || [])
         if (contentResponse.data) {
           const contentMap = contentResponse.data.reduce(
@@ -29,6 +36,11 @@ export default function ProductsPage() {
             {} as Record<string, string>,
           )
           setSiteContent(contentMap)
+        }
+        if (categoryResponse?.data) {
+          setCurrentCategoryInfo(categoryResponse.data)
+        } else {
+          setCurrentCategoryInfo(null)
         }
       })
       .catch(console.error)
@@ -38,25 +50,31 @@ export default function ProductsPage() {
   const getText = (key: string, fallback: string) => siteContent[key] || fallback
 
   let title = getText('tab_name_principal', 'Todas as Peças')
-  let subtitle =
+  let subtitle: string | null =
     'Explore nossa coleção de peças exclusivas, desenvolvidas para inspirar o seu dia a dia.'
 
   if (promotion === 'true') {
     title = 'Promoções'
     subtitle = 'Aproveite nossas ofertas exclusivas.'
   } else if (category) {
-    const catLower = category.toLowerCase()
-    if (catLower.includes('conjuntos')) {
-      title = getText('sets_title', getText('tab_name_conjuntos', category))
-      subtitle = getText('sets_description', subtitle)
-    } else if (catLower.includes('cima')) {
-      title = getText('tops_title', getText('tab_name_partes_de_cima', category))
-      subtitle = getText('tops_description', subtitle)
-    } else if (catLower.includes('baixo')) {
-      title = getText('bottoms_title', getText('tab_name_partes_de_baixo', category))
-      subtitle = getText('bottoms_description', subtitle)
+    if (currentCategoryInfo?.description) {
+      title = currentCategoryInfo.name || category
+      subtitle = currentCategoryInfo.description
     } else {
-      title = category
+      const catLower = category.toLowerCase()
+      if (catLower.includes('conjuntos')) {
+        title = getText('sets_title', getText('tab_name_conjuntos', category))
+        subtitle = getText('sets_description', subtitle)
+      } else if (catLower.includes('cima')) {
+        title = getText('tops_title', getText('tab_name_partes_de_cima', category))
+        subtitle = getText('tops_description', subtitle)
+      } else if (catLower.includes('baixo')) {
+        title = getText('bottoms_title', getText('tab_name_partes_de_baixo', category))
+        subtitle = getText('bottoms_description', subtitle)
+      } else {
+        title = category
+        subtitle = null
+      }
     }
   } else {
     title = getText('main_title', getText('tab_name_principal', 'Todas as Peças'))
@@ -69,7 +87,9 @@ export default function ProductsPage() {
           <h1 className="font-sans font-light tracking-tight text-4xl md:text-5xl mb-4 text-foreground uppercase">
             {title}
           </h1>
-          <p className="text-muted-foreground font-sans max-w-2xl mx-auto">{subtitle}</p>
+          {subtitle && (
+            <p className="text-muted-foreground font-sans max-w-2xl mx-auto">{subtitle}</p>
+          )}
         </div>
 
         {isLoading ? (

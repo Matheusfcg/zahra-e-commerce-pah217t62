@@ -449,67 +449,20 @@ export default function AdminUpload() {
             <CardHeader>
               <CardTitle>Categorias de Produtos</CardTitle>
               <CardDescription>
-                Gerencie as categorias disponíveis para os produtos.
+                Gerencie as categorias disponíveis para os produtos e defina subtítulos descritivos.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateCategory} className="flex gap-4 mb-8">
-                <Input
-                  placeholder="Nome da nova categoria..."
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="max-w-sm"
-                />
-                <Button type="submit" disabled={isCreatingCategory || !newCategoryName.trim()}>
-                  {isCreatingCategory ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-2" />
-                  )}
-                  Adicionar
-                </Button>
-              </form>
-
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {productCategories.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                          Nenhuma categoria encontrada.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      productCategories.map((cat) => (
-                        <TableRow key={cat.id}>
-                          <TableCell className="font-medium">{cat.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{cat.slug}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-                                  handleDeleteCategory(cat.id)
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              {(() => {
+                const Comp = (window as any).ManageCategoriesComponent
+                return Comp ? (
+                  <Comp />
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground border rounded-lg bg-muted/10 mt-6">
+                    Carregando categorias...
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
