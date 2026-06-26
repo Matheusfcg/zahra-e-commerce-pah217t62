@@ -63,7 +63,7 @@ export default function AdminUpload() {
   const fetchProducts = async () => {
     const { data, error } = await supabase
       .from('products')
-      .select('*, product_images(*), product_colors(*)')
+      .select('*, product_images(*), product_colors(*), product_sizes(*)')
       .order('name')
     if (data) setProducts(data)
     if (error) toast.error('Erro ao buscar produtos')

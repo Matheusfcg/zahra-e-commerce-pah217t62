@@ -11,6 +11,13 @@ export type ProductImage = {
   id: string
   url: string
   display_order: number
+  is_cover?: boolean
+}
+
+export type ProductSize = {
+  id: string
+  size_name: string
+  quantity: number
 }
 
 export type Product = {
@@ -28,6 +35,7 @@ export type Product = {
   category?: string
   product_colors: ProductColor[]
   product_images: ProductImage[]
+  product_sizes?: ProductSize[]
 }
 
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
@@ -48,7 +56,7 @@ async function fetchWithCache<T>(key: string, fetcher: () => Promise<T>): Promis
 }
 
 const PRODUCT_SELECT =
-  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order)'
+  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order, is_cover), product_sizes(id, size_name, quantity)'
 
 export async function getFeaturedProducts() {
   return fetchWithCache('featured', async () => {

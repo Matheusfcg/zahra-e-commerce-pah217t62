@@ -86,11 +86,17 @@ const ProductPage = () => {
     }, 600) // Simulate network delay for feeling
   }
 
-  const availableSizes = ['P', 'M', 'G', 'GG']
+  const availableSizes = (product.product_sizes || []).sort((a, b) => {
+    if (a.size_name === 'Tamanho Único') return -1
+    if (b.size_name === 'Tamanho Único') return 1
+    return a.size_name.localeCompare(b.size_name)
+  })
 
-  const sortedImages = [...(product.product_images || [])].sort(
-    (a, b) => a.display_order - b.display_order,
-  )
+  const sortedImages = [...(product.product_images || [])].sort((a, b) => {
+    if (a.is_cover && !b.is_cover) return -1
+    if (!a.is_cover && b.is_cover) return 1
+    return (a.display_order || 0) - (b.display_order || 0)
+  })
 
   return (
     <div className="w-full bg-background pt-20">
@@ -162,21 +168,31 @@ const ProductPage = () => {
             <div className="flex justify-between text-sm mb-3">
               <span className="font-medium">Tamanho: {selectedSize || 'Selecione'}</span>
             </div>
-            <div className="flex gap-3">
-              {availableSizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={cn(
-                    'w-10 h-10 border flex items-center justify-center text-sm transition-all',
-                    selectedSize === size
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input hover:border-primary',
-                  )}
-                >
-                  {size}
-                </button>
-              ))}
+            <div className="flex gap-3 flex-wrap">
+              {availableSizes.length > 0 ? (
+                availableSizes.map((size) => {
+                  const isOutOfStock = size.quantity <= 0
+                  return (
+                    <button
+                      key={size.id}
+                      onClick={() => !isOutOfStock && setSelectedSize(size.size_name)}
+                      disabled={isOutOfStock}
+                      title={isOutOfStock ? 'Sem estoque' : `${size.quantity} em estoque`}
+                      className={cn(
+                        'px-4 h-10 border flex items-center justify-center text-sm transition-all',
+                        selectedSize === size.size_name
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input hover:border-primary',
+                        isOutOfStock && 'opacity-40 cursor-not-allowed hover:border-input',
+                      )}
+                    >
+                      {size.size_name}
+                    </button>
+                  )
+                })
+              ) : (
+                <span className="text-sm text-muted-foreground">Tamanho não disponível</span>
+              )}
             </div>
           </div>
 

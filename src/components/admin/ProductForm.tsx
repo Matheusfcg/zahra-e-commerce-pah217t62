@@ -13,12 +13,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Loader2, ArrowLeft, ArrowRight, Trash2, Plus } from 'lucide-react'
+import { Loader2, ArrowLeft, ArrowRight, Trash2, Plus, Star } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ProductFormProps {
   product?: any
   onSuccess: () => void
   onCancel: () => void
+}
+
+interface SizeEntry {
+  id: string
+  size_name: string
+  quantity: string
+  isNew?: boolean
+  _deleted?: boolean
 }
 
 export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
@@ -27,7 +36,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     name: '',
     slug: '',
     price: '',
-    quantity: '0',
     description: '',
     composition: '',
     measurements: '',
@@ -38,6 +46,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
   })
 
   const [images, setImages] = useState<any[]>([])
+  const [sizes, setSizes] = useState<SizeEntry[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
@@ -46,7 +55,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         name: product.name || '',
         slug: product.slug || '',
         price: product.price?.toString() || '',
-        quantity: product.quantity?.toString() || '0',
         description: product.description || '',
         composition: product.composition || '',
         measurements: product.measurements || '',
@@ -62,6 +70,36 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         )
         setImages(sortedImages.map((img) => ({ ...img, _deleted: false })))
       }
+
+      if (product.product_sizes && product.product_sizes.length > 0) {
+        setSizes(
+          product.product_sizes.map((s: any) => ({
+            ...s,
+            quantity: s.quantity.toString(),
+            _deleted: false,
+          })),
+        )
+      } else {
+        setSizes([
+          {
+            id: `temp-${Date.now()}`,
+            size_name: 'Tamanho Único',
+            quantity: product.quantity?.toString() || '0',
+            isNew: true,
+            _deleted: false,
+          },
+        ])
+      }
+    } else {
+      setSizes([
+        {
+          id: `temp-${Date.now()}`,
+          size_name: 'Tamanho Único',
+          quantity: '0',
+          isNew: true,
+          _deleted: false,
+        },
+      ])
     }
   }, [product])
 
@@ -93,10 +131,13 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
       const { data } = supabase.storage.from('product-images').getPublicUrl(filePath)
 
+      const hasCover = images.some((i) => !i._deleted && i.is_cover)
+
       const newImage = {
         id: `temp-${Date.now()}`,
         url: data.publicUrl,
         display_order: images.filter((i) => !i._deleted).length,
+        is_cover: !hasCover,
         isNew: true,
         _deleted: false,
       }
@@ -125,10 +166,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     newActive[index] = newActive[targetIndex]
     newActive[targetIndex] = temp
 
-    // Reassign display_order based on new position
     const reorderedActive = newActive.map((img, i) => ({ ...img, display_order: i }))
 
-    // Merge back into main images array
     const newImages = images.map((img) => {
       if (img._deleted) return img
       const found = reorderedActive.find((ri) => ri.id === img.id)
@@ -140,13 +179,10 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
   const removeImage = (idToRemove: string) => {
     const newImages = images.map((img) => {
-      if (img.id === idToRemove) {
-        return { ...img, _deleted: true }
-      }
+      if (img.id === idToRemove) return { ...img, _deleted: true }
       return img
     })
 
-    // Re-adjust display_order for remaining active images
     let counter = 0
     const finalImages = newImages.map((img) => {
       if (!img._deleted) {
@@ -157,7 +193,50 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       return img
     })
 
+    // Check if we deleted the cover
+    const hasCover = finalImages.some((i) => !i._deleted && i.is_cover)
+    if (!hasCover) {
+      const firstActive = finalImages.find((i) => !i._deleted)
+      if (firstActive) firstActive.is_cover = true
+    }
+
     setImages(finalImages)
+  }
+
+  const setCoverImage = (idToCover: string) => {
+    setImages(
+      images.map((img) => ({
+        ...img,
+        is_cover: img.id === idToCover,
+      })),
+    )
+  }
+
+  const activeSizes = sizes.filter((s) => !s._deleted)
+  const totalQuantity = activeSizes.reduce(
+    (acc, curr) => acc + parseInt(curr.quantity || '0', 10),
+    0,
+  )
+
+  const addSize = (sizeName: string) => {
+    setSizes([
+      ...sizes,
+      {
+        id: `temp-${Date.now()}`,
+        size_name: sizeName,
+        quantity: '0',
+        isNew: true,
+        _deleted: false,
+      },
+    ])
+  }
+
+  const updateSize = (id: string, field: string, value: string) => {
+    setSizes(sizes.map((s) => (s.id === id ? { ...s, [field]: value } : s)))
+  }
+
+  const removeSize = (id: string) => {
+    setSizes(sizes.map((s) => (s.id === id ? { ...s, _deleted: true } : s)))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,7 +250,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         name: formData.name,
         slug: formData.slug,
         price: parseFloat(formData.price),
-        quantity: parseInt(formData.quantity, 10),
+        quantity: totalQuantity,
         description: formData.description,
         composition: formData.composition,
         measurements: formData.measurements,
@@ -194,6 +273,26 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         productId = data.id
       }
 
+      // Process sizes
+      for (const size of sizes) {
+        if (size._deleted) {
+          if (!size.isNew) {
+            await supabase.from('product_sizes').delete().eq('id', size.id)
+          }
+        } else {
+          const sizeData = {
+            product_id: productId,
+            size_name: size.size_name,
+            quantity: parseInt(size.quantity || '0', 10),
+          }
+          if (size.isNew) {
+            await supabase.from('product_sizes').insert([sizeData])
+          } else {
+            await supabase.from('product_sizes').update(sizeData).eq('id', size.id)
+          }
+        }
+      }
+
       // Process images
       for (const img of images) {
         if (img._deleted) {
@@ -207,6 +306,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
                 product_id: productId,
                 url: img.url,
                 display_order: img.display_order,
+                is_cover: img.is_cover || false,
               },
             ])
           } else {
@@ -214,6 +314,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               .from('product_images')
               .update({
                 display_order: img.display_order,
+                is_cover: img.is_cover || false,
               })
               .eq('id', img.id)
           }
@@ -262,14 +363,9 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="quantity">Quantidade em Estoque</Label>
-          <Input
-            id="quantity"
-            type="number"
-            value={formData.quantity}
-            onChange={(e) => handleInputChange('quantity', e.target.value)}
-            required
-          />
+          <Label>Estoque Total</Label>
+          <Input value={totalQuantity} disabled className="bg-muted" />
+          <p className="text-xs text-muted-foreground">Calculado automaticamente pelos tamanhos.</p>
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="category">Categoria</Label>
@@ -352,16 +448,77 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       </div>
 
       <div className="border-t pt-6 mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Tamanhos e Estoque</h3>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addSize('Tamanho Único')}
+            >
+              + T. Único
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addSize('')}>
+              + Personalizado
+            </Button>
+          </div>
+        </div>
+
+        {activeSizes.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4 border rounded-md border-dashed">
+            Adicione pelo menos um tamanho.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {activeSizes.map((size) => (
+              <div key={size.id} className="flex gap-3 items-center">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Nome (Ex: P, M, Tamanho Único)"
+                    value={size.size_name}
+                    onChange={(e) => updateSize(size.id, 'size_name', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="w-24">
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Qtd"
+                    value={size.quantity}
+                    onChange={(e) => updateSize(size.id, 'quantity', e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeSize(size.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t pt-6 mt-6">
         <h3 className="text-lg font-semibold mb-1">Imagens do Produto</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Arraste não suportado, use as setas para ordenar as fotos
+          Use a estrela para definir a imagem de capa (aparecerá primeiro e nas miniaturas).
         </p>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           {activeImages.map((img, index) => (
             <div
               key={img.id}
-              className="relative group border rounded-md overflow-hidden bg-muted/20 aspect-[3/4]"
+              className={cn(
+                'relative group border rounded-md overflow-hidden bg-muted/20 aspect-[3/4] transition-all',
+                img.is_cover && 'ring-2 ring-primary ring-offset-2',
+              )}
             >
               <img
                 src={img.url}
@@ -369,37 +526,55 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
                 className="w-full h-full object-cover"
               />
 
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => moveImage(index, 'left')}
-                  disabled={index === 0}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => removeImage(img.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => moveImage(index, 'right')}
-                  disabled={index === activeImages.length - 1}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => moveImage(index, 'left')}
+                    disabled={index === 0}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => removeImage(img.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => moveImage(index, 'right')}
+                    disabled={index === activeImages.length - 1}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                {!img.is_cover && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 mt-2"
+                    onClick={() => setCoverImage(img.id)}
+                  >
+                    <Star className="h-3 w-3 mr-1" /> Capa
+                  </Button>
+                )}
               </div>
+              {img.is_cover && (
+                <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-[10px] uppercase font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                  <Star className="h-3 w-3 fill-current" /> Capa
+                </div>
+              )}
               <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-md">
                 {index + 1}
               </div>

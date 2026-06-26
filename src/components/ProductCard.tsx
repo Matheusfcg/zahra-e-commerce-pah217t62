@@ -16,6 +16,7 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
         <Link to={`/product/${product.slug}`}>
           <img
             src={
+              product.product_images?.find((img) => img.is_cover)?.url ||
               product.product_images?.[0]?.url ||
               'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
             }
