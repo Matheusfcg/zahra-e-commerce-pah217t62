@@ -98,6 +98,7 @@ export default function AdminUpload() {
         { key: 'category_5_image', value: '' },
         { key: 'category_5_title', value: 'Jeans' },
         { key: 'category_5_desc', value: 'Descubra nossa coleção de jeans.' },
+        { key: 'exchange_return_policy', value: '' },
       ]
 
       const mergedData = [...data]
@@ -246,6 +247,7 @@ export default function AdminUpload() {
     category_5_image: 'IMAGEM DA CATEGORIA (JEANS)',
     category_5_title: 'TÍTULO DA SEÇÃO (JEANS)',
     category_5_desc: 'DESCRIÇÃO DA CATEGORIA (JEANS)',
+    exchange_return_policy: 'TEXTO DE TROCAS E DEVOLUÇÕES',
   }
 
   const getFieldsForCategory = (category: string) => {
@@ -259,6 +261,7 @@ export default function AdminUpload() {
         if (category === 'cat3') return key.startsWith('category_3_')
         if (category === 'cat4') return key.startsWith('category_4_')
         if (category === 'cat5') return key.startsWith('category_5_')
+        if (category === 'policies') return key === 'exchange_return_policy'
         return false
       })
       .sort((a, b) => {
@@ -271,7 +274,9 @@ export default function AdminUpload() {
   const renderContentGroup = (category: string) => {
     const fields = getFieldsForCategory(category)
     return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+      <div
+        className={`grid gap-6 mt-4 ${category === 'policies' ? 'grid-cols-1' : 'sm:grid-cols-2 lg:grid-cols-3'}`}
+      >
         {fields.map((item) => (
           <div key={item.id} className="space-y-2">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
@@ -301,11 +306,13 @@ export default function AdminUpload() {
                   />
                 </Label>
               </div>
-            ) : item.content_value.length > 50 || item.section_key.includes('desc') ? (
+            ) : item.content_value.length > 50 ||
+              item.section_key.includes('desc') ||
+              item.section_key.includes('policy') ? (
               <Textarea
                 value={item.content_value}
                 onChange={(e) => handleContentChangeByKey(item.section_key, e.target.value)}
-                className="min-h-[100px] resize-none"
+                className="min-h-[250px] resize-none"
               />
             ) : (
               <Input
@@ -570,6 +577,9 @@ export default function AdminUpload() {
                     <TabsTrigger value="cat5" className="flex-1 sm:flex-none">
                       Jeans
                     </TabsTrigger>
+                    <TabsTrigger value="policies" className="flex-1 sm:flex-none">
+                      Políticas
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="main">{renderContentGroup('main')}</TabsContent>
@@ -578,6 +588,7 @@ export default function AdminUpload() {
                   <TabsContent value="cat3">{renderContentGroup('cat3')}</TabsContent>
                   <TabsContent value="cat4">{renderContentGroup('cat4')}</TabsContent>
                   <TabsContent value="cat5">{renderContentGroup('cat5')}</TabsContent>
+                  <TabsContent value="policies">{renderContentGroup('policies')}</TabsContent>
                 </Tabs>
 
                 <div className="pt-6 border-t flex justify-end">

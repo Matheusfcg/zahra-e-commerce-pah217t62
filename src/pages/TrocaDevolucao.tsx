@@ -56,7 +56,7 @@ export default function TrocaDevolucao() {
         const { data, error } = await supabase
           .from('site_content')
           .select('content_value')
-          .eq('section_key', 'exchange_policy')
+          .eq('section_key', 'exchange_return_policy')
           .single()
 
         if (data && data.content_value) {
