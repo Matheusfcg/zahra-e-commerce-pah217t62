@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { toast } from '@/hooks/use-toast'
 import { generatePixPayload } from '@/lib/pix'
 import { supabase } from '@/lib/supabase/client'
@@ -22,10 +23,16 @@ import {
 const Checkout = () => {
   const { items, subtotal } = useCart()
   const { session } = useAuth()
-  const shipping = 0
-  const total = subtotal + shipping
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [cep, setCep] = useState('')
+  const [shippingOptions, setShippingOptions] = useState<any[]>([])
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false)
+  const [selectedShipping, setSelectedShipping] = useState<any>(null)
+
+  const shipping = selectedShipping ? parseFloat(selectedShipping.price) : 0
+  const total = subtotal + shipping
+
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'pix'>('credit')
   const [guestEmail, setGuestEmail] = useState('')
   const [pixPayload, setPixPayload] = useState('')
@@ -374,8 +381,106 @@ const Checkout = () => {
                 <div className="space-y-4 animate-fade-in">
                   <div className="space-y-2">
                     <Label htmlFor="cep">CEP</Label>
-                    <Input id="cep" placeholder="00000-000" className="rounded-none h-12 w-1/3" />
+                    <div className="flex gap-2">
+                      <Input
+                        id="cep"
+                        value={cep}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, '')
+                          if (value.length > 5) value = value.replace(/^(\d{5})(\d)/, '$1-$2')
+                          setCep(value)
+                        }}
+                        maxLength={9}
+                        placeholder="00000-000"
+                        className="rounded-none h-12 w-1/3"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-12 rounded-none"
+                        onClick={async () => {
+                          if (!cep || cep.replace(/\D/g, '').length !== 8) {
+                            toast({ title: 'CEP inválido', variant: 'destructive' })
+                            return
+                          }
+                          setIsCalculatingShipping(true)
+                          try {
+                            const { data, error } = await supabase.functions.invoke(
+                              'melhor-envio-quote',
+                              {
+                                body: { cep, items },
+                              },
+                            )
+                            if (error) throw error
+                            if (data.error) throw new Error(data.error)
+                            if (data.quotes && data.quotes.length > 0) {
+                              setShippingOptions(data.quotes)
+                              if (!selectedShipping) setSelectedShipping(data.quotes[0])
+                            } else {
+                              toast({
+                                title: 'Nenhuma opção de frete encontrada',
+                                variant: 'destructive',
+                              })
+                              setShippingOptions([])
+                            }
+                          } catch (err: any) {
+                            toast({
+                              title: 'Erro ao calcular frete',
+                              description: err.message,
+                              variant: 'destructive',
+                            })
+                          } finally {
+                            setIsCalculatingShipping(false)
+                          }
+                        }}
+                        disabled={isCalculatingShipping}
+                      >
+                        {isCalculatingShipping ? 'Calculando...' : 'Calcular'}
+                      </Button>
+                    </div>
                   </div>
+
+                  {shippingOptions.length > 0 && (
+                    <div className="space-y-4 py-4 animate-fade-in">
+                      <Label>Opções de Frete</Label>
+                      <RadioGroup
+                        value={selectedShipping?.id?.toString()}
+                        onValueChange={(val) => {
+                          const option = shippingOptions.find((o) => o.id.toString() === val)
+                          if (option) setSelectedShipping(option)
+                        }}
+                      >
+                        {shippingOptions.map((option) => (
+                          <div
+                            key={option.id}
+                            className="flex items-center justify-between space-x-2 border p-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem
+                                value={option.id.toString()}
+                                id={`shipping-${option.id}`}
+                              />
+                              <Label
+                                htmlFor={`shipping-${option.id}`}
+                                className="font-medium cursor-pointer"
+                              >
+                                {option.company?.name || 'Transportadora'} - {option.name}
+                              </Label>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">
+                                R$ {parseFloat(option.price).toFixed(2).replace('.', ',')}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Prazo: {option.delivery_time} dias
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="address">Endereço</Label>
                     <Input id="address" className="rounded-none h-12" />
