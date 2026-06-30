@@ -32,6 +32,41 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    const productIds = items.map((i: any) => i.id).filter(Boolean)
+    let productDetailsMap: Record<string, any> = {}
+
+    if (productIds.length > 0) {
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('id, weight_g, height_cm, width_cm, length_cm, price')
+        .in('id', productIds)
+
+      if (!productsError && products) {
+        productDetailsMap = products.reduce((acc: Record<string, any>, p: any) => {
+          acc[p.id] = p
+          return acc
+        }, {})
+      }
+    }
+
+    let fromCep = '01153000'
+    const { data: siteContent } = await supabase
+      .from('site_content')
+      .select('content_value')
+      .eq('section_key', 'melhor_envio_settings')
+      .maybeSingle()
+
+    if (siteContent?.content_value) {
+      try {
+        const settings = JSON.parse(siteContent.content_value)
+        if (settings.from_cep) {
+          fromCep = String(settings.from_cep).replace(/\D/g, '')
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
     const clientSecret =
       Deno.env.get('MELHOR_ENVIO_CLIENT_SECRET') ||
@@ -58,50 +93,69 @@ Deno.serve(async (req) => {
     }
 
     let accessToken = tokens.access_token
-
     const expiresAt = new Date(tokens.expires_at).getTime()
-    if (isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000) {
-      const refreshReq = await fetch(`${apiUrl}/oauth/oauth/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: tokens.refresh_token,
-          client_id: clientId,
-          client_secret: clientSecret,
-        }).toString(),
-      })
+    const needsRefresh = isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000
 
-      const refreshData = await refreshReq.json()
-      if (!refreshReq.ok) {
-        console.error('Refresh Error:', refreshData)
-        throw new Error('Falha ao atualizar token. Por favor, reconecte no painel.')
-      }
-
-      accessToken = refreshData.access_token
-      await supabase
-        .from('shipping_tokens')
-        .update({
-          access_token: refreshData.access_token,
-          refresh_token: refreshData.refresh_token,
-          expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
+    if (needsRefresh) {
+      try {
+        const refreshReq = await fetch(`${apiUrl}/oauth/oauth/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json',
+          },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: tokens.refresh_token,
+            client_id: clientId,
+            client_secret: clientSecret,
+          }).toString(),
         })
-        .eq('id', tokens.id)
+
+        const refreshData = await refreshReq.json()
+
+        if (!refreshReq.ok) {
+          console.error('Refresh Error:', refreshData)
+          if (expiresAt > Date.now()) {
+            console.warn('Refresh failed but token still valid, using existing token')
+            accessToken = tokens.access_token
+          } else {
+            throw new Error('Falha ao atualizar token. Por favor, reconecte no painel.')
+          }
+        } else {
+          accessToken = refreshData.access_token
+          await supabase
+            .from('shipping_tokens')
+            .update({
+              access_token: refreshData.access_token,
+              refresh_token: refreshData.refresh_token,
+              expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', tokens.id)
+        }
+      } catch (refreshErr: any) {
+        if (expiresAt > Date.now() && accessToken) {
+          console.warn('Token refresh network error, using existing valid token:', refreshErr)
+        } else {
+          throw refreshErr
+        }
+      }
     }
 
-    const products = items.map((i: any) => ({
-      id: i.id || 'product',
-      width: Number(i.width_cm) || 15,
-      height: Number(i.height_cm) || 15,
-      length: Number(i.length_cm) || 15,
-      weight: i.weight_g ? Number(i.weight_g) / 1000 : 0.5,
-      insurance_value: Number(i.price) || 0,
-      quantity: Number(i.quantity) || 1,
-    }))
+    const products = items.map((i: any) => {
+      const dbProduct = productDetailsMap[i.id]
+      const weightG = dbProduct?.weight_g ?? i.weight_g
+      return {
+        id: i.id || 'product',
+        width: Number(dbProduct?.width_cm ?? i.width_cm) || 15,
+        height: Number(dbProduct?.height_cm ?? i.height_cm) || 15,
+        length: Number(dbProduct?.length_cm ?? i.length_cm) || 15,
+        weight: weightG ? Number(weightG) / 1000 : 0.5,
+        insurance_value: Number(dbProduct?.price ?? i.price) || 0,
+        quantity: Number(i.quantity) || 1,
+      }
+    })
 
     const quoteReq = await fetch(`${apiUrl}/api/v2/me/shipment/calculate`, {
       method: 'POST',
@@ -111,16 +165,25 @@ Deno.serve(async (req) => {
         Accept: 'application/json',
       },
       body: JSON.stringify({
-        from: { postal_code: '01153000' },
+        from: { postal_code: fromCep },
         to: { postal_code: cep.replace(/\D/g, '') },
         products,
       }),
     })
 
     const quoteData = await quoteReq.json()
+
     if (!quoteReq.ok) {
-      console.error('Quote Error:', quoteData)
-      throw new Error(quoteData.message || 'Falha ao calcular frete')
+      console.error('Quote API Error:', {
+        status: quoteReq.status,
+        data: quoteData,
+      })
+      const errMsg =
+        quoteData?.message ||
+        quoteData?.error ||
+        quoteData?.errors?.[0]?.message ||
+        'Falha ao calcular frete'
+      throw new Error(errMsg)
     }
 
     const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
