@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
-
+  
   try {
     const { cep, items } = await req.json()
     if (!cep) throw new Error('CEP is required')
@@ -18,20 +18,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
-    const clientSecret =
-      Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
+    const clientSecret = Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     // Fetch tokens
-    const { data: tokens, error: tokensError } = await supabase
-      .from('shipping_tokens')
-      .select('*')
-      .limit(1)
-      .single()
-    if (tokensError || !tokens)
-      throw new Error(
-        'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
-      )
+    const { data: tokens, error: tokensError } = await supabase.from('shipping_tokens').select('*').limit(1).single()
+    if (tokensError || !tokens) throw new Error('Melhor Envio não configurado. Por favor, autorize no painel de administração.')
 
     let accessToken = tokens.access_token
 
@@ -39,10 +31,7 @@ Deno.serve(async (req) => {
     if (new Date(tokens.expires_at).getTime() < Date.now() + 5 * 60 * 1000) {
       const refreshReq = await fetch(`${apiUrl}/oauth/oauth/token`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: tokens.refresh_token,
@@ -58,15 +47,12 @@ Deno.serve(async (req) => {
       }
 
       accessToken = refreshData.access_token
-      await supabase
-        .from('shipping_tokens')
-        .update({
-          access_token: refreshData.access_token,
-          refresh_token: refreshData.refresh_token,
-          expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tokens.id)
+      await supabase.from('shipping_tokens').update({
+        access_token: refreshData.access_token,
+        refresh_token: refreshData.refresh_token,
+        expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id', tokens.id)
     }
 
     // Call Quote API
@@ -77,21 +63,21 @@ Deno.serve(async (req) => {
       length: 15,
       weight: 0.5,
       insurance_value: i.price || 0,
-      quantity: i.quantity || 1,
+      quantity: i.quantity || 1
     }))
 
     const quoteReq = await fetch(`${apiUrl}/api/v2/me/shipment/calculate`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        from: { postal_code: '01153000' }, // Default Store Origin CEP (Sao Paulo)
+        from: { postal_code: "01153000" }, // Default Store Origin CEP (Sao Paulo)
         to: { postal_code: cep.replace(/\D/g, '') },
-        products,
-      }),
+        products
+      })
     })
 
     const quoteData = await quoteReq.json()
@@ -104,13 +90,13 @@ Deno.serve(async (req) => {
     const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
 
     return new Response(JSON.stringify({ quotes }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (err: any) {
     console.error(err)
     return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
