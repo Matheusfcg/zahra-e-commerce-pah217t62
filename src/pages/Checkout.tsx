@@ -434,8 +434,12 @@ const Checkout = () => {
                               errMsg.includes('expirada') ||
                               errMsg.includes('reconecte')
                             toast({
-                              title: 'Serviço de entrega temporariamente indisponível',
-                              description: 'Por favor, entre em contato com o suporte.',
+                              title: isNotConfigured
+                                ? 'Frete não configurado'
+                                : 'Serviço de entrega temporariamente indisponível',
+                              description: isNotConfigured
+                                ? 'O administrador precisa configurar a integração com Melhor Envio.'
+                                : 'Por favor, entre em contato com o suporte.',
                               variant: 'destructive',
                             })
                             setShippingOptions([])

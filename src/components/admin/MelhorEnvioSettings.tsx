@@ -12,6 +12,7 @@ export function MelhorEnvioSettings() {
   const [connected, setConnected] = useState(false)
   const [checking, setChecking] = useState(true)
   const [clientId, setClientId] = useState('26564')
+  const [fromCep, setFromCep] = useState('01153000')
   const [tokenExpiry, setTokenExpiry] = useState<string | null>(null)
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export function MelhorEnvioSettings() {
       if (data?.content_value) {
         const settings = JSON.parse(data.content_value)
         if (settings.client_id) setClientId(settings.client_id)
+        if (settings.from_cep) setFromCep(settings.from_cep)
       }
     } catch {
       /* intentionally ignored */
@@ -73,6 +75,7 @@ export function MelhorEnvioSettings() {
       const contentValue = JSON.stringify({
         ...existingSettings,
         client_id: clientId,
+        from_cep: fromCep,
       })
 
       await supabase.from('site_content').upsert(
@@ -165,6 +168,19 @@ export function MelhorEnvioSettings() {
           />
           <p className="text-xs text-muted-foreground">
             O Client ID é fornecido pelo Melhor Envio ao criar seu aplicativo OAuth.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>CEP de Origem (Loja)</Label>
+          <Input
+            value={fromCep}
+            onChange={(e) => setFromCep(e.target.value.replace(/\D/g, ''))}
+            placeholder="00000000"
+            maxLength={8}
+          />
+          <p className="text-xs text-muted-foreground">
+            CEP de origem usado para calcular o frete dos produtos.
           </p>
         </div>
 

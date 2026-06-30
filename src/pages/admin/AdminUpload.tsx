@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/table'
 import { Switch } from '@/components/ui/switch'
 import { ProductForm } from '@/components/admin/ProductForm'
+import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -468,16 +469,19 @@ export default function AdminUpload() {
         </TabsContent>
 
         <TabsContent value="categories">
-          {(() => {
-            const Comp = (window as any).SiteContentTabComponent
-            return Comp ? (
-              <Comp />
-            ) : (
-              <div className="py-12 text-center text-muted-foreground border rounded-lg bg-muted/10 mt-6">
-                Carregando gerenciador de conteúdo...
-              </div>
-            )
-          })()}
+          <div className="space-y-6">
+            <MelhorEnvioSettings />
+            {(() => {
+              const Comp = (window as any).SiteContentTabComponent
+              return Comp ? (
+                <Comp />
+              ) : (
+                <div className="py-12 text-center text-muted-foreground border rounded-lg bg-muted/10">
+                  Carregando gerenciador de conteúdo...
+                </div>
+              )
+            })()}
+          </div>
         </TabsContent>
 
         <TabsContent value="products">

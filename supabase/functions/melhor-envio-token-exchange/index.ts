@@ -72,13 +72,10 @@ Deno.serve(async (req) => {
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
-      return new Response(
-        JSON.stringify({ error: 'Melhor Envio credentials not configured' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ error: 'Melhor Envio credentials not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const response = await fetch(`${apiUrl}/oauth/oauth/token`, {
@@ -103,9 +100,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           error:
-            data.message ||
-            data.error_description ||
-            'Failed to exchange token with Melhor Envio',
+            data.message || data.error_description || 'Failed to exchange token with Melhor Envio',
         }),
         {
           status: 400,
@@ -114,37 +109,24 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { data: existing, error: existingError } = await supabase
+    const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString()
+    const nowIso = new Date().toISOString()
+
+    const { error: deleteError } = await supabase
       .from('shipping_tokens')
-      .select('id')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
 
-    if (existingError) {
-      console.error('Token query error:', existingError)
+    if (deleteError) {
+      console.error('Token delete error:', deleteError)
     }
 
-    let dbError
-    if (existing) {
-      const { error } = await supabase
-        .from('shipping_tokens')
-        .update({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-      dbError = error
-    } else {
-      const { error } = await supabase.from('shipping_tokens').insert({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-      })
-      dbError = error
-    }
+    const { error: dbError } = await supabase.from('shipping_tokens').insert({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: expiresAt,
+      updated_at: nowIso,
+    })
 
     if (dbError) {
       console.error('Token save error:', dbError)
