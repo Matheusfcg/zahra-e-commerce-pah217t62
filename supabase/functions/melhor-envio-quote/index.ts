@@ -186,16 +186,21 @@ Deno.serve(async (req) => {
       throw new Error(errMsg)
     }
 
-    const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
+    const quotes = Array.isArray(quoteData)
+      ? quoteData.filter((q: any) => !q.error && q.price)
+      : []
 
     return new Response(JSON.stringify({ quotes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err: any) {
     console.error('melhor-envio-quote error:', err)
-    return new Response(JSON.stringify({ error: err.message || 'Erro interno do servidor' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: err.message || 'Erro interno do servidor' }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   }
 })
