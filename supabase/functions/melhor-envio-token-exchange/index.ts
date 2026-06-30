@@ -10,19 +10,26 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('Missing Authorization header')
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing in environment')
+      return new Response(JSON.stringify({ error: 'Supabase configuration missing' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    })
 
-    // Verify user using the token sent from frontend
     const token = authHeader.replace('Bearer ', '')
     const {
       data: { user },
@@ -30,22 +37,32 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token)
 
     if (userError || !user) {
-      throw new Error('Unauthorized')
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    // Verify admin status
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('is_admin')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (!profile?.is_admin) {
-      throw new Error('Forbidden')
+    if (profileError || !profile?.is_admin) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const { code, redirect_uri } = await req.json()
-    if (!code) throw new Error('Code is required')
+    if (!code) {
+      return new Response(JSON.stringify({ error: 'Code is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
     const clientSecret =
@@ -55,7 +72,10 @@ Deno.serve(async (req) => {
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
-      throw new Error('Melhor Envio credentials not configured in edge function secrets')
+      return new Response(JSON.stringify({ error: 'Melhor Envio credentials not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const response = await fetch(`${apiUrl}/oauth/oauth/token`, {
@@ -77,17 +97,28 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('Melhor Envio API error:', data)
-      throw new Error(
-        data.message || data.error_description || 'Failed to exchange token with Melhor Envio',
+      return new Response(
+        JSON.stringify({
+          error:
+            data.message || data.error_description || 'Failed to exchange token with Melhor Envio',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
       )
     }
 
-    // Save tokens in shipping_tokens table
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('shipping_tokens')
       .select('id')
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    if (existingError) {
+      console.error('Token query error:', existingError)
+    }
 
     let dbError
     if (existing) {
@@ -111,16 +142,20 @@ Deno.serve(async (req) => {
     }
 
     if (dbError) {
-      throw dbError
+      console.error('Token save error:', dbError)
+      return new Response(JSON.stringify({ error: 'Failed to save tokens' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err: any) {
-    console.error('Error:', err)
+    console.error('melhor-envio-token-exchange error:', err)
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

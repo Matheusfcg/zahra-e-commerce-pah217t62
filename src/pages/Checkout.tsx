@@ -429,14 +429,17 @@ const Checkout = () => {
                           } catch (err: any) {
                             console.error('Shipping calculation error:', err)
                             const errMsg = err?.message || ''
-                            const isNotConfigured = errMsg.includes('não configurado')
+                            const isNotConfigured =
+                              errMsg.includes('não configurado') ||
+                              errMsg.includes('expirada') ||
+                              errMsg.includes('reconecte')
                             toast({
                               title: isNotConfigured
                                 ? 'Frete não configurado'
                                 : 'Serviço de entrega temporariamente indisponível',
                               description: isNotConfigured
                                 ? errMsg
-                                : 'Não foi possível calcular o frete no momento. Tente novamente em instantes.',
+                                : 'Não foi possível calcular o frete no momento. Tente novamente em instantes ou entre em contato pelo WhatsApp.',
                               variant: 'destructive',
                             })
                             setShippingOptions([])

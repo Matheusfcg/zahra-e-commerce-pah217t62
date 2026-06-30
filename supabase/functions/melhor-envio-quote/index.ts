@@ -27,10 +27,15 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Configuração do banco de dados ausente')
+      return new Response(JSON.stringify({ error: 'Configuração do banco de dados ausente' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    })
 
     const productIds = items.map((i: any) => i.id).filter(Boolean)
     let productDetailsMap: Record<string, any> = {}
@@ -41,7 +46,9 @@ Deno.serve(async (req) => {
         .select('id, weight_g, height_cm, width_cm, length_cm, price')
         .in('id', productIds)
 
-      if (!productsError && products) {
+      if (productsError) {
+        console.error('Product query error:', productsError)
+      } else if (products) {
         productDetailsMap = products.reduce((acc: Record<string, any>, p: any) => {
           acc[p.id] = p
           return acc
@@ -50,11 +57,15 @@ Deno.serve(async (req) => {
     }
 
     let fromCep = '01153000'
-    const { data: siteContent } = await supabase
+    const { data: siteContent, error: siteContentError } = await supabase
       .from('site_content')
       .select('content_value')
       .eq('section_key', 'melhor_envio_settings')
       .maybeSingle()
+
+    if (siteContentError) {
+      console.error('Site content query error:', siteContentError)
+    }
 
     if (siteContent?.content_value) {
       try {
@@ -74,6 +85,19 @@ Deno.serve(async (req) => {
       'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
+    if (!clientId || !clientSecret) {
+      return new Response(
+        JSON.stringify({
+          error:
+            'Melhor Envio não configurado. Por favor, configure as credenciais no painel de administração.',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
     const { data: tokens, error: tokensError } = await supabase
       .from('shipping_tokens')
       .select('*')
@@ -83,17 +107,31 @@ Deno.serve(async (req) => {
 
     if (tokensError) {
       console.error('Token query error:', tokensError)
-      throw new Error('Erro ao consultar tokens de frete')
+      return new Response(
+        JSON.stringify({
+          error: 'Erro ao consultar tokens de frete. Verifique a configuração do Melhor Envio.',
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     if (!tokens || !tokens.access_token || !tokens.refresh_token) {
-      throw new Error(
-        'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
+      return new Response(
+        JSON.stringify({
+          error: 'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
       )
     }
 
     let accessToken = tokens.access_token
-    const expiresAt = new Date(tokens.expires_at).getTime()
+    const expiresAt = tokens.expires_at ? new Date(tokens.expires_at).getTime() : 0
     const needsRefresh = isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000
 
     if (needsRefresh) {
@@ -120,11 +158,20 @@ Deno.serve(async (req) => {
             console.warn('Refresh failed but token still valid, using existing token')
             accessToken = tokens.access_token
           } else {
-            throw new Error('Falha ao atualizar token. Por favor, reconecte no painel.')
+            return new Response(
+              JSON.stringify({
+                error:
+                  'Sessão do Melhor Envio expirada. Por favor, reconecte no painel de administração.',
+              }),
+              {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            )
           }
         } else {
           accessToken = refreshData.access_token
-          await supabase
+          const { error: updateError } = await supabase
             .from('shipping_tokens')
             .update({
               access_token: refreshData.access_token,
@@ -133,12 +180,26 @@ Deno.serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq('id', tokens.id)
+
+          if (updateError) {
+            console.error('Token update error:', updateError)
+          }
         }
       } catch (refreshErr: any) {
         if (expiresAt > Date.now() && accessToken) {
           console.warn('Token refresh network error, using existing valid token:', refreshErr)
         } else {
-          throw refreshErr
+          console.error('Token refresh failed:', refreshErr)
+          return new Response(
+            JSON.stringify({
+              error:
+                'Não foi possível atualizar a sessão do Melhor Envio. Tente novamente em instantes.',
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            },
+          )
         }
       }
     }
@@ -183,12 +244,13 @@ Deno.serve(async (req) => {
         quoteData?.error ||
         quoteData?.errors?.[0]?.message ||
         'Falha ao calcular frete'
-      throw new Error(errMsg)
+      return new Response(JSON.stringify({ error: errMsg }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const quotes = Array.isArray(quoteData)
-      ? quoteData.filter((q: any) => !q.error && q.price)
-      : []
+    const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
 
     return new Response(JSON.stringify({ quotes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -196,9 +258,11 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     console.error('melhor-envio-quote error:', err)
     return new Response(
-      JSON.stringify({ error: err.message || 'Erro interno do servidor' }),
+      JSON.stringify({
+        error: err.message || 'Erro interno do servidor. Tente novamente em instantes.',
+      }),
       {
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
