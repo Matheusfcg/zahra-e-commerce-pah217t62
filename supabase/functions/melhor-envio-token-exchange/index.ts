@@ -72,10 +72,13 @@ Deno.serve(async (req) => {
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
-      return new Response(JSON.stringify({ error: 'Melhor Envio credentials not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ error: 'Melhor Envio credentials not configured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     const response = await fetch(`${apiUrl}/oauth/oauth/token`, {
@@ -100,7 +103,9 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           error:
-            data.message || data.error_description || 'Failed to exchange token with Melhor Envio',
+            data.message ||
+            data.error_description ||
+            'Failed to exchange token with Melhor Envio',
         }),
         {
           status: 400,
