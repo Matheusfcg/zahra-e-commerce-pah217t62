@@ -33,6 +33,10 @@ export type Product = {
   is_featured?: boolean
   show_in_carousel?: boolean
   category?: string
+  weight_g?: number
+  height_cm?: number
+  width_cm?: number
+  length_cm?: number
   product_colors: ProductColor[]
   product_images: ProductImage[]
   product_sizes?: ProductSize[]
@@ -56,7 +60,7 @@ async function fetchWithCache<T>(key: string, fetcher: () => Promise<T>): Promis
 }
 
 const PRODUCT_SELECT =
-  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order, is_cover), product_sizes(id, size_name, quantity)'
+  'id, slug, name, price, quantity, description, composition, measurements, is_promotion, is_featured, show_in_carousel, category, weight_g, height_cm, width_cm, length_cm, product_colors(id, name, hex_value, image_url), product_images(id, url, display_order, is_cover), product_sizes(id, size_name, quantity)'
 
 export async function getFeaturedProducts() {
   return fetchWithCache('featured', async () => {

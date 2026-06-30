@@ -43,6 +43,10 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     is_promotion: false,
     is_featured: false,
     show_in_carousel: false,
+    weight_g: '',
+    height_cm: '',
+    width_cm: '',
+    length_cm: '',
   })
 
   const [images, setImages] = useState<any[]>([])
@@ -71,6 +75,10 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         is_promotion: product.is_promotion || false,
         is_featured: product.is_featured || false,
         show_in_carousel: product.show_in_carousel || false,
+        weight_g: product.weight_g?.toString() || '',
+        height_cm: product.height_cm?.toString() || '',
+        width_cm: product.width_cm?.toString() || '',
+        length_cm: product.length_cm?.toString() || '',
       })
 
       if (product.product_images) {
@@ -248,6 +256,31 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     setSizes(sizes.map((s) => (s.id === id ? { ...s, _deleted: true } : s)))
   }
 
+  const applyPreset = (presetName: string) => {
+    const presets: Record<string, { w: string; h: string; wd: string; l: string }> = {
+      leve: { w: '150', h: '2', wd: '20', l: '15' },
+      padrao: { w: '300', h: '4', wd: '25', l: '20' },
+      medio: { w: '500', h: '7', wd: '27', l: '21' },
+      volumoso: { w: '1000', h: '12', wd: '30', l: '25' },
+      kit: { w: '1200', h: '14', wd: '33', l: '27' },
+    }
+    const preset = presets[presetName]
+    if (preset) {
+      setFormData((prev) => ({
+        ...prev,
+        weight_g: preset.w,
+        height_cm: preset.h,
+        width_cm: preset.wd,
+        length_cm: preset.l,
+      }))
+    }
+  }
+
+  const showShippingWarning =
+    (formData.height_cm && parseFloat(formData.height_cm) < 1) ||
+    (formData.width_cm && parseFloat(formData.width_cm) < 8) ||
+    (formData.length_cm && parseFloat(formData.length_cm) < 13)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -267,6 +300,10 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         is_promotion: formData.is_promotion,
         is_featured: formData.is_featured,
         show_in_carousel: formData.show_in_carousel,
+        weight_g: formData.weight_g ? parseInt(formData.weight_g, 10) : 0,
+        height_cm: formData.height_cm ? parseFloat(formData.height_cm) : 0,
+        width_cm: formData.width_cm ? parseFloat(formData.width_cm) : 0,
+        length_cm: formData.length_cm ? parseFloat(formData.length_cm) : 0,
       }
 
       if (productId) {
@@ -457,6 +494,89 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
                 Carrossel Home
               </Label>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-6 mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">Informações de Frete (Pesos e Medidas)</h3>
+            <p className="text-sm text-muted-foreground">
+              Para o cálculo correto do frete, adicione as dimensões da embalagem.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select onValueChange={applyPreset}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Preenchimento Rápido" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="leve">Leve (Biquínis, Regatas)</SelectItem>
+                <SelectItem value="padrao">Padrão (T-shirts, Saias)</SelectItem>
+                <SelectItem value="medio">Médio (Vestidos, Calças)</SelectItem>
+                <SelectItem value="volumoso">Volumoso (Casacos, Tricôs)</SelectItem>
+                <SelectItem value="kit">Kits/Conjuntos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {showShippingWarning && (
+          <div className="mb-4 p-3 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-md text-sm">
+            <strong>Atenção:</strong> As dimensões informadas estão abaixo do limite mínimo aceito
+            pelos Correios (1cm A x 8cm L x 13cm C). Recomendamos o uso da caixa padrão.
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="weight_g">Peso Total (g)</Label>
+            <Input
+              id="weight_g"
+              type="number"
+              min="0"
+              value={formData.weight_g}
+              onChange={(e) => handleInputChange('weight_g', e.target.value)}
+              placeholder="Ex: 300"
+            />
+            <p className="text-[10px] text-muted-foreground">Adicione 50-100g p/ embalagem.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="height_cm">Altura (cm)</Label>
+            <Input
+              id="height_cm"
+              type="number"
+              min="0"
+              step="0.1"
+              value={formData.height_cm}
+              onChange={(e) => handleInputChange('height_cm', e.target.value)}
+              placeholder="Min: 1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="width_cm">Largura (cm)</Label>
+            <Input
+              id="width_cm"
+              type="number"
+              min="0"
+              step="0.1"
+              value={formData.width_cm}
+              onChange={(e) => handleInputChange('width_cm', e.target.value)}
+              placeholder="Min: 8"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="length_cm">Comprimento (cm)</Label>
+            <Input
+              id="length_cm"
+              type="number"
+              min="0"
+              step="0.1"
+              value={formData.length_cm}
+              onChange={(e) => handleInputChange('length_cm', e.target.value)}
+              placeholder="Min: 13"
+            />
           </div>
         </div>
       </div>

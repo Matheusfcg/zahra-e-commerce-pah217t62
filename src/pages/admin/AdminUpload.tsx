@@ -558,6 +558,7 @@ export default function AdminUpload() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Preço</TableHead>
                     <TableHead>Imagens</TableHead>
+                    <TableHead>Frete</TableHead>
                     <TableHead className="text-center">Exibição na Home</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -570,6 +571,13 @@ export default function AdminUpload() {
                       </TableCell>
                       <TableCell>R$ {product.price?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>{product.product_images?.length || 0}</TableCell>
+                      <TableCell>
+                        <div className="text-xs text-muted-foreground whitespace-nowrap">
+                          {product.weight_g || 0}g<br />
+                          {product.height_cm || 0}x{product.width_cm || 0}x{product.length_cm || 0}
+                          cm
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">
                         <div className="flex justify-center">
                           <Switch

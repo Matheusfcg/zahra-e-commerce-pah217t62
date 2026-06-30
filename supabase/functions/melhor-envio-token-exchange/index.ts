@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
     if (!code) throw new Error('Code is required')
 
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
-    const clientSecret = Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
+    const clientSecret =
+      Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
@@ -81,15 +82,18 @@ Deno.serve(async (req) => {
 
     // Save tokens in shipping_tokens table
     const { data: existing } = await supabase.from('shipping_tokens').select('id').limit(1).single()
-    
-    let dbError;
+
+    let dbError
     if (existing) {
-      const { error } = await supabase.from('shipping_tokens').update({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-        updated_at: new Date().toISOString()
-      }).eq('id', existing.id)
+      const { error } = await supabase
+        .from('shipping_tokens')
+        .update({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
       dbError = error
     } else {
       const { error } = await supabase.from('shipping_tokens').insert({
