@@ -404,6 +404,8 @@ const Checkout = () => {
                             return
                           }
                           setIsCalculatingShipping(true)
+                          setShippingOptions([])
+                          setSelectedShipping(null)
                           try {
                             const { data, error } = await supabase.functions.invoke(
                               'melhor-envio-quote',
@@ -412,23 +414,28 @@ const Checkout = () => {
                               },
                             )
                             if (error) throw error
-                            if (data.error) throw new Error(data.error)
-                            if (data.quotes && data.quotes.length > 0) {
+                            if (data?.error) throw new Error(data.error)
+                            if (data?.quotes && data.quotes.length > 0) {
                               setShippingOptions(data.quotes)
-                              if (!selectedShipping) setSelectedShipping(data.quotes[0])
+                              setSelectedShipping(data.quotes[0])
                             } else {
                               toast({
                                 title: 'Nenhuma opção de frete encontrada',
+                                description:
+                                  'Não foi possível encontrar opções de entrega para este CEP.',
                                 variant: 'destructive',
                               })
-                              setShippingOptions([])
                             }
                           } catch (err: any) {
+                            console.error('Shipping calculation error:', err)
                             toast({
-                              title: 'Erro ao calcular frete',
-                              description: err.message,
+                              title: 'Serviço de entrega temporariamente indisponível',
+                              description:
+                                'Não foi possível calcular o frete no momento. Tente novamente em instantes.',
                               variant: 'destructive',
                             })
+                            setShippingOptions([])
+                            setSelectedShipping(null)
                           } finally {
                             setIsCalculatingShipping(false)
                           }

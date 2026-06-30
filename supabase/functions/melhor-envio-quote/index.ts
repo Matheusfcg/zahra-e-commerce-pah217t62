@@ -1,12 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,34 +9,58 @@ Deno.serve(async (req) => {
 
   try {
     const { cep, items } = await req.json()
-    if (!cep) throw new Error('CEP is required')
+
+    if (!cep) {
+      return new Response(JSON.stringify({ error: 'CEP é obrigatório' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return new Response(JSON.stringify({ error: 'Items são obrigatórios' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (!supabaseUrl || !supabaseKey) throw new Error('Missing DB credentials')
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Configuração do banco de dados ausente')
+    }
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
     const clientSecret =
-      Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
+      Deno.env.get('MELHOR_ENVIO_CLIENT_SECRET') ||
+      Deno.env.get('MELHOR_ENVIO_SECRET') ||
+      'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
-    // Fetch tokens
     const { data: tokens, error: tokensError } = await supabase
       .from('shipping_tokens')
       .select('*')
+      .order('updated_at', { ascending: false })
       .limit(1)
-      .single()
-    if (tokensError || !tokens)
+      .maybeSingle()
+
+    if (tokensError) {
+      console.error('Token query error:', tokensError)
+      throw new Error('Erro ao consultar tokens de frete')
+    }
+
+    if (!tokens || !tokens.access_token || !tokens.refresh_token) {
       throw new Error(
         'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
       )
+    }
 
     let accessToken = tokens.access_token
 
-    // Check expiration (refresh if expires in less than 5 minutes)
-    if (new Date(tokens.expires_at).getTime() < Date.now() + 5 * 60 * 1000) {
+    const expiresAt = new Date(tokens.expires_at).getTime()
+    if (isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000) {
       const refreshReq = await fetch(`${apiUrl}/oauth/oauth/token`, {
         method: 'POST',
         headers: {
@@ -75,15 +93,14 @@ Deno.serve(async (req) => {
         .eq('id', tokens.id)
     }
 
-    // Call Quote API
     const products = items.map((i: any) => ({
       id: i.id || 'product',
-      width: i.width_cm || 15,
-      height: i.height_cm || 15,
-      length: i.length_cm || 15,
-      weight: i.weight_g ? i.weight_g / 1000 : 0.5,
-      insurance_value: i.price || 0,
-      quantity: i.quantity || 1,
+      width: Number(i.width_cm) || 15,
+      height: Number(i.height_cm) || 15,
+      length: Number(i.length_cm) || 15,
+      weight: i.weight_g ? Number(i.weight_g) / 1000 : 0.5,
+      insurance_value: Number(i.price) || 0,
+      quantity: Number(i.quantity) || 1,
     }))
 
     const quoteReq = await fetch(`${apiUrl}/api/v2/me/shipment/calculate`, {
@@ -94,7 +111,7 @@ Deno.serve(async (req) => {
         Accept: 'application/json',
       },
       body: JSON.stringify({
-        from: { postal_code: '01153000' }, // Default Store Origin CEP (Sao Paulo)
+        from: { postal_code: '01153000' },
         to: { postal_code: cep.replace(/\D/g, '') },
         products,
       }),
@@ -106,15 +123,14 @@ Deno.serve(async (req) => {
       throw new Error(quoteData.message || 'Falha ao calcular frete')
     }
 
-    // Filter valid quotes
     const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
 
     return new Response(JSON.stringify({ quotes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err: any) {
-    console.error(err)
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('melhor-envio-quote error:', err)
+    return new Response(JSON.stringify({ error: err.message || 'Erro interno do servidor' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -1,12 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,7 +49,9 @@ Deno.serve(async (req) => {
 
     const clientId = Deno.env.get('MELHOR_ENVIO_CLIENT_ID') || '26564'
     const clientSecret =
-      Deno.env.get('MELHOR_ENVIO_SECRET') || 'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
+      Deno.env.get('MELHOR_ENVIO_CLIENT_SECRET') ||
+      Deno.env.get('MELHOR_ENVIO_SECRET') ||
+      'zMP0qTLRTmxJ4TqauO4U4tVbWWEq73I0MvNWtYxM'
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
@@ -87,7 +83,11 @@ Deno.serve(async (req) => {
     }
 
     // Save tokens in shipping_tokens table
-    const { data: existing } = await supabase.from('shipping_tokens').select('id').limit(1).single()
+    const { data: existing } = await supabase
+      .from('shipping_tokens')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
 
     let dbError
     if (existing) {
