@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { toast } from '@/hooks/use-toast'
 import { Trash2, Plus, GripVertical } from 'lucide-react'
+import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
 
 export default function SiteContentTab() {
   const [categories, setCategories] = useState<string[]>([])
@@ -187,6 +188,10 @@ export default function SiteContentTab() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="md:col-span-2">
+        <MelhorEnvioSettings />
+      </div>
     </div>
   )
 }

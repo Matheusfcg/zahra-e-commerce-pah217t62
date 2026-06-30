@@ -27,13 +27,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
-      return new Response(
-        JSON.stringify({ error: 'Configuração do banco de dados ausente' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ error: 'Configuração do banco de dados ausente' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -112,8 +109,7 @@ Deno.serve(async (req) => {
       console.error('Token query error:', tokensError)
       return new Response(
         JSON.stringify({
-          error:
-            'Erro ao consultar tokens de frete. Verifique a configuração do Melhor Envio.',
+          error: 'Erro ao consultar tokens de frete. Verifique a configuração do Melhor Envio.',
         }),
         {
           status: 500,
@@ -125,8 +121,7 @@ Deno.serve(async (req) => {
     if (!tokens || !tokens.access_token || !tokens.refresh_token) {
       return new Response(
         JSON.stringify({
-          error:
-            'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
+          error: 'Melhor Envio não configurado. Por favor, autorize no painel de administração.',
         }),
         {
           status: 400,
@@ -136,11 +131,8 @@ Deno.serve(async (req) => {
     }
 
     let accessToken = tokens.access_token
-    const expiresAt = tokens.expires_at
-      ? new Date(tokens.expires_at).getTime()
-      : 0
-    const needsRefresh =
-      isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000
+    const expiresAt = tokens.expires_at ? new Date(tokens.expires_at).getTime() : 0
+    const needsRefresh = isNaN(expiresAt) || expiresAt < Date.now() + 5 * 60 * 1000
 
     if (needsRefresh) {
       try {
@@ -184,9 +176,7 @@ Deno.serve(async (req) => {
             .update({
               access_token: refreshData.access_token,
               refresh_token: refreshData.refresh_token,
-              expires_at: new Date(
-                Date.now() + refreshData.expires_in * 1000,
-              ).toISOString(),
+              expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('id', tokens.id)
@@ -254,18 +244,13 @@ Deno.serve(async (req) => {
         quoteData?.error ||
         quoteData?.errors?.[0]?.message ||
         'Falha ao calcular frete'
-      return new Response(
-        JSON.stringify({ error: errMsg }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ error: errMsg }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const quotes = Array.isArray(quoteData)
-      ? quoteData.filter((q: any) => !q.error && q.price)
-      : []
+    const quotes = Array.isArray(quoteData) ? quoteData.filter((q: any) => !q.error && q.price) : []
 
     return new Response(JSON.stringify({ quotes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -274,9 +259,7 @@ Deno.serve(async (req) => {
     console.error('melhor-envio-quote error:', err)
     return new Response(
       JSON.stringify({
-        error:
-          err.message ||
-          'Erro interno do servidor. Tente novamente em instantes.',
+        error: err.message || 'Erro interno do servidor. Tente novamente em instantes.',
       }),
       {
         status: 500,

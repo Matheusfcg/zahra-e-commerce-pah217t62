@@ -434,12 +434,8 @@ const Checkout = () => {
                               errMsg.includes('expirada') ||
                               errMsg.includes('reconecte')
                             toast({
-                              title: isNotConfigured
-                                ? 'Frete não configurado'
-                                : 'Serviço de entrega temporariamente indisponível',
-                              description: isNotConfigured
-                                ? errMsg
-                                : 'Não foi possível calcular o frete no momento. Tente novamente em instantes ou entre em contato pelo WhatsApp.',
+                              title: 'Serviço de entrega temporariamente indisponível',
+                              description: 'Por favor, entre em contato com o suporte.',
                               variant: 'destructive',
                             })
                             setShippingOptions([])
