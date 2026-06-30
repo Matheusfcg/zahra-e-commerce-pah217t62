@@ -11,6 +11,7 @@ import Favorites from './pages/Favorites'
 import TrocaDevolucao from './pages/TrocaDevolucao'
 import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
+import ShippingCallback from './pages/admin/ShippingCallback'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 import { AdminRoute } from './components/AdminRoute'
@@ -56,6 +57,14 @@ const App = () => {
                 element={
                   <AdminRoute>
                     <AdminUpload />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/shipping-callback"
+                element={
+                  <AdminRoute>
+                    <ShippingCallback />
                   </AdminRoute>
                 }
               />
