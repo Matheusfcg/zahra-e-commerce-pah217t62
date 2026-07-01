@@ -77,7 +77,10 @@ export default function ShippingCallback() {
       return
     }
 
-    if (loading) return
+    if (loading) {
+      setStatus('waiting')
+      return
+    }
 
     if (!session) {
       setStatus('error')
@@ -98,9 +101,18 @@ export default function ShippingCallback() {
       .invoke('melhor-envio-token-exchange', {
         body: { code, redirect_uri: redirectUri },
       })
-      .then(({ data, error: invokeError }) => {
+      .then(async ({ data, error: invokeError }) => {
         if (invokeError) {
-          throw new Error(invokeError.message || 'Erro ao contatar o servidor')
+          let errorMsg = invokeError.message || 'Erro ao contatar o servidor'
+          try {
+            if (invokeError.context) {
+              const ctx = await invokeError.context.json()
+              if (ctx.error) errorMsg = ctx.error
+            }
+          } catch (_) {
+            // fallback to default message
+          }
+          throw new Error(errorMsg)
         }
 
         if (data?.error) {

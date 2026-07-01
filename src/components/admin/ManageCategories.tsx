@@ -27,6 +27,7 @@ export function ManageCategories() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategorySlug, setNewCategorySlug] = useState('')
   const [newCategoryDescription, setNewCategoryDescription] = useState('')
 
   const [editingCategory, setEditingCategory] = useState<any>(null)
@@ -51,16 +52,39 @@ export function ManageCategories() {
     fetchCategories()
   }, [])
 
+  const handleNameChange = (val: string) => {
+    setNewCategoryName(val)
+    if (
+      !newCategorySlug ||
+      newCategorySlug ===
+        newCategoryName
+          .trim()
+          .toLowerCase()
+          .replace(/[\s_]+/g, '-')
+          .replace(/[^\w-]+/g, '')
+    ) {
+      setNewCategorySlug(
+        val
+          .trim()
+          .toLowerCase()
+          .replace(/[\s_]+/g, '-')
+          .replace(/[^\w-]+/g, ''),
+      )
+    }
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCategoryName.trim()) return
 
     setIsSaving(true)
-    const slug = newCategoryName
-      .trim()
-      .toLowerCase()
-      .replace(/[\s_]+/g, '-')
-      .replace(/[^\w-]+/g, '')
+    const slug =
+      newCategorySlug.trim() ||
+      newCategoryName
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^\w-]+/g, '')
 
     const { error } = await supabase.from('categories').insert({
       name: newCategoryName.trim(),
@@ -102,11 +126,13 @@ export function ManageCategories() {
     if (!editingCategory) return
 
     setIsSaving(true)
-    const slug = editingCategory.name
-      .trim()
-      .toLowerCase()
-      .replace(/[\s_]+/g, '-')
-      .replace(/[^\w-]+/g, '')
+    const slug =
+      editingCategory.slug?.trim() ||
+      editingCategory.name
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^\w-]+/g, '')
 
     const { error } = await supabase
       .from('categories')
@@ -146,7 +172,15 @@ export function ManageCategories() {
           <Input
             placeholder="Ex: Conjuntos"
             value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
+          />
+        </div>
+        <div className="flex-1 space-y-2">
+          <Label>Slug</Label>
+          <Input
+            placeholder="Ex: conjuntos"
+            value={newCategorySlug}
+            onChange={(e) => setNewCategorySlug(e.target.value)}
           />
         </div>
         <div className="flex-1 space-y-2">
@@ -172,6 +206,7 @@ export function ManageCategories() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Slug</TableHead>
               <TableHead>Subtítulo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -179,7 +214,7 @@ export function ManageCategories() {
           <TableBody>
             {categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                   Nenhuma categoria encontrada.
                 </TableCell>
               </TableRow>
@@ -187,6 +222,7 @@ export function ManageCategories() {
               categories.map((cat) => (
                 <TableRow key={cat.id}>
                   <TableCell className="font-medium">{cat.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{cat.slug}</TableCell>
                   <TableCell className="text-muted-foreground">{cat.description || '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => setEditingCategory(cat)}>
@@ -217,6 +253,15 @@ export function ManageCategories() {
                     value={editingCategory.name}
                     onChange={(e) =>
                       setEditingCategory({ ...editingCategory, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Slug</Label>
+                  <Input
+                    value={editingCategory.slug || ''}
+                    onChange={(e) =>
+                      setEditingCategory({ ...editingCategory, slug: e.target.value })
                     }
                   />
                 </div>

@@ -36,6 +36,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     name: '',
     slug: '',
     price: '',
+    quantity: '',
     description: '',
     composition: '',
     measurements: '',
@@ -68,6 +69,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         name: product.name || '',
         slug: product.slug || '',
         price: product.price?.toString() || '',
+        quantity: product.quantity?.toString() || '0',
         description: product.description || '',
         composition: product.composition || '',
         measurements: product.measurements || '',
@@ -230,10 +232,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
   }
 
   const activeSizes = sizes.filter((s) => !s._deleted)
-  const totalQuantity = activeSizes.reduce(
-    (acc, curr) => acc + parseInt(curr.quantity || '0', 10),
-    0,
-  )
 
   const addSize = (sizeName: string) => {
     setSizes([
@@ -292,7 +290,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
         name: formData.name,
         slug: formData.slug,
         price: parseFloat(formData.price),
-        quantity: totalQuantity,
+        quantity: parseInt(formData.quantity || '0', 10),
         description: formData.description,
         composition: formData.composition,
         measurements: formData.measurements,
@@ -409,9 +407,15 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           />
         </div>
         <div className="space-y-2">
-          <Label>Estoque Total</Label>
-          <Input value={totalQuantity} disabled className="bg-muted" />
-          <p className="text-xs text-muted-foreground">Calculado automaticamente pelos tamanhos.</p>
+          <Label htmlFor="quantity">Estoque Total</Label>
+          <Input
+            id="quantity"
+            type="number"
+            min="0"
+            value={formData.quantity}
+            onChange={(e) => handleInputChange('quantity', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">Estoque geral do produto.</p>
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="category">Categoria</Label>
