@@ -51,6 +51,8 @@ export default function ShippingCallback() {
   }, [])
 
   useEffect(() => {
+    if (loading) return
+
     if (oauthError) {
       const reason = oauthErrorDescription || oauthError
       setStatus('error')
@@ -74,11 +76,6 @@ export default function ShippingCallback() {
       setErrorMessage('Este código de autorização já foi utilizado.')
       toast.error('Falha na integração: Código de autorização já utilizado.')
       scheduleRedirect()
-      return
-    }
-
-    if (loading) {
-      setStatus('waiting')
       return
     }
 
@@ -133,6 +130,15 @@ export default function ShippingCallback() {
         scheduleRedirect(4000)
       })
   }, [code, oauthError, oauthErrorDescription, session, loading, navigate])
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16">
+        <Loader2 className="w-12 h-12 animate-spin text-[#2D0B0B] mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-[#2D0B0B]">Verificando sessão...</h2>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16">

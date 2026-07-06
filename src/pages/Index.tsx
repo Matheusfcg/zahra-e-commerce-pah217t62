@@ -3,44 +3,23 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import logo from '@/assets/logozahra-e51d5.png'
-
-const defaultCategoryNavItems = [
-  {
-    label: 'Blusas/Bodys',
-    value: 'Blusas e Bodies',
-    image:
-      'https://img.usecurling.com/p/400/400?q=brown%20one%20shoulder%20top%20clothing&color=white',
-  },
-  {
-    label: 'Conjuntos',
-    value: 'Conjuntos',
-    image:
-      'https://img.usecurling.com/p/400/400?q=black%20button-down%20shirt%20shorts%20set&color=white',
-  },
-  {
-    label: 'Partes de baixo',
-    value: 'Saias',
-    image: 'https://img.usecurling.com/p/400/400?q=black%20mini%20skirt%20clothing&color=white',
-  },
-  {
-    label: 'Macaquinho',
-    value: 'Macaquinhos',
-    image:
-      'https://img.usecurling.com/p/400/400?q=light%20green%20cape%20top%20clothing&color=white',
-  },
-  {
-    label: 'Jeans',
-    value: 'Jeans',
-    image: 'https://img.usecurling.com/p/400/400?q=denim%20jumpsuit%20clothing&color=white',
-  },
-]
+import { FeaturedProducts } from '@/components/FeaturedProducts'
 
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(true)
+  const [featuredCategories, setFeaturedCategories] = useState<any[]>([])
 
   useEffect(() => {
+    supabase
+      .from('categories')
+      .select('*')
+      .eq('is_featured', true)
+      .order('created_at')
+      .then(({ data }) => {
+        if (data) setFeaturedCategories(data)
+      })
+
     const fetchContent = async () => {
       const cached = sessionStorage.getItem('site_content_cache')
       if (cached) {
@@ -51,7 +30,7 @@ export default function Index() {
             setIsLoading(false)
             return
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
@@ -76,22 +55,36 @@ export default function Index() {
   }, [])
 
   const dynamicHeroBannerImages = useMemo(() => {
-    return [
+    if (content.hero_images) {
+      try {
+        const parsed = JSON.parse(content.hero_images)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      } catch {
+        /* ignore */
+      }
+    }
+    const legacy = [
       content.hero_banner_1,
       content.hero_banner_2,
       content.hero_banner_3,
       content.hero_banner_4,
     ].filter(Boolean) as string[]
+
+    if (legacy.length > 0) return legacy
+
+    return [
+      'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2',
+      'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2',
+    ]
   }, [content])
 
   const dynamicCategoryNavItems = useMemo(() => {
-    return defaultCategoryNavItems.map((item, index) => ({
-      ...item,
-      label: content[`category_${index + 1}_label`] || item.label,
-      value: content[`category_${index + 1}_value`] || item.value,
-      image: content[`category_${index + 1}_image`] || item.image,
+    return featuredCategories.map((cat) => ({
+      label: cat.name,
+      value: cat.name,
+      image: cat.image_url || 'https://img.usecurling.com/p/400/400?q=clothing&color=white',
     }))
-  }, [content])
+  }, [featuredCategories])
 
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
@@ -138,44 +131,49 @@ export default function Index() {
       </section>
 
       {/* Section 2: Categories Grid */}
-      <section className="py-12 md:py-20 bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
-          <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
-            {isLoading
-              ? [1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
-                  >
-                    <Skeleton className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full mb-5" />
-                    <Skeleton className="w-24 h-8" />
-                  </div>
-                ))
-              : dynamicCategoryNavItems.map((item) => (
-                  <Link
-                    key={item.value}
-                    to={`/produtos?category=${encodeURIComponent(item.value)}`}
-                    className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
-                  >
-                    <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
-                      <img
-                        src={item.image}
-                        alt={item.label}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                      />
+      {dynamicCategoryNavItems.length > 0 && (
+        <section className="py-12 md:py-20 bg-white">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
+            <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
+              {isLoading
+                ? [1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
+                    >
+                      <Skeleton className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full mb-5" />
+                      <Skeleton className="w-24 h-8" />
                     </div>
-                    <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
-                      {item.label}
-                    </span>
-                  </Link>
-                ))}
+                  ))
+                : dynamicCategoryNavItems.map((item) => (
+                    <Link
+                      key={item.value}
+                      to={`/produtos?category=${encodeURIComponent(item.value)}`}
+                      className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
+                    >
+                      <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
+                        <img
+                          src={item.image}
+                          alt={item.label}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
+                        {item.label}
+                      </span>
+                    </Link>
+                  ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Section 3: Benefits */}
+      {/* Section 3: Featured Products */}
+      <FeaturedProducts />
+
+      {/* Section 4: Benefits */}
       <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-[1200px]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">

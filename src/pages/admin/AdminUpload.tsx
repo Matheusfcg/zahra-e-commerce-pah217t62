@@ -37,6 +37,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { ProductForm } from '@/components/admin/ProductForm'
 import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
+import { AdminOrders } from '@/components/admin/AdminOrders'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -441,9 +442,24 @@ export default function AdminUpload() {
         <TabsList className="mb-8 flex-wrap h-auto gap-2">
           <TabsTrigger value="products">Produtos</TabsTrigger>
           <TabsTrigger value="product-categories">Categorias</TabsTrigger>
+          <TabsTrigger value="orders">Pedidos</TabsTrigger>
           <TabsTrigger value="texts">Textos do Site</TabsTrigger>
           <TabsTrigger value="categories">Pix & Outros</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciamento de Pedidos</CardTitle>
+              <CardDescription>
+                Visualize e atualize o status de todos os pedidos dos clientes em tempo real.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminOrders />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="product-categories">
           <Card>

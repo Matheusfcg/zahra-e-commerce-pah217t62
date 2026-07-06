@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
     if (profileError || !profile?.is_admin) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     const { code, redirect_uri } = await req.json()
     if (!code) {
       return new Response(JSON.stringify({ error: 'Code is required' }), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -72,13 +72,16 @@ Deno.serve(async (req) => {
     const apiUrl = Deno.env.get('MELHOR_ENVIO_URL') || 'https://melhorenvio.com.br'
 
     if (!clientId || !clientSecret) {
-      return new Response(JSON.stringify({ error: 'Melhor Envio credentials not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ error: 'Melhor Envio credentials not configured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
-    const response = await fetch(`${apiUrl}/oauth/oauth/token`, {
+    const response = await fetch(`${apiUrl}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -100,10 +103,13 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           error:
-            data.message || data.error_description || 'Failed to exchange token with Melhor Envio',
+            data.message ||
+            data.error_description ||
+            'Failed to exchange token with Melhor Envio',
+          details: data
         }),
         {
-          status: 400,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
@@ -131,7 +137,7 @@ Deno.serve(async (req) => {
     if (dbError) {
       console.error('Token save error:', dbError)
       return new Response(JSON.stringify({ error: 'Failed to save tokens' }), {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -142,7 +148,7 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     console.error('melhor-envio-token-exchange error:', err)
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

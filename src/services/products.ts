@@ -141,6 +141,21 @@ export async function getCarouselProducts() {
   })
 }
 
+export async function getHighlightedProducts() {
+  return fetchWithCache('highlighted', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .or('show_in_carousel.eq.true,is_featured.eq.true')
+      .gt('quantity', 0)
+      .order('created_at', { ascending: false })
+      .limit(8)
+
+    if (error) throw error
+    return data as Product[]
+  })
+}
+
 export async function getMixedCollectionProducts() {
   return fetchWithCache('mixed-collection', async () => {
     const { data, error } = await supabase
@@ -172,6 +187,20 @@ export async function getTopStockProducts() {
       .select(PRODUCT_SELECT)
       .order('quantity', { ascending: false })
       .limit(5)
+
+    if (error) throw error
+    return data as Product[]
+  })
+}
+
+export async function getHomepageProducts() {
+  return fetchWithCache('homepage-products', async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .or('is_featured.eq.true,show_in_carousel.eq.true')
+      .order('created_at', { ascending: false })
+      .limit(8)
 
     if (error) throw error
     return data as Product[]

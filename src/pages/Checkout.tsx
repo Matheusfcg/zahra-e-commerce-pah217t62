@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/carousel'
 
 const Checkout = () => {
-  const { items, subtotal } = useCart()
+  const { items, subtotal, clearCart } = useCart()
   const { session } = useAuth()
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -204,11 +204,16 @@ const Checkout = () => {
         product_id: item.id,
         quantity: item.quantity,
         price_at_purchase: item.price,
+        size_name: item.size,
+        color_name: item.color,
       }))
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
 
       if (itemsError) throw itemsError
+
+      // Clear the cart upon successful order creation
+      clearCart()
 
       // Trigger Edge Function Notification Asynchronously
       supabase.functions

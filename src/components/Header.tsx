@@ -24,23 +24,23 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 
-const appCategories = [
-  'Conjuntos',
-  'Macaquinhos',
-  'Blusas e Bodies',
-  'Saias',
-  'Calças',
-  'Malhas',
-  'Básicos',
-  'Jeans',
-]
-
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { totalItems, openDrawer } = useCart()
   const location = useLocation()
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
+
+  useEffect(() => {
+    supabase
+      .from('categories')
+      .select('name')
+      .order('name')
+      .then(({ data }) => {
+        if (data) setCategories(data.map((c: any) => c.name))
+      })
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -122,7 +122,7 @@ export function Header() {
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
-                      {appCategories.map((cat) => (
+                      {categories.map((cat) => (
                         <li key={cat}>
                           <NavigationMenuLink asChild>
                             <Link
@@ -281,7 +281,7 @@ export function Header() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col bg-muted/30 py-2">
-                      {appCategories.map((cat) => (
+                      {categories.map((cat) => (
                         <Link
                           key={cat}
                           to={`/produtos?category=${encodeURIComponent(cat)}`}

@@ -286,16 +286,20 @@ export function ProfileMenu({ renderTrigger }: ProfileMenuProps = {}) {
         <Button
           variant="ghost"
           className="w-full justify-start font-medium h-12 text-base rounded-xl hover:bg-secondary/50"
-          onClick={() => setIsOpen(false)}
+          asChild
         >
-          <ShoppingBag className="mr-3 h-5 w-5 text-muted-foreground" /> Minhas Compras
+          <a href="/meus-pedidos" onClick={() => setIsOpen(false)}>
+            <ShoppingBag className="mr-3 h-5 w-5 text-muted-foreground" /> Meus Pedidos
+          </a>
         </Button>
         <Button
           variant="ghost"
           className="w-full justify-start font-medium h-12 text-base rounded-xl hover:bg-secondary/50"
-          onClick={() => setIsOpen(false)}
+          asChild
         >
-          <Heart className="mr-3 h-5 w-5 text-muted-foreground" /> Itens Salvos
+          <a href="/favoritos" onClick={() => setIsOpen(false)}>
+            <Heart className="mr-3 h-5 w-5 text-muted-foreground" /> Itens Salvos
+          </a>
         </Button>
         <Button
           variant="ghost"

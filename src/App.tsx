@@ -8,6 +8,7 @@ import Product from './pages/Product'
 import ProductsPage from './pages/Products'
 import Checkout from './pages/Checkout'
 import Favorites from './pages/Favorites'
+import Orders from './pages/Orders'
 import TrocaDevolucao from './pages/TrocaDevolucao'
 import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
@@ -53,6 +54,7 @@ const App = () => {
               <Route path="/product/:id" element={<Product />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/favoritos" element={<Favorites />} />
+              <Route path="/meus-pedidos" element={<Orders />} />
               <Route path="/troca-e-devolucao" element={<TrocaDevolucao />} />
               <Route
                 path="/admin/upload"

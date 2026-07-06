@@ -19,6 +19,7 @@ interface CartContextType {
   updateQuantity: (id: string, color: string, size: string, quantity: number) => void
   openDrawer: () => void
   closeDrawer: () => void
+  clearCart: () => void
   totalItems: number
   subtotal: number
 }
@@ -86,6 +87,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [removeFromCart],
   )
 
+  const clearCart = useCallback(() => setItems([]), [])
+
   const openDrawer = useCallback(() => setIsDrawerOpen(true), [])
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), [])
 
@@ -106,6 +109,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         openDrawer,
         closeDrawer,
+        clearCart,
         totalItems,
         subtotal,
       },
