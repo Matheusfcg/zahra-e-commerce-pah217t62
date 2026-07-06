@@ -268,7 +268,7 @@ export function AdminOrders() {
                   </a>
                 )}
               </div>
-              {selectedOrder.shipping_zip_code && (
+              {(selectedOrder.shipping_zip_code || selectedOrder.shipping_street) && (
                 <div>
                   <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
@@ -276,18 +276,17 @@ export function AdminOrders() {
                   </h4>
                   <div className="text-sm space-y-1 text-muted-foreground bg-muted/30 p-3 rounded-md">
                     <p>
-                      {selectedOrder.shipping_street || '—'}
-                      {selectedOrder.shipping_number ? `, ${selectedOrder.shipping_number}` : ''}
+                      {selectedOrder.shipping_street || '—'},{' '}
+                      {selectedOrder.shipping_number || 'S/N'}
                     </p>
                     {selectedOrder.shipping_complement && (
-                      <p>Complemento: {selectedOrder.shipping_complement}</p>
+                      <p>{selectedOrder.shipping_complement}</p>
                     )}
-                    <p>Bairro: {selectedOrder.shipping_neighborhood || '—'}</p>
+                    <p>{selectedOrder.shipping_neighborhood || '—'}</p>
                     <p>
-                      {selectedOrder.shipping_city || '—'}
-                      {selectedOrder.shipping_state ? ` - ${selectedOrder.shipping_state}` : ''}
+                      {selectedOrder.shipping_city || '—'} - {selectedOrder.shipping_state || '—'}
                     </p>
-                    <p>CEP: {selectedOrder.shipping_zip_code}</p>
+                    <p>{selectedOrder.shipping_zip_code || '—'}</p>
                   </div>
                 </div>
               )}
