@@ -30,6 +30,15 @@ interface SizeEntry {
   _deleted?: boolean
 }
 
+interface VariantEntry {
+  id: string
+  size_name: string
+  color_name: string
+  quantity: string
+  isNew?: boolean
+  _deleted?: boolean
+}
+
 export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -52,6 +61,7 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
   const [images, setImages] = useState<any[]>([])
   const [sizes, setSizes] = useState<SizeEntry[]>([])
+  const [variants, setVariants] = useState<VariantEntry[]>([])
   const [uploadingImage, setUploadingImage] = useState(false)
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
 
@@ -99,21 +109,27 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
           })),
         )
       } else {
-        setSizes([
-          {
-            id: `temp-${Date.now()}`,
-            size_name: 'Tamanho Único',
-            quantity: product.quantity?.toString() || '0',
-            isNew: true,
+        setSizes([])
+      }
+
+      if (product.product_variants && product.product_variants.length > 0) {
+        setVariants(
+          product.product_variants.map((v: any) => ({
+            ...v,
+            quantity: v.quantity.toString(),
             _deleted: false,
-          },
-        ])
+          })),
+        )
+      } else {
+        setVariants([])
       }
     } else {
-      setSizes([
+      setSizes([])
+      setVariants([
         {
           id: `temp-${Date.now()}`,
           size_name: 'Tamanho Único',
+          color_name: 'Padrão',
           quantity: '0',
           isNew: true,
           _deleted: false,
@@ -254,6 +270,30 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
     setSizes(sizes.map((s) => (s.id === id ? { ...s, _deleted: true } : s)))
   }
 
+  const activeVariants = variants.filter((v) => !v._deleted)
+
+  const addVariant = () => {
+    setVariants([
+      ...variants,
+      {
+        id: `temp-${Date.now()}`,
+        size_name: '',
+        color_name: '',
+        quantity: '0',
+        isNew: true,
+        _deleted: false,
+      },
+    ])
+  }
+
+  const updateVariant = (id: string, field: string, value: string) => {
+    setVariants(variants.map((v) => (v.id === id ? { ...v, [field]: value } : v)))
+  }
+
+  const removeVariant = (id: string) => {
+    setVariants(variants.map((v) => (v.id === id ? { ...v, _deleted: true } : v)))
+  }
+
   const applyPreset = (presetName: string) => {
     const presets: Record<string, { w: string; h: string; wd: string; l: string }> = {
       leve: { w: '150', h: '2', wd: '20', l: '15' },
@@ -333,6 +373,27 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
             await supabase.from('product_sizes').insert([sizeData])
           } else {
             await supabase.from('product_sizes').update(sizeData).eq('id', size.id)
+          }
+        }
+      }
+
+      // Process variants
+      for (const variant of variants) {
+        if (variant._deleted) {
+          if (!variant.isNew) {
+            await supabase.from('product_variants').delete().eq('id', variant.id)
+          }
+        } else {
+          const variantData = {
+            product_id: productId,
+            size_name: variant.size_name,
+            color_name: variant.color_name,
+            quantity: parseInt(variant.quantity || '0', 10),
+          }
+          if (variant.isNew) {
+            await supabase.from('product_variants').insert([variantData])
+          } else {
+            await supabase.from('product_variants').update(variantData).eq('id', variant.id)
           }
         }
       }
@@ -587,27 +648,78 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
 
       <div className="border-t pt-6 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Tamanhos e Estoque</h3>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => addSize('Tamanho Único')}
-            >
-              + T. Único
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => addSize('')}>
-              + Personalizado
-            </Button>
-          </div>
+          <h3 className="text-lg font-semibold">Gerenciar Estoque por Variantes</h3>
+          <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+            <Plus className="h-4 w-4 mr-1" /> Adicionar Variante
+          </Button>
         </div>
 
-        {activeSizes.length === 0 ? (
+        {activeVariants.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4 border rounded-md border-dashed">
-            Adicione pelo menos um tamanho.
+            Adicione combinações de tamanho e cor para gerenciar o estoque específico.
           </p>
         ) : (
+          <div className="space-y-3">
+            {activeVariants.map((variant) => (
+              <div
+                key={variant.id}
+                className="flex gap-3 items-center bg-muted/30 p-2 rounded-md border"
+              >
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Tamanho</Label>
+                  <Input
+                    placeholder="Ex: TAM único, P, M"
+                    value={variant.size_name}
+                    onChange={(e) => updateVariant(variant.id, 'size_name', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Cor</Label>
+                  <Input
+                    placeholder="Ex: Preto, Vinho"
+                    value={variant.color_name}
+                    onChange={(e) => updateVariant(variant.id, 'color_name', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="w-24">
+                  <Label className="text-xs text-muted-foreground mb-1 block">Quantidade</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Qtd"
+                    value={variant.quantity}
+                    onChange={(e) => updateVariant(variant.id, 'quantity', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="pt-5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeVariant(variant.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {activeSizes.length > 0 && (
+        <div className="border-t pt-6 mt-6 opacity-60">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Tamanhos Antigos (Legado)</h3>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => addSize('')}>
+                + Tamanho Legado
+              </Button>
+            </div>
+          </div>
           <div className="space-y-3">
             {activeSizes.map((size) => (
               <div key={size.id} className="flex gap-3 items-center">
@@ -640,8 +752,8 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="border-t pt-6 mt-6">
         <h3 className="text-lg font-semibold mb-1">Imagens do Produto</h3>

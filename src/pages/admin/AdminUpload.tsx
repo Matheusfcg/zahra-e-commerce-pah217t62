@@ -108,7 +108,7 @@ export default function AdminUpload() {
   const fetchProducts = async () => {
     const { data, error } = await supabase
       .from('products')
-      .select('*, product_images(*), product_colors(*), product_sizes(*)')
+      .select('*, product_images(*), product_colors(*), product_sizes(*), product_variants(*)')
       .order('name')
     if (data) setProducts(data)
     if (error) toast.error('Erro ao buscar produtos')
@@ -591,7 +591,22 @@ export default function AdminUpload() {
                         <div>{product.name}</div>
                       </TableCell>
                       <TableCell>R$ {product.price?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell>{product.quantity || 0}</TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {product.product_variants && product.product_variants.length > 0 ? (
+                            product.product_variants.map((v: any) => (
+                              <div
+                                key={v.id}
+                                className="text-xs whitespace-nowrap text-muted-foreground"
+                              >
+                                {v.size_name} - cor {v.color_name} - quantidade {v.quantity}
+                              </div>
+                            ))
+                          ) : (
+                            <span>{product.quantity || 0}</span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{product.product_images?.length || 0}</TableCell>
                       <TableCell>
                         <div className="text-xs text-muted-foreground whitespace-nowrap">

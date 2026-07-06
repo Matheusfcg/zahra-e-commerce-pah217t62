@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Loader2, Plus, Trash2, Edit2, Star, Image as ImageIcon } from 'lucide-react'
+import { Loader2, Plus, Trash2, Edit2, Star, Image as ImageIcon, Upload } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import {
   Dialog,
@@ -26,6 +26,7 @@ export function ManageCategories() {
   const [categories, setCategories] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategorySlug, setNewCategorySlug] = useState('')
@@ -54,6 +55,68 @@ export function ManageCategories() {
   useEffect(() => {
     fetchCategories()
   }, [])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingImage(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('category-images')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('category-images').getPublicUrl(filePath)
+
+      setNewCategoryImageUrl(data.publicUrl)
+      toast({ title: 'Sucesso', description: 'Imagem enviada com sucesso!' })
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível enviar a imagem: ' + error.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !editingCategory) return
+
+    setIsSaving(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('category-images')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('category-images').getPublicUrl(filePath)
+
+      setEditingCategory({ ...editingCategory, image_url: data.publicUrl })
+      toast({ title: 'Sucesso', description: 'Imagem enviada com sucesso!' })
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível enviar a imagem: ' + error.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleNameChange = (val: string) => {
     setNewCategoryName(val)
@@ -211,11 +274,29 @@ export function ManageCategories() {
         </div>
         <div className="space-y-2 lg:col-span-2">
           <Label>URL da Imagem de Capa (Para exibir no início)</Label>
-          <Input
-            placeholder="https://..."
-            value={newCategoryImageUrl}
-            onChange={(e) => setNewCategoryImageUrl(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <Input
+              placeholder="https://..."
+              value={newCategoryImageUrl}
+              onChange={(e) => setNewCategoryImageUrl(e.target.value)}
+              className="flex-1"
+            />
+            <Label className="cursor-pointer flex items-center justify-center px-4 border rounded-md hover:bg-secondary transition-colors shrink-0">
+              {uploadingImage ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {uploadingImage ? 'Enviando...' : 'Upload'}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploadingImage}
+              />
+            </Label>
+          </div>
         </div>
         <div className="flex items-center justify-between gap-4 h-10 px-2">
           <div className="flex items-center space-x-2">
@@ -338,14 +419,31 @@ export function ManageCategories() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>URL da Imagem</Label>
-                  <Input
-                    value={editingCategory.image_url || ''}
-                    placeholder="https://..."
-                    onChange={(e) =>
-                      setEditingCategory({ ...editingCategory, image_url: e.target.value })
-                    }
-                  />
+                  <Label>URL da Imagem de Capa</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editingCategory.image_url || ''}
+                      placeholder="https://..."
+                      onChange={(e) =>
+                        setEditingCategory({ ...editingCategory, image_url: e.target.value })
+                      }
+                      className="flex-1"
+                    />
+                    <Label className="cursor-pointer flex items-center justify-center px-3 border rounded-md hover:bg-secondary transition-colors shrink-0">
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleEditImageUpload}
+                        disabled={isSaving}
+                      />
+                    </Label>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2 pt-2">
                   <Switch
