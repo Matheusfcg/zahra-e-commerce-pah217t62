@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Lock, Copy } from 'lucide-react'
+import { ChevronRight, Lock, Copy, Loader2 } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/hooks/use-auth'
+import { useCepLookup } from '@/hooks/use-cep-lookup'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +30,8 @@ const Checkout = () => {
   const [shippingOptions, setShippingOptions] = useState<any[]>([])
   const [isCalculatingShipping, setIsCalculatingShipping] = useState(false)
   const [selectedShipping, setSelectedShipping] = useState<any>(null)
+  const { isLoading: isCepLoading, error: cepError, lookup: lookupCep } = useCepLookup()
+  const [cepNotFound, setCepNotFound] = useState(false)
 
   const shipping = selectedShipping ? parseFloat(selectedShipping.price) : 0
   const total = subtotal + shipping
@@ -95,20 +98,28 @@ const Checkout = () => {
     }
   }, [userId])
 
+  const handleCepLookup = async (rawCep: string) => {
+    const clean = rawCep.replace(/\D/g, '')
+    if (clean.length !== 8) {
+      setCepNotFound(false)
+      return
+    }
+    const data = await lookupCep(clean)
+    if (data) {
+      setAddressStreet(data.street)
+      setAddressNeighborhood(data.neighborhood)
+      setAddressCity(data.city)
+      setAddressState(data.state)
+      setCepNotFound(false)
+    } else {
+      setCepNotFound(true)
+    }
+  }
+
   useEffect(() => {
     const clean = cep.replace(/\D/g, '')
     if (clean.length === 8) {
-      fetch(`https://viacep.com.br/ws/${clean}/json/`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.erro) {
-            setAddressStreet(data.logradouro || '')
-            setAddressNeighborhood(data.bairro || '')
-            setAddressCity(data.localidade || '')
-            setAddressState(data.uf || '')
-          }
-        })
-        .catch(() => {})
+      handleCepLookup(cep)
     }
   }, [cep])
 
@@ -463,11 +474,28 @@ const Checkout = () => {
                           let value = e.target.value.replace(/\D/g, '')
                           if (value.length > 5) value = value.replace(/^(\d{5})(\d)/, '$1-$2')
                           setCep(value)
+                          if (value.replace(/\D/g, '').length !== 8) {
+                            setCepNotFound(false)
+                          }
                         }}
+                        onBlur={(e) => handleCepLookup(e.target.value)}
                         maxLength={9}
                         placeholder="00000-000"
                         className="rounded-none h-12 w-1/3"
                       />
+                      {isCepLoading && (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground self-center ml-1" />
+                      )}
+                    </div>
+                    {cepNotFound && (
+                      <p className="text-sm text-red-600 mt-1">
+                        CEP não encontrado. Preencha o endereço manualmente.
+                      </p>
+                    )}
+                    {cepError && !cepNotFound && (
+                      <p className="text-sm text-amber-600 mt-1">{cepError}</p>
+                    )}
+                    <div className="flex gap-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -576,6 +604,7 @@ const Checkout = () => {
                       id="address"
                       value={addressStreet}
                       onChange={(e) => setAddressStreet(e.target.value)}
+                      disabled={isCepLoading}
                       className="rounded-none h-12"
                     />
                   </div>
@@ -605,6 +634,7 @@ const Checkout = () => {
                       id="neighborhood"
                       value={addressNeighborhood}
                       onChange={(e) => setAddressNeighborhood(e.target.value)}
+                      disabled={isCepLoading}
                       className="rounded-none h-12"
                     />
                   </div>
@@ -615,6 +645,7 @@ const Checkout = () => {
                         id="city"
                         value={addressCity}
                         onChange={(e) => setAddressCity(e.target.value)}
+                        disabled={isCepLoading}
                         className="rounded-none h-12"
                       />
                     </div>
@@ -625,6 +656,7 @@ const Checkout = () => {
                         value={addressState}
                         onChange={(e) => setAddressState(e.target.value.toUpperCase())}
                         maxLength={2}
+                        disabled={isCepLoading}
                         className="rounded-none h-12"
                       />
                     </div>

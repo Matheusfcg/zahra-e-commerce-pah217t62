@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
+import { useCepLookup } from '@/hooks/use-cep-lookup'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,8 @@ export default function Profile() {
   const [neighborhood, setNeighborhood] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
+  const { isLoading: isCepLoading, error: cepError, lookup: lookupCep } = useCepLookup()
+  const [cepNotFound, setCepNotFound] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -49,20 +52,28 @@ export default function Profile() {
       })
   }, [user])
 
+  const handleCepLookup = async (rawCep: string) => {
+    const clean = rawCep.replace(/\D/g, '')
+    if (clean.length !== 8) {
+      setCepNotFound(false)
+      return
+    }
+    const data = await lookupCep(clean)
+    if (data) {
+      setStreet(data.street)
+      setNeighborhood(data.neighborhood)
+      setCity(data.city)
+      setState(data.state)
+      setCepNotFound(false)
+    } else {
+      setCepNotFound(true)
+    }
+  }
+
   useEffect(() => {
     const clean = zipCode.replace(/\D/g, '')
     if (clean.length === 8) {
-      fetch(`https://viacep.com.br/ws/${clean}/json/`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (!d.erro) {
-            setStreet(d.logradouro || '')
-            setNeighborhood(d.bairro || '')
-            setCity(d.localidade || '')
-            setState(d.uf || '')
-          }
-        })
-        .catch(() => {})
+      handleCepLookup(zipCode)
     }
   }, [zipCode])
 
@@ -161,18 +172,33 @@ export default function Profile() {
             </h2>
             <div className="space-y-2">
               <Label htmlFor="zip">CEP *</Label>
-              <Input
-                id="zip"
-                value={zipCode}
-                onChange={(e) => {
-                  let v = e.target.value.replace(/\D/g, '')
-                  if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2')
-                  setZipCode(v)
-                }}
-                maxLength={9}
-                placeholder="00000-000"
-                className={`${inputCls} w-1/3`}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="zip"
+                  value={zipCode}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/\D/g, '')
+                    if (v.length > 5) v = v.replace(/^(\d{5})(\d)/, '$1-$2')
+                    setZipCode(v)
+                    if (v.replace(/\D/g, '').length !== 8) {
+                      setCepNotFound(false)
+                    }
+                  }}
+                  onBlur={(e) => handleCepLookup(e.target.value)}
+                  maxLength={9}
+                  placeholder="00000-000"
+                  className={`${inputCls} w-1/3`}
+                />
+                {isCepLoading && (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground self-center ml-1" />
+                )}
+              </div>
+              {cepNotFound && (
+                <p className="text-sm text-red-600">
+                  CEP não encontrado. Preencha o endereço manualmente.
+                </p>
+              )}
+              {cepError && !cepNotFound && <p className="text-sm text-amber-600">{cepError}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="street">Rua *</Label>
@@ -180,6 +206,7 @@ export default function Profile() {
                 id="street"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
+                disabled={isCepLoading}
                 className={inputCls}
               />
             </div>
@@ -209,6 +236,7 @@ export default function Profile() {
                 id="neighborhood"
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
+                disabled={isCepLoading}
                 className={inputCls}
               />
             </div>
@@ -219,8 +247,9 @@ export default function Profile() {
                   id="city"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
+                  disabled={isCepLoading}
                   className={inputCls}
-                />
+                />{' '}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="state">Estado *</Label>
@@ -229,8 +258,9 @@ export default function Profile() {
                   value={state}
                   onChange={(e) => setState(e.target.value.toUpperCase())}
                   maxLength={2}
+                  disabled={isCepLoading}
                   className={inputCls}
-                />
+                />{' '}
               </div>
             </div>
           </div>
