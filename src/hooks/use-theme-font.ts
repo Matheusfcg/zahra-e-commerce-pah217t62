@@ -76,20 +76,15 @@ export function useThemeFont() {
       applyThemeFont(cached)
     }
 
-    supabase
-      .from('site_content')
-      .select('content_value')
-      .eq('section_key', 'theme_settings')
+    ;(supabase as any)
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', 'main_font')
       .single()
-      .then(({ data, error }) => {
+      .then(({ data, error }: any) => {
         let fontName = cached || DEFAULT_FONT
-        if (!error && data?.content_value) {
-          try {
-            const parsed = JSON.parse(data.content_value)
-            if (parsed.font) fontName = parsed.font
-          } catch (e) {
-            // ignore
-          }
+        if (!error && data?.setting_value) {
+          fontName = data.setting_value
           setFont(fontName)
           applyThemeFont(fontName)
           setLoading(false)

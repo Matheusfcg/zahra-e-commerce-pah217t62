@@ -172,17 +172,33 @@ export function Header() {
 
                 {isAdmin && (
                   <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to="/admin/upload"
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'text-[#3c6e47] font-bold bg-transparent hover:bg-transparent text-[15px]',
-                        )}
-                      >
-                        ADMIN
-                      </Link>
-                    </NavigationMenuLink>
+                    <NavigationMenuTrigger className="text-[#3c6e47] font-bold bg-transparent hover:bg-transparent text-[15px]">
+                      ADMIN
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[200px] gap-1 p-4 bg-white shadow-md border rounded-md">
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to="/admin/upload"
+                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            >
+                              Dashboard
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to="/admin/appearance"
+                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            >
+                              Aparência
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      </ul>
+                    </NavigationMenuContent>
                   </NavigationMenuItem>
                 )}
               </NavigationMenuList>
@@ -348,7 +364,14 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-6 py-4 text-sm font-bold text-[#3c6e47] uppercase tracking-wider hover:bg-muted transition-colors"
                   >
-                    Administrador
+                    Dashboard Admin
+                  </Link>
+                  <Link
+                    to="/admin/appearance"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-6 py-4 text-sm font-bold text-[#3c6e47] uppercase tracking-wider hover:bg-muted transition-colors"
+                  >
+                    Aparência
                   </Link>
                 </div>
               )}

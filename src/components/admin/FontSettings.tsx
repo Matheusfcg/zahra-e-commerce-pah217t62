@@ -20,19 +20,14 @@ export function FontSettings() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('site_content')
-      .select('content_value')
-      .eq('section_key', 'theme_settings')
+    ;(supabase as any)
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', 'main_font')
       .single()
-      .then(({ data, error }) => {
-        if (!error && data?.content_value) {
-          try {
-            const parsed = JSON.parse(data.content_value)
-            if (parsed.font) setSelectedFont(parsed.font)
-          } catch (e) {
-            // Ignore parse error
-          }
+      .then(({ data, error }: any) => {
+        if (!error && data?.setting_value) {
+          setSelectedFont(data.setting_value)
         } else {
           // Fallback to primary_font
           supabase
@@ -55,13 +50,13 @@ export function FontSettings() {
 
   const handleSave = async () => {
     setSaving(true)
-    const { error } = await supabase.from('site_content').upsert(
+    const { error } = await (supabase as any).from('site_settings').upsert(
       {
-        section_key: 'theme_settings',
-        content_value: JSON.stringify({ font: selectedFont }),
+        setting_key: 'main_font',
+        setting_value: selectedFont,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'section_key' },
+      { onConflict: 'setting_key' },
     )
     if (error) {
       toast({ title: 'Erro ao salvar fonte', variant: 'destructive' })

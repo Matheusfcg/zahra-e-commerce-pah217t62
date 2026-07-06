@@ -669,12 +669,14 @@ const Checkout = () => {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Frete</span>
-                  <span className="text-green-600 font-medium">
-                    {shipping === 0 ? 'Grátis' : `R$ ${shipping.toFixed(2).replace('.', ',')}`}
-                  </span>
-                </div>
+                {selectedShipping && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Frete</span>
+                    <span className="text-green-600 font-medium">
+                      {shipping === 0 ? 'Grátis' : `R$ ${shipping.toFixed(2).replace('.', ',')}`}
+                    </span>
+                  </div>
+                )}
                 <Separator className="my-2" />
                 <div className="flex justify-between text-base font-medium">
                   <span>Total</span>
