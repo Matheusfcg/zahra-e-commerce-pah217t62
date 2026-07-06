@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from '@/hooks/use-toast'
 import { Trash2, Plus, ArrowUp, ArrowDown, UploadCloud } from 'lucide-react'
 import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
+import { FontSettings } from '@/components/admin/FontSettings'
 
 export default function SiteContentTab() {
   const [heroImages, setHeroImages] = useState<string[]>([])
@@ -121,6 +122,9 @@ export default function SiteContentTab() {
 
   return (
     <div className="grid gap-8 mt-6 md:grid-cols-2">
+      <div className="md:col-span-2">
+        <FontSettings />
+      </div>
       <Card className="border shadow-sm">
         <CardHeader className="bg-muted/30 pb-4">
           <CardTitle>Banner Principal (Hero)</CardTitle>

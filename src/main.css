@@ -38,6 +38,9 @@
     --ring: 360 61% 11%;
 
     --radius: 0rem; /* Sharp corners for premium look */
+
+    --font-primary: 'Inter';
+    --font-heading: 'Playfair Display';
   }
 
   * {

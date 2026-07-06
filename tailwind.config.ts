@@ -27,8 +27,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans: ['var(--font-primary)', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-heading)', '"Playfair Display"', 'Georgia', 'serif'],
         script: ['"Billy Betty"', '"Great Vibes"', 'cursive'],
       },
       colors: {

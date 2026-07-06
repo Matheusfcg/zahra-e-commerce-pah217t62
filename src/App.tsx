@@ -17,6 +17,7 @@ import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
 import { AdminRoute } from './components/AdminRoute'
 import { useEffect } from 'react'
+import { useThemeFont } from './hooks/use-theme-font'
 import SiteContentTab from './components/admin/SiteContentTab'
 import { PixModal } from './components/PixModal'
 import { ManageCategories } from './components/admin/ManageCategories'
@@ -32,6 +33,8 @@ if (typeof window !== 'undefined') {
 }
 
 const App = () => {
+  useThemeFont()
+
   useEffect(() => {
     const currentVersion = localStorage.getItem('app_cache_version')
     if (currentVersion !== APP_CACHE_VERSION) {
