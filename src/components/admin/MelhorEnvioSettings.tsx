@@ -134,9 +134,15 @@ export function MelhorEnvioSettings() {
               <div className="flex-1">
                 <span className="text-sm font-medium text-green-700">Conectado</span>
                 {tokenExpiry && (
-                  <p className="text-xs text-green-600 mt-0.5">
-                    Válido até: {formatExpiry(tokenExpiry)}
-                  </p>
+                  <div className="mt-0.5">
+                    <p className="text-sm text-green-800 font-semibold">
+                      Válido até: {formatExpiry(tokenExpiry)}
+                    </p>
+                    <p className="text-[11px] text-green-700/80 mt-1 leading-tight max-w-[400px]">
+                      * A renovação só é necessária quando o token expirar (o token tem longa
+                      duração, não é necessário renovar mensalmente).
+                    </p>
+                  </div>
                 )}
               </div>
               <Button

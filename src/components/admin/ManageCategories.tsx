@@ -273,25 +273,28 @@ export function ManageCategories() {
           />
         </div>
         <div className="space-y-2 lg:col-span-2">
-          <Label>URL da Imagem de Capa (Para exibir no início)</Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="https://..."
-              value={newCategoryImageUrl}
-              onChange={(e) => setNewCategoryImageUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Label className="cursor-pointer flex items-center justify-center px-4 border rounded-md hover:bg-secondary transition-colors shrink-0">
+          <Label>Imagem de Capa (Para exibir no início)</Label>
+          <div className="flex gap-4 items-center">
+            {newCategoryImageUrl && (
+              <div className="w-16 h-16 rounded-full overflow-hidden border shrink-0">
+                <img
+                  src={newCategoryImageUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <Label className="cursor-pointer flex items-center justify-center px-4 py-2 border border-dashed rounded-md hover:bg-secondary transition-colors flex-1 text-muted-foreground h-16">
               {uploadingImage ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
               ) : (
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="h-5 w-5 mr-2" />
               )}
-              {uploadingImage ? 'Enviando...' : 'Upload'}
+              {uploadingImage ? 'Enviando imagem...' : 'Selecionar Arquivo'}
               <input
                 type="file"
                 className="hidden"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageUpload}
                 disabled={uploadingImage}
               />
@@ -419,26 +422,28 @@ export function ManageCategories() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>URL da Imagem de Capa</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={editingCategory.image_url || ''}
-                      placeholder="https://..."
-                      onChange={(e) =>
-                        setEditingCategory({ ...editingCategory, image_url: e.target.value })
-                      }
-                      className="flex-1"
-                    />
-                    <Label className="cursor-pointer flex items-center justify-center px-3 border rounded-md hover:bg-secondary transition-colors shrink-0">
+                  <Label>Imagem de Capa</Label>
+                  <div className="flex gap-4 items-center">
+                    {editingCategory.image_url && (
+                      <div className="w-16 h-16 rounded-full overflow-hidden border shrink-0">
+                        <img
+                          src={editingCategory.image_url}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <Label className="cursor-pointer flex items-center justify-center px-4 py-2 border border-dashed rounded-md hover:bg-secondary transition-colors flex-1 text-muted-foreground h-16">
                       {isSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
                       ) : (
-                        <Upload className="h-4 w-4" />
+                        <Upload className="h-5 w-5 mr-2" />
                       )}
+                      {isSaving ? 'Enviando imagem...' : 'Selecionar Arquivo'}
                       <input
                         type="file"
                         className="hidden"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         onChange={handleEditImageUpload}
                         disabled={isSaving}
                       />

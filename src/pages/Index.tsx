@@ -160,7 +160,10 @@ export default function Index() {
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <span className="font-script text-[36px] md:text-[44px] text-wine whitespace-nowrap tracking-wide text-center leading-none">
+                      <span
+                        className="text-[36px] md:text-[44px] text-[#2D0B0B] whitespace-nowrap tracking-wide text-center leading-none mt-2"
+                        style={{ fontFamily: '"Great Vibes", "Brush Script MT", cursive' }}
+                      >
                         {item.label}
                       </span>
                     </Link>
