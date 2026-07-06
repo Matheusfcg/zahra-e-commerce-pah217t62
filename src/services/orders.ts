@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 export const ORDER_STATUSES = [
   { value: 'pending', label: 'Pendente' },
   { value: 'processing', label: 'Em Processamento' },
+  { value: 'paid', label: 'Pago' },
   { value: 'shipped', label: 'Enviado' },
   { value: 'delivered', label: 'Entregue' },
   { value: 'canceled', label: 'Cancelado' },
@@ -32,12 +33,13 @@ export type Order = {
   customer_email: string
   customer_phone: string | null
   user_id: string | null
+  invoice_url: string | null
   order_items: OrderItem[]
 }
 
 const ORDER_SELECT = `
   id, created_at, status, total_amount, payment_method,
-  customer_name, customer_email, customer_phone, user_id,
+  customer_name, customer_email, customer_phone, user_id, invoice_url,
   order_items (
     quantity, price_at_purchase, product_id, size_name, color_name,
     products (name, product_images(url))
@@ -65,6 +67,15 @@ export async function updateOrderStatus(orderId: string, status: string) {
   const { data, error } = await supabase
     .from('orders')
     .update({ status })
+    .eq('id', orderId)
+    .select()
+  return { data, error }
+}
+
+export async function updateOrderInvoice(orderId: string, invoiceUrl: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ invoice_url: invoiceUrl })
     .eq('id', orderId)
     .select()
   return { data, error }

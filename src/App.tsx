@@ -59,6 +59,7 @@ const App = () => {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/favoritos" element={<Favorites />} />
               <Route path="/meus-pedidos" element={<Orders />} />
+              <Route path="/my-orders" element={<Orders />} />
               <Route path="/troca-e-devolucao" element={<TrocaDevolucao />} />
               <Route
                 path="/admin/upload"

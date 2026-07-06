@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
-import { Loader2, Package, Clock, CheckCircle2, Truck, XCircle } from 'lucide-react'
+import { Loader2, Package, Clock, CheckCircle2, Truck, XCircle, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 
@@ -20,6 +20,7 @@ type Order = {
   status: string
   total_amount: number
   payment_method: string | null
+  invoice_url: string | null
   order_items: OrderItem[]
 }
 
@@ -81,7 +82,7 @@ export default function Orders() {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          id, created_at, status, total_amount, payment_method,
+          id, created_at, status, total_amount, payment_method, invoice_url,
           order_items (
             quantity, price_at_purchase, product_id, size_name, color_name,
             products (name, product_images(url))
@@ -239,6 +240,18 @@ export default function Orders() {
                       )
                     })}
                   </div>
+                  {order.invoice_url && (
+                    <div className="mt-4 pt-4 border-t">
+                      <a
+                        href={order.invoice_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:underline flex items-center gap-1.5"
+                      >
+                        <FileText className="w-4 h-4" /> Ver Nota Fiscal
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

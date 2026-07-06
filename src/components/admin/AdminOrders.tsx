@@ -5,6 +5,7 @@ import {
   getStatusLabel,
   fetchAllOrders,
   updateOrderStatus,
+  updateOrderInvoice,
   type Order,
 } from '@/services/orders'
 import { Loader2, Eye } from 'lucide-react'
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -35,6 +37,7 @@ const getStatusColor = (status: string) => {
     canceled: 'bg-red-100 text-red-800 border-red-200',
     processing: 'bg-purple-100 text-purple-800 border-purple-200',
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    paid: 'bg-green-100 text-green-800 border-green-200',
   }
   return map[status] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
@@ -54,6 +57,8 @@ export function AdminOrders() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [invoiceUrl, setInvoiceUrl] = useState('')
+  const [updatingInvoice, setUpdatingInvoice] = useState(false)
 
   const loadOrders = useCallback(async () => {
     const { data } = await fetchAllOrders()
@@ -86,6 +91,28 @@ export function AdminOrders() {
       if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status })
     }
     setUpdatingId(null)
+  }
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setInvoiceUrl(selectedOrder.invoice_url || '')
+    }
+  }, [selectedOrder])
+
+  const handleSaveInvoice = async () => {
+    if (!selectedOrder) return
+    setUpdatingInvoice(true)
+    const { error } = await updateOrderInvoice(selectedOrder.id, invoiceUrl)
+    if (error) {
+      toast.error('Erro ao salvar nota fiscal')
+    } else {
+      toast.success('Nota fiscal salva com sucesso!')
+      setOrders((prev) =>
+        prev.map((o) => (o.id === selectedOrder.id ? { ...o, invoice_url: invoiceUrl } : o)),
+      )
+      setSelectedOrder({ ...selectedOrder, invoice_url: invoiceUrl })
+    }
+    setUpdatingInvoice(false)
   }
 
   const filtered = filterStatus === 'all' ? orders : orders.filter((o) => o.status === filterStatus)
@@ -216,6 +243,30 @@ export function AdminOrders() {
                 <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
                   {getStatusLabel(selectedOrder.status)}
                 </Badge>
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground">Nota Fiscal (URL):</span>
+                <div className="flex gap-2">
+                  <Input
+                    value={invoiceUrl}
+                    onChange={(e) => setInvoiceUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={handleSaveInvoice} disabled={updatingInvoice}>
+                    {updatingInvoice ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
+                  </Button>
+                </div>
+                {selectedOrder.invoice_url && (
+                  <a
+                    href={selectedOrder.invoice_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    Ver NF atual
+                  </a>
+                )}
               </div>
               <div>
                 <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide">Itens</h4>
