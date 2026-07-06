@@ -19,10 +19,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-export function ProfileMenu() {
+interface ProfileMenuProps {
+  renderTrigger?: (user: SupabaseUser | null, profile: any) => ReactNode
+}
+
+export function ProfileMenu({ renderTrigger }: ProfileMenuProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [isAdmin, setIsAdmin] = useState(false)
@@ -51,22 +56,26 @@ export function ProfileMenu() {
 
   if (!user) return null
 
+  const defaultTrigger = (
+    <Button
+      variant="ghost"
+      className="relative h-9 w-9 rounded-full ml-1 hover:bg-muted/50 transition-colors"
+    >
+      <Avatar className="h-9 w-9 border border-border/50">
+        <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || ''} />
+        <AvatarFallback className="bg-primary/5 text-primary text-xs font-medium">
+          {profile?.full_name?.charAt(0)?.toUpperCase() ||
+            user.email?.charAt(0)?.toUpperCase() ||
+            'U'}
+        </AvatarFallback>
+      </Avatar>
+    </Button>
+  )
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-9 w-9 rounded-full ml-1 hover:bg-muted/50 transition-colors"
-        >
-          <Avatar className="h-9 w-9 border border-border/50">
-            <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || ''} />
-            <AvatarFallback className="bg-primary/5 text-primary text-xs font-medium">
-              {profile?.full_name?.charAt(0)?.toUpperCase() ||
-                user.email?.charAt(0)?.toUpperCase() ||
-                'U'}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+        {renderTrigger ? renderTrigger(user, profile) : defaultTrigger}
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 mt-1" align="end" forceMount>
         <DropdownMenuLabel className="font-normal p-3 bg-muted/20">

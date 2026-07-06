@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import Auth from './pages/Auth'
 import Profile from './pages/Profile'
 import Index from './pages/Index'
 import Product from './pages/Product'
@@ -54,6 +55,7 @@ const App = () => {
           <PixModal />
           <Routes>
             <Route element={<Layout />}>
+              <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<Index />} />
               <Route path="/produtos" element={<ProductsPage />} />
               <Route path="/product/:id" element={<Product />} />

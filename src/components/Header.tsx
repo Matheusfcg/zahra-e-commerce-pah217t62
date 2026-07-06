@@ -212,13 +212,22 @@ export function Header() {
             </button>
 
             <div className="hidden lg:block">
-              <ProfileMenu
-                renderTrigger={() => (
-                  <button className="flex items-center hover:opacity-70 transition-opacity">
-                    <User className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
-                  </button>
-                )}
-              />
+              {user ? (
+                <ProfileMenu
+                  renderTrigger={() => (
+                    <button className="flex items-center hover:opacity-70 transition-opacity">
+                      <User className="h-5 w-5 md:h-5 md:w-5 stroke-[1.5] text-[#2D0B0B]" />
+                    </button>
+                  )}
+                />
+              ) : (
+                <Link
+                  to="/auth"
+                  className="text-sm font-medium text-[#2D0B0B] hover:opacity-70 transition-opacity uppercase tracking-wider"
+                >
+                  Entrar
+                </Link>
+              )}
             </div>
 
             <Link
@@ -254,30 +263,41 @@ export function Header() {
           <div className="flex flex-col h-full overflow-y-auto">
             {/* Auth Section */}
             <div className="bg-muted/30 px-6 py-8 relative border-b border-foreground/10">
-              <ProfileMenu
-                renderTrigger={(user, profile) => (
-                  <button className="flex items-center gap-4 w-full text-left outline-none">
-                    <div className="w-12 h-12 rounded-full bg-[#2D0B0B] flex items-center justify-center flex-shrink-0 text-white">
-                      {profile?.avatar_url ? (
-                        <img
-                          src={profile.avatar_url}
-                          alt=""
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-6 w-6" />
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-serif text-xl text-[#2D0B0B]">
-                        {user
-                          ? `Olá, ${profile?.full_name?.split(' ')[0] || 'Usuário'}`
-                          : 'Entrar / Cadastrar'}
-                      </span>
-                    </div>
-                  </button>
-                )}
-              />
+              {user ? (
+                <ProfileMenu
+                  renderTrigger={(u, profile) => (
+                    <button className="flex items-center gap-4 w-full text-left outline-none">
+                      <div className="w-12 h-12 rounded-full bg-[#2D0B0B] flex items-center justify-center flex-shrink-0 text-white">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt=""
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-6 w-6" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-serif text-xl text-[#2D0B0B]">
+                          {`Olá, ${profile?.full_name?.split(' ')[0] || 'Usuário'}`}
+                        </span>
+                      </div>
+                    </button>
+                  )}
+                />
+              ) : (
+                <Link
+                  to="/auth"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-4 w-full text-left outline-none"
+                >
+                  <div className="w-12 h-12 rounded-full bg-[#2D0B0B] flex items-center justify-center flex-shrink-0 text-white">
+                    <User className="h-6 w-6" />
+                  </div>
+                  <span className="font-serif text-xl text-[#2D0B0B]">Entrar / Cadastrar</span>
+                </Link>
+              )}
             </div>
 
             {/* Nav Links */}
