@@ -14,9 +14,6 @@ export default function Appearance() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold font-serif text-primary tracking-tight">Aparência</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie a identidade visual e tipografia da loja.
-          </p>
         </div>
       </div>
       <div className="grid gap-8">
