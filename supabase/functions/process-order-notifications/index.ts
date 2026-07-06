@@ -49,9 +49,10 @@ Deno.serve(async (req) => {
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (!resendKey) {
       console.log('RESEND_API_KEY not configured. Skipping email.')
-      return new Response(JSON.stringify({ success: true, message: 'No email key configured' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ success: true, message: 'No email key configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     let subject: string
@@ -66,13 +67,7 @@ Deno.serve(async (req) => {
       html = invoiceAvailableHtml(customerName, order_id, order.invoice_url)
     } else {
       subject = `Confirmação do seu pedido na Zahrá - #${shortId}`
-      html = orderConfirmationHtml(
-        customerName,
-        order_id,
-        items,
-        order.total_amount,
-        order.invoice_url,
-      )
+      html = orderConfirmationHtml(customerName, order_id, items, order.total_amount, order.invoice_url)
       await sendWhatsAppNotification(order, items, customerName, order_id)
     }
 
@@ -94,15 +89,16 @@ Deno.serve(async (req) => {
       console.error('Failed to send email:', await emailReq.text())
     }
 
-    return new Response(JSON.stringify({ success: true, message: 'Notifications processed' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ success: true, message: 'Notifications processed' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
   } catch (error) {
     console.error('Error processing notifications:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
   }
 })
 

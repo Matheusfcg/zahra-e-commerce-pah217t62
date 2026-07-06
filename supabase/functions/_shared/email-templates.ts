@@ -34,12 +34,11 @@ export function orderConfirmationHtml(
   totalAmount: number,
   invoiceUrl: string | null,
 ): string {
-  const itemsHtml = items
-    .map((item: any) => {
-      const images = item.products?.product_images || []
-      images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-      const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing'
-      return `
+  const itemsHtml = items.map((item: any) => {
+    const images = item.products?.product_images || []
+    images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+    const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing'
+    return `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #eee;">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -51,8 +50,7 @@ export function orderConfirmationHtml(
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">R$ ${Number(item.price_at_purchase).toFixed(2).replace('.', ',')}</td>
       </tr>
     `
-    })
-    .join('')
+  }).join('')
 
   const invoiceHtml = invoiceUrl
     ? `<div style="margin-top: 20px; text-align: center;"><a href="${invoiceUrl}" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 500;">Visualizar Nota Fiscal</a></div>`
