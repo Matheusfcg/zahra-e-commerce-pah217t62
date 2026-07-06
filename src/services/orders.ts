@@ -34,6 +34,11 @@ export type Order = {
   customer_phone: string | null
   user_id: string | null
   invoice_url: string | null
+  tracking_code: string | null
+  carrier_name: string | null
+  shipping_method: string | null
+  shipping_cost: number | null
+  delivery_days: number | null
   shipping_zip_code: string | null
   shipping_street: string | null
   shipping_number: string | null
@@ -47,6 +52,7 @@ export type Order = {
 const ORDER_SELECT = `
   id, created_at, status, total_amount, payment_method,
   customer_name, customer_email, customer_phone, user_id, invoice_url,
+  tracking_code, carrier_name, shipping_method, shipping_cost, delivery_days,
   shipping_zip_code, shipping_street, shipping_number, shipping_complement,
   shipping_neighborhood, shipping_city, shipping_state,
   order_items (
@@ -85,6 +91,19 @@ export async function updateOrderInvoice(orderId: string, invoiceUrl: string) {
   const { data, error } = await supabase
     .from('orders')
     .update({ invoice_url: invoiceUrl })
+    .eq('id', orderId)
+    .select()
+  return { data, error }
+}
+
+export async function updateOrderTracking(
+  orderId: string,
+  trackingCode: string,
+  carrierName: string,
+) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ tracking_code: trackingCode, carrier_name: carrierName })
     .eq('id', orderId)
     .select()
   return { data, error }

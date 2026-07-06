@@ -1,9 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
-import { Loader2, Package, Clock, CheckCircle2, Truck, XCircle, FileText } from 'lucide-react'
+import {
+  Loader2,
+  Package,
+  Clock,
+  CheckCircle2,
+  Truck,
+  XCircle,
+  FileText,
+  MapPin,
+  Eye,
+  PackageCheck,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 
 type OrderItem = {
   quantity: number
@@ -21,6 +35,18 @@ type Order = {
   total_amount: number
   payment_method: string | null
   invoice_url: string | null
+  tracking_code: string | null
+  carrier_name: string | null
+  shipping_method: string | null
+  shipping_cost: number | null
+  delivery_days: number | null
+  shipping_zip_code: string | null
+  shipping_street: string | null
+  shipping_number: string | null
+  shipping_complement: string | null
+  shipping_neighborhood: string | null
+  shipping_city: string | null
+  shipping_state: string | null
   order_items: OrderItem[]
 }
 
@@ -70,23 +96,23 @@ export default function Orders() {
   const { user } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     if (!user) {
       setIsLoading(false)
       return
     }
-
     const fetchOrders = async () => {
       setIsLoading(true)
       const { data, error } = await supabase
         .from('orders')
         .select(`
           id, created_at, status, total_amount, payment_method, invoice_url,
-          order_items (
-            quantity, price_at_purchase, product_id, size_name, color_name,
-            products (name, product_images(url))
-          )
+          shipping_zip_code, shipping_street, shipping_number, shipping_complement,
+          shipping_neighborhood, shipping_city, shipping_state,
+          tracking_code, carrier_name, shipping_method, shipping_cost, delivery_days,
+          order_items (quantity, price_at_purchase, product_id, size_name, color_name, products (name, product_images(url)))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -94,9 +120,7 @@ export default function Orders() {
       if (data) setOrders(data as unknown as Order[])
       setIsLoading(false)
     }
-
     fetchOrders()
-
     const channel = supabase
       .channel('user-orders-realtime')
       .on(
@@ -105,7 +129,6 @@ export default function Orders() {
         () => fetchOrders(),
       )
       .subscribe()
-
     return () => {
       supabase.removeChannel(channel)
     }
@@ -195,14 +218,17 @@ export default function Orders() {
                     </Badge>
                   </div>
                 </div>
-
                 <div className="p-6">
-                  <h4 className="text-sm font-semibold mb-4 text-foreground/80 uppercase tracking-wide">
-                    Itens do Pedido
-                  </h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-foreground/80 uppercase tracking-wide">
+                      Itens do Pedido
+                    </h4>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
+                      <Eye className="w-4 h-4 mr-1.5" /> Ver Detalhes
+                    </Button>
+                  </div>
                   <div className="space-y-4">
                     {order.order_items.map((item, idx) => {
-                      // Attempt to safely find an image URL
                       let imageUrl = 'https://img.usecurling.com/p/200/200?q=clothing'
                       if (
                         item.products?.product_images &&
@@ -210,7 +236,6 @@ export default function Orders() {
                       ) {
                         imageUrl = item.products.product_images[0].url
                       }
-
                       return (
                         <div key={idx} className="flex items-start gap-4">
                           <div className="w-16 h-20 bg-muted shrink-0 rounded overflow-hidden">
@@ -240,16 +265,14 @@ export default function Orders() {
                       )
                     })}
                   </div>
-                  {order.invoice_url && (
-                    <div className="mt-4 pt-4 border-t">
-                      <a
-                        href={order.invoice_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline flex items-center gap-1.5"
-                      >
-                        <FileText className="w-4 h-4" /> Ver Nota Fiscal
-                      </a>
+                  {order.tracking_code && (
+                    <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm">
+                      <PackageCheck className="w-4 h-4 text-blue-600" />
+                      <span className="text-muted-foreground">Rastreamento:</span>
+                      <span className="font-medium">{order.tracking_code}</span>
+                      {order.carrier_name && (
+                        <span className="text-muted-foreground">({order.carrier_name})</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -258,6 +281,123 @@ export default function Orders() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Detalhes do Pedido {selectedOrder?.id.split('-')[0].toUpperCase()}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Data:</span>{' '}
+                  {new Date(selectedOrder.created_at).toLocaleDateString('pt-BR')}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Pagamento:</span>{' '}
+                  {selectedOrder.payment_method || '—'}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total:</span> R${' '}
+                  {Number(selectedOrder.total_amount).toFixed(2).replace('.', ',')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
+                    {getStatusLabel(selectedOrder.status)}
+                  </Badge>
+                </div>
+              </div>
+              {selectedOrder.shipping_method && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Frete:</span>{' '}
+                  {selectedOrder.shipping_method}
+                  {selectedOrder.shipping_cost != null && Number(selectedOrder.shipping_cost) > 0
+                    ? ` — R$ ${Number(selectedOrder.shipping_cost).toFixed(2).replace('.', ',')}`
+                    : ' — Grátis'}
+                  {selectedOrder.delivery_days && ` (${selectedOrder.delivery_days} dias úteis)`}
+                </div>
+              )}
+              {selectedOrder.tracking_code && (
+                <div className="text-sm flex items-center gap-2">
+                  <PackageCheck className="w-4 h-4 text-blue-600" />
+                  <span className="text-muted-foreground">Rastreamento:</span>
+                  <span className="font-medium">{selectedOrder.tracking_code}</span>
+                  {selectedOrder.carrier_name && (
+                    <span className="text-muted-foreground">({selectedOrder.carrier_name})</span>
+                  )}
+                </div>
+              )}
+              {(selectedOrder.shipping_street || selectedOrder.shipping_zip_code) && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" /> Endereço de Entrega
+                  </h4>
+                  <div className="text-sm space-y-1 text-muted-foreground bg-muted/30 p-3 rounded-md">
+                    <p>
+                      {selectedOrder.shipping_street || '—'},{' '}
+                      {selectedOrder.shipping_number || 'S/N'}
+                    </p>
+                    {selectedOrder.shipping_complement && (
+                      <p>{selectedOrder.shipping_complement}</p>
+                    )}
+                    <p>{selectedOrder.shipping_neighborhood || '—'}</p>
+                    <p>
+                      {selectedOrder.shipping_city || '—'} - {selectedOrder.shipping_state || '—'}
+                    </p>
+                    <p>CEP: {selectedOrder.shipping_zip_code || '—'}</p>
+                  </div>
+                </div>
+              )}
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-3 uppercase tracking-wide">Itens</h4>
+                <div className="space-y-3">
+                  {selectedOrder.order_items.map((item, i) => (
+                    <div key={i} className="flex gap-3 items-center">
+                      <div className="w-12 h-12 bg-muted rounded overflow-hidden shrink-0">
+                        {item.products?.product_images?.[0]?.url && (
+                          <img
+                            src={item.products.product_images[0].url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.products?.name || 'Produto indisponível'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Qtd: {item.quantity}
+                          {item.size_name ? ` | Tam: ${item.size_name}` : ''}
+                          {item.color_name ? ` | Cor: ${item.color_name}` : ''}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium">
+                        R$ {Number(item.price_at_purchase).toFixed(2).replace('.', ',')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {selectedOrder.invoice_url && (
+                <a
+                  href={selectedOrder.invoice_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:underline flex items-center gap-1.5"
+                >
+                  <FileText className="w-4 h-4" /> Ver Nota Fiscal
+                </a>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

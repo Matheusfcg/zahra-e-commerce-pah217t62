@@ -6,6 +6,7 @@ import {
   fetchAllOrders,
   updateOrderStatus,
   updateOrderInvoice,
+  updateOrderTracking,
   type Order,
 } from '@/services/orders'
 import { Loader2, Eye, MapPin } from 'lucide-react'
@@ -59,6 +60,9 @@ export function AdminOrders() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [invoiceUrl, setInvoiceUrl] = useState('')
   const [updatingInvoice, setUpdatingInvoice] = useState(false)
+  const [trackingCode, setTrackingCode] = useState('')
+  const [carrierName, setCarrierName] = useState('')
+  const [updatingTracking, setUpdatingTracking] = useState(false)
 
   const loadOrders = useCallback(async () => {
     const { data } = await fetchAllOrders()
@@ -96,6 +100,8 @@ export function AdminOrders() {
   useEffect(() => {
     if (selectedOrder) {
       setInvoiceUrl(selectedOrder.invoice_url || '')
+      setTrackingCode(selectedOrder.tracking_code || '')
+      setCarrierName(selectedOrder.carrier_name || '')
     }
   }, [selectedOrder])
 
@@ -113,6 +119,26 @@ export function AdminOrders() {
       setSelectedOrder({ ...selectedOrder, invoice_url: invoiceUrl })
     }
     setUpdatingInvoice(false)
+  }
+
+  const handleSaveTracking = async () => {
+    if (!selectedOrder) return
+    setUpdatingTracking(true)
+    const { error } = await updateOrderTracking(selectedOrder.id, trackingCode, carrierName)
+    if (error) {
+      toast.error('Erro ao salvar rastreamento')
+    } else {
+      toast.success('Rastreamento salvo!')
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selectedOrder.id
+            ? { ...o, tracking_code: trackingCode, carrier_name: carrierName }
+            : o,
+        ),
+      )
+      setSelectedOrder({ ...selectedOrder, tracking_code: trackingCode, carrier_name: carrierName })
+    }
+    setUpdatingTracking(false)
   }
 
   const filtered = filterStatus === 'all' ? orders : orders.filter((o) => o.status === filterStatus)
@@ -267,6 +293,28 @@ export function AdminOrders() {
                     Ver NF atual
                   </a>
                 )}
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm text-muted-foreground">Rastreamento:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={trackingCode}
+                    onChange={(e) => setTrackingCode(e.target.value)}
+                    placeholder="Código de rastreamento"
+                  />
+                  <Input
+                    value={carrierName}
+                    onChange={(e) => setCarrierName(e.target.value)}
+                    placeholder="Transportadora"
+                  />
+                </div>
+                <Button size="sm" onClick={handleSaveTracking} disabled={updatingTracking}>
+                  {updatingTracking ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Salvar Rastreamento'
+                  )}
+                </Button>
               </div>
               {(selectedOrder.shipping_zip_code || selectedOrder.shipping_street) && (
                 <div>

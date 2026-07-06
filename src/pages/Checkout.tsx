@@ -249,7 +249,12 @@ const Checkout = () => {
           shipping_neighborhood: addressNeighborhood,
           shipping_city: addressCity,
           shipping_state: addressState,
-        })
+          shipping_method: selectedShipping
+            ? `${selectedShipping.company?.name || ''} - ${selectedShipping.name}`
+            : null,
+          shipping_cost: shipping,
+          delivery_days: selectedShipping ? parseInt(selectedShipping.delivery_time) || null : null,
+        } as any)
         .select()
         .single()
 
