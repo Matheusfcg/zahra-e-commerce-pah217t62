@@ -50,7 +50,20 @@ const Checkout = () => {
     full_name: string | null
     document_number: string | null
     phone: string | null
+    zip_code: string | null
+    street: string | null
+    number: string | null
+    complement: string | null
+    neighborhood: string | null
+    city: string | null
+    state: string | null
   } | null>(null)
+  const [addressStreet, setAddressStreet] = useState('')
+  const [addressNumber, setAddressNumber] = useState('')
+  const [addressComplement, setAddressComplement] = useState('')
+  const [addressNeighborhood, setAddressNeighborhood] = useState('')
+  const [addressCity, setAddressCity] = useState('')
+  const [addressState, setAddressState] = useState('')
 
   const userEmail = session?.user?.email
   const userId = session?.user?.id
@@ -62,14 +75,42 @@ const Checkout = () => {
     if (userId) {
       supabase
         .from('user_profiles')
-        .select('full_name, document_number, phone')
+        .select(
+          'full_name, document_number, phone, zip_code, street, number, complement, neighborhood, city, state',
+        )
         .eq('id', userId)
         .single()
         .then(({ data }) => {
-          if (data) setProfile(data)
+          if (data) {
+            setProfile(data)
+            if (data.zip_code) setCep(data.zip_code)
+            if (data.street) setAddressStreet(data.street)
+            if (data.number) setAddressNumber(data.number)
+            if (data.complement) setAddressComplement(data.complement)
+            if (data.neighborhood) setAddressNeighborhood(data.neighborhood)
+            if (data.city) setAddressCity(data.city)
+            if (data.state) setAddressState(data.state)
+          }
         })
     }
   }, [userId])
+
+  useEffect(() => {
+    const clean = cep.replace(/\D/g, '')
+    if (clean.length === 8) {
+      fetch(`https://viacep.com.br/ws/${clean}/json/`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.erro) {
+            setAddressStreet(data.logradouro || '')
+            setAddressNeighborhood(data.bairro || '')
+            setAddressCity(data.localidade || '')
+            setAddressState(data.uf || '')
+          }
+        })
+        .catch(() => {})
+    }
+  }, [cep])
 
   useEffect(() => {
     if (userEmail && step === 1) {
@@ -190,6 +231,13 @@ const Checkout = () => {
           total_amount: total,
           status: 'pending',
           payment_method: 'pix',
+          shipping_zip_code: cep,
+          shipping_street: addressStreet,
+          shipping_number: addressNumber,
+          shipping_complement: addressComplement || null,
+          shipping_neighborhood: addressNeighborhood,
+          shipping_city: addressCity,
+          shipping_state: addressState,
         })
         .select()
         .single()
@@ -212,7 +260,21 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError
 
-      // Clear the cart upon successful order creation
+      if (userId && cep) {
+        await supabase
+          .from('user_profiles')
+          .update({
+            zip_code: cep,
+            street: addressStreet,
+            number: addressNumber,
+            complement: addressComplement || null,
+            neighborhood: addressNeighborhood,
+            city: addressCity,
+            state: addressState,
+          })
+          .eq('id', userId)
+      }
+
       clearCart()
 
       // Trigger Edge Function Notification Asynchronously
@@ -273,6 +335,13 @@ const Checkout = () => {
     paymentMethod,
     createdOrderId,
     pixPayload,
+    cep,
+    addressStreet,
+    addressNumber,
+    addressComplement,
+    addressNeighborhood,
+    addressCity,
+    addressState,
   ])
 
   const copyPixKey = () => {
@@ -502,20 +571,84 @@ const Checkout = () => {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Endereço</Label>
-                    <Input id="address" className="rounded-none h-12" />
+                    <Label htmlFor="address">Rua *</Label>
+                    <Input
+                      id="address"
+                      value={addressStreet}
+                      onChange={(e) => setAddressStreet(e.target.value)}
+                      className="rounded-none h-12"
+                    />
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="number">Número</Label>
-                      <Input id="number" className="rounded-none h-12" />
+                      <Label htmlFor="number">Número *</Label>
+                      <Input
+                        id="number"
+                        value={addressNumber}
+                        onChange={(e) => setAddressNumber(e.target.value)}
+                        className="rounded-none h-12"
+                      />
                     </div>
                     <div className="space-y-2 col-span-2">
                       <Label htmlFor="complement">Complemento</Label>
-                      <Input id="complement" className="rounded-none h-12" />
+                      <Input
+                        id="complement"
+                        value={addressComplement}
+                        onChange={(e) => setAddressComplement(e.target.value)}
+                        className="rounded-none h-12"
+                      />
                     </div>
                   </div>
-                  <Button className="w-full rounded-none h-12 mt-4" onClick={() => setStep(3)}>
+                  <div className="space-y-2">
+                    <Label htmlFor="neighborhood">Bairro *</Label>
+                    <Input
+                      id="neighborhood"
+                      value={addressNeighborhood}
+                      onChange={(e) => setAddressNeighborhood(e.target.value)}
+                      className="rounded-none h-12"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Cidade *</Label>
+                      <Input
+                        id="city"
+                        value={addressCity}
+                        onChange={(e) => setAddressCity(e.target.value)}
+                        className="rounded-none h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">Estado *</Label>
+                      <Input
+                        id="state"
+                        value={addressState}
+                        onChange={(e) => setAddressState(e.target.value.toUpperCase())}
+                        maxLength={2}
+                        className="rounded-none h-12"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full rounded-none h-12 mt-4"
+                    onClick={() => {
+                      if (
+                        !cep ||
+                        !addressStreet ||
+                        !addressNumber ||
+                        !addressNeighborhood ||
+                        !addressCity ||
+                        !addressState
+                      ) {
+                        toast({
+                          title: 'Preencha todos os campos de endereço obrigatórios',
+                          variant: 'destructive',
+                        })
+                        return
+                      }
+                      setStep(3)
+                    }}
+                  >
                     Continuar para Pagamento
                   </Button>
                 </div>

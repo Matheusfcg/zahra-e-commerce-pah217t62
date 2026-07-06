@@ -1,7 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
-import { User, LogOut, Settings, Image as ImageIcon, Package, Heart } from 'lucide-react'
+import {
+  User,
+  LogOut,
+  Settings,
+  Image as ImageIcon,
+  Package,
+  Heart,
+  UserCircle,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +77,12 @@ export function ProfileMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-0" />
         <div className="p-1">
+          <DropdownMenuItem asChild className="cursor-pointer py-2">
+            <Link to="/perfil" className="w-full flex items-center">
+              <UserCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+              <span>Meu Perfil</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer py-2">
             <Link to="/meus-pedidos" className="w-full flex items-center">
               <Package className="mr-2 h-4 w-4 text-muted-foreground" />

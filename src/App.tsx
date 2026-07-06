@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import Profile from './pages/Profile'
 import Index from './pages/Index'
 import Product from './pages/Product'
 import ProductsPage from './pages/Products'
@@ -57,6 +58,7 @@ const App = () => {
               <Route path="/produtos" element={<ProductsPage />} />
               <Route path="/product/:id" element={<Product />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/perfil" element={<Profile />} />
               <Route path="/favoritos" element={<Favorites />} />
               <Route path="/meus-pedidos" element={<Orders />} />
               <Route path="/my-orders" element={<Orders />} />

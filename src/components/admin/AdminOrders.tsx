@@ -8,7 +8,7 @@ import {
   updateOrderInvoice,
   type Order,
 } from '@/services/orders'
-import { Loader2, Eye } from 'lucide-react'
+import { Loader2, Eye, MapPin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -268,6 +268,29 @@ export function AdminOrders() {
                   </a>
                 )}
               </div>
+              {selectedOrder.shipping_zip_code && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    Endereço de Entrega
+                  </h4>
+                  <div className="text-sm space-y-1 text-muted-foreground bg-muted/30 p-3 rounded-md">
+                    <p>
+                      {selectedOrder.shipping_street || '—'}
+                      {selectedOrder.shipping_number ? `, ${selectedOrder.shipping_number}` : ''}
+                    </p>
+                    {selectedOrder.shipping_complement && (
+                      <p>Complemento: {selectedOrder.shipping_complement}</p>
+                    )}
+                    <p>Bairro: {selectedOrder.shipping_neighborhood || '—'}</p>
+                    <p>
+                      {selectedOrder.shipping_city || '—'}
+                      {selectedOrder.shipping_state ? ` - ${selectedOrder.shipping_state}` : ''}
+                    </p>
+                    <p>CEP: {selectedOrder.shipping_zip_code}</p>
+                  </div>
+                </div>
+              )}
               <div>
                 <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide">Itens</h4>
                 <div className="space-y-3">

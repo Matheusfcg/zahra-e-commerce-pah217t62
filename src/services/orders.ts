@@ -34,12 +34,21 @@ export type Order = {
   customer_phone: string | null
   user_id: string | null
   invoice_url: string | null
+  shipping_zip_code: string | null
+  shipping_street: string | null
+  shipping_number: string | null
+  shipping_complement: string | null
+  shipping_neighborhood: string | null
+  shipping_city: string | null
+  shipping_state: string | null
   order_items: OrderItem[]
 }
 
 const ORDER_SELECT = `
   id, created_at, status, total_amount, payment_method,
   customer_name, customer_email, customer_phone, user_id, invoice_url,
+  shipping_zip_code, shipping_street, shipping_number, shipping_complement,
+  shipping_neighborhood, shipping_city, shipping_state,
   order_items (
     quantity, price_at_purchase, product_id, size_name, color_name,
     products (name, product_images(url))
