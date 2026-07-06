@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useCepLookup } from '@/hooks/use-cep-lookup'
 import { supabase } from '@/lib/supabase/client'
@@ -24,6 +24,7 @@ export default function Profile() {
   const [state, setState] = useState('')
   const { isLoading: isCepLoading, error: cepError, lookup: lookupCep } = useCepLookup()
   const [cepNotFound, setCepNotFound] = useState(false)
+  const numberRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user) {
@@ -65,6 +66,10 @@ export default function Profile() {
       setCity(data.city)
       setState(data.state)
       setCepNotFound(false)
+      // Focus on "Número" field automatically after successful auto-fill
+      setTimeout(() => {
+        numberRef.current?.focus()
+      }, 50)
     } else {
       setCepNotFound(true)
     }
@@ -215,6 +220,7 @@ export default function Profile() {
                 <Label htmlFor="number">Número *</Label>
                 <Input
                   id="number"
+                  ref={numberRef}
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
                   className={inputCls}
