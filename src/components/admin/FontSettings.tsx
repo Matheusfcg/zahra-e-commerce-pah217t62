@@ -23,11 +23,26 @@ export function FontSettings() {
     supabase
       .from('site_content')
       .select('content_value')
-      .eq('section_key', 'primary_font')
+      .eq('section_key', 'theme_settings')
       .single()
       .then(({ data, error }) => {
         if (!error && data?.content_value) {
-          setSelectedFont(data.content_value)
+          try {
+            const parsed = JSON.parse(data.content_value)
+            if (parsed.font) setSelectedFont(parsed.font)
+          } catch (e) {
+            // Ignore parse error
+          }
+        } else {
+          // Fallback to primary_font
+          supabase
+            .from('site_content')
+            .select('content_value')
+            .eq('section_key', 'primary_font')
+            .single()
+            .then(({ data: legacy }) => {
+              if (legacy?.content_value) setSelectedFont(legacy.content_value)
+            })
         }
         setLoading(false)
       })
@@ -42,8 +57,8 @@ export function FontSettings() {
     setSaving(true)
     const { error } = await supabase.from('site_content').upsert(
       {
-        section_key: 'primary_font',
-        content_value: selectedFont,
+        section_key: 'theme_settings',
+        content_value: JSON.stringify({ font: selectedFont }),
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'section_key' },

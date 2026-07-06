@@ -12,6 +12,7 @@ import Orders from './pages/Orders'
 import TrocaDevolucao from './pages/TrocaDevolucao'
 import NotFound from './pages/NotFound'
 import AdminUpload from './pages/admin/AdminUpload'
+import Appearance from './pages/admin/Appearance'
 import ShippingCallback from './pages/admin/ShippingCallback'
 import Layout from './components/Layout'
 import { AuthProvider } from './hooks/use-auth'
@@ -64,6 +65,14 @@ const App = () => {
                 element={
                   <AdminRoute>
                     <AdminUpload />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/appearance"
+                element={
+                  <AdminRoute>
+                    <Appearance />
                   </AdminRoute>
                 }
               />

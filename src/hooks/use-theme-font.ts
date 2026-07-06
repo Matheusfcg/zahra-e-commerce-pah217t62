@@ -79,13 +79,41 @@ export function useThemeFont() {
     supabase
       .from('site_content')
       .select('content_value')
-      .eq('section_key', 'primary_font')
+      .eq('section_key', 'theme_settings')
       .single()
       .then(({ data, error }) => {
-        const fontName = !error && data?.content_value ? data.content_value : cached || DEFAULT_FONT
-        setFont(fontName)
-        applyThemeFont(fontName)
-        setLoading(false)
+        let fontName = cached || DEFAULT_FONT
+        if (!error && data?.content_value) {
+          try {
+            const parsed = JSON.parse(data.content_value)
+            if (parsed.font) fontName = parsed.font
+          } catch (e) {
+            // ignore
+          }
+          setFont(fontName)
+          applyThemeFont(fontName)
+          setLoading(false)
+        } else {
+          // Legacy fallback
+          supabase
+            .from('site_content')
+            .select('content_value')
+            .eq('section_key', 'primary_font')
+            .single()
+            .then(({ data: legacy }) => {
+              if (legacy?.content_value) {
+                fontName = legacy.content_value
+              }
+              setFont(fontName)
+              applyThemeFont(fontName)
+              setLoading(false)
+            })
+            .catch(() => {
+              setFont(fontName)
+              applyThemeFont(fontName)
+              setLoading(false)
+            })
+        }
       })
       .catch(() => {
         setLoading(false)

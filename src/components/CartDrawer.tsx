@@ -119,10 +119,6 @@ export function CartDrawer() {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Frete</span>
-                <span className="text-green-600 font-medium">Grátis</span>
-              </div>
               <div className="flex justify-between items-center text-lg font-medium pt-2 border-t mt-2">
                 <span>Total</span>
                 <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
