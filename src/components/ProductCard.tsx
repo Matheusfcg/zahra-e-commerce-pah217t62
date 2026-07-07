@@ -50,9 +50,13 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
           <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
         </button>
 
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 items-start">
-          {product.is_featured && null}
-        </div>
+        {product.quantity <= 0 && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 pointer-events-none">
+            <span className="bg-white text-black px-6 py-1.5 text-xs uppercase tracking-widest font-medium">
+              Esgotado
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex flex-col items-center text-center gap-1 mt-3 px-1">
         <h3 className="font-sans text-[13px] font-medium text-[#2D0B0B]">

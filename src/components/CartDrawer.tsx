@@ -85,24 +85,31 @@ export function CartDrawer() {
                           R$ {item.price.toFixed(2).replace('.', ',')}
                         </p>
                       </div>
-                      <div className="flex items-center border w-max">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.color, item.size, item.quantity - 1)
-                          }
-                          className="p-2 hover:bg-muted transition-colors"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-8 text-center text-sm">{item.quantity}</span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.color, item.size, item.quantity + 1)
-                          }
-                          className="p-2 hover:bg-muted transition-colors"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center border w-max">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.color, item.size, item.quantity - 1)
+                            }
+                            className="p-2 hover:bg-muted transition-colors"
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-8 text-center text-sm">{item.quantity}</span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.color, item.size, item.quantity + 1)
+                            }
+                            className="p-2 hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={item.maxQuantity ? item.quantity >= item.maxQuantity : false}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {item.maxQuantity && item.quantity >= item.maxQuantity && (
+                          <span className="text-[10px] text-muted-foreground">Máx. disponível</span>
+                        )}
                       </div>
                     </div>
                   </div>

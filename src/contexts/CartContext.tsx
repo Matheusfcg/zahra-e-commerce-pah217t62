@@ -9,6 +9,7 @@ export type CartItem = {
   image: string
   color: string
   size: string
+  maxQuantity?: number
 }
 
 interface CartContextType {
@@ -55,7 +56,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existing) {
         return prev.map((i) =>
           i.id === item.id && i.color === item.color && i.size === item.size
-            ? { ...i, quantity: i.quantity + quantity }
+            ? {
+                ...i,
+                quantity: item.maxQuantity
+                  ? Math.min(i.quantity + quantity, item.maxQuantity)
+                  : i.quantity + quantity,
+                maxQuantity: item.maxQuantity ?? i.maxQuantity,
+              }
             : i,
         )
       }

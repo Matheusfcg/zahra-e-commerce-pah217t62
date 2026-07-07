@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,7 +17,7 @@ import {
 import { useCart } from '@/contexts/CartContext'
 import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Plus, Minus } from 'lucide-react'
 
 const getImageUrl = (url: string | undefined | null) => {
   if (!url) return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing&dpr=2'
@@ -31,6 +31,7 @@ const ProductPage = () => {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [quantity, setQuantity] = useState(1)
   const { addToCart } = useCart()
 
   useEffect(() => {
@@ -47,6 +48,73 @@ const ProductPage = () => {
         .finally(() => setIsLoading(false))
     }
   }, [id])
+
+  useEffect(() => {
+    setSelectedSize('')
+    setQuantity(1)
+  }, [selectedColor])
+
+  useEffect(() => {
+    setQuantity(1)
+  }, [selectedSize])
+
+  const sortedImages = useMemo(() => {
+    if (!product) return []
+    return [...(product.product_images || [])].sort((a, b) => {
+      if (a.is_cover && !b.is_cover) return -1
+      if (!a.is_cover && b.is_cover) return 1
+      return (a.display_order || 0) - (b.display_order || 0)
+    })
+  }, [product])
+
+  const availableSizes = useMemo(() => {
+    if (!product) return []
+
+    if (product.product_variants?.length) {
+      const variantsForColor = selectedColor
+        ? product.product_variants.filter((v) => v.color_name === selectedColor.name)
+        : product.product_variants
+
+      const sizeMap = new Map<string, number>()
+      for (const v of variantsForColor) {
+        const current = sizeMap.get(v.size_name) ?? 0
+        sizeMap.set(v.size_name, current + v.quantity)
+      }
+
+      return Array.from(sizeMap.entries())
+        .map(([sizeName, qty]) => ({
+          id: sizeName,
+          size_name: sizeName,
+          quantity: qty,
+        }))
+        .sort((a, b) => {
+          if (a.size_name === 'Tamanho Único') return -1
+          if (b.size_name === 'Tamanho Único') return 1
+          return a.size_name.localeCompare(b.size_name)
+        })
+    }
+
+    return (product.product_sizes || []).sort((a, b) => {
+      if (a.size_name === 'Tamanho Único') return -1
+      if (b.size_name === 'Tamanho Único') return 1
+      return a.size_name.localeCompare(b.size_name)
+    })
+  }, [product, selectedColor])
+
+  const effectiveStock = useMemo(() => {
+    if (!product) return 0
+    if (selectedColor && selectedSize && product.product_variants?.length) {
+      const variant = product.product_variants.find(
+        (v) => v.color_name === selectedColor.name && v.size_name === selectedSize,
+      )
+      if (variant) return variant.quantity
+    }
+    if (selectedSize && !product.product_variants?.length && product.product_sizes?.length) {
+      const size = product.product_sizes.find((s) => s.size_name === selectedSize)
+      if (size) return size.quantity
+    }
+    return product.quantity
+  }, [product, selectedColor, selectedSize])
 
   if (isLoading) {
     return (
@@ -67,36 +135,42 @@ const ProductPage = () => {
     )
   }
 
+  const isTotalOutOfStock = product.quantity <= 0
+  const isVariantOutOfStock = !!selectedSize && effectiveStock <= 0
+  const canAddToCart =
+    !isAdding &&
+    !isTotalOutOfStock &&
+    (!product.product_colors?.length || !!selectedColor) &&
+    !!selectedSize &&
+    !isVariantOutOfStock
+
   const handleAddToCart = () => {
-    if (product.product_colors && product.product_colors.length > 0 && !selectedColor) return
-    if (!selectedSize) return
+    if (!canAddToCart) return
     setIsAdding(true)
     setTimeout(() => {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: Number(product.price),
-        image: selectedColor
-          ? getImageUrl(selectedColor.image_url)
-          : getImageUrl(sortedImages[0]?.url),
-        color: selectedColor?.name || 'Padrão',
-        size: selectedSize || 'Único',
-      })
+      addToCart(
+        {
+          id: product.id,
+          name: product.name,
+          price: Number(product.price),
+          image: selectedColor
+            ? getImageUrl(selectedColor.image_url)
+            : getImageUrl(sortedImages[0]?.url),
+          color: selectedColor?.name || 'Padrão',
+          size: selectedSize || 'Único',
+          maxQuantity: effectiveStock,
+        },
+        quantity,
+      )
       setIsAdding(false)
-    }, 600) // Simulate network delay for feeling
+    }, 600)
   }
 
-  const availableSizes = (product.product_sizes || []).sort((a, b) => {
-    if (a.size_name === 'Tamanho Único') return -1
-    if (b.size_name === 'Tamanho Único') return 1
-    return a.size_name.localeCompare(b.size_name)
-  })
-
-  const sortedImages = [...(product.product_images || [])].sort((a, b) => {
-    if (a.is_cover && !b.is_cover) return -1
-    if (!a.is_cover && b.is_cover) return 1
-    return (a.display_order || 0) - (b.display_order || 0)
-  })
+  const handleQuantityChange = (newQty: number) => {
+    if (newQty < 1) return
+    if (effectiveStock > 0 && newQty > effectiveStock) return
+    setQuantity(newQty)
+  }
 
   return (
     <div className="w-full bg-background pt-20">
@@ -135,7 +209,14 @@ const ProductPage = () => {
             /<span className="ml-2">{product.category || 'Produtos'}</span>
           </nav>
 
-          <h1 className="font-serif text-3xl md:text-4xl mb-4">{product.name}</h1>
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <h1 className="font-serif text-3xl md:text-4xl">{product.name}</h1>
+            {isTotalOutOfStock && (
+              <span className="bg-destructive/10 text-destructive text-xs uppercase tracking-widest px-3 py-1 rounded">
+                Esgotado
+              </span>
+            )}
+          </div>
           <p className="text-xl font-medium mb-8">
             R$ {Number(product.price).toFixed(2).replace('.', ',')}
           </p>
@@ -196,17 +277,48 @@ const ProductPage = () => {
             </div>
           </div>
 
+          {/* Quantity Selector */}
+          {selectedSize && !isVariantOutOfStock && (
+            <div className="mb-8">
+              <div className="flex justify-between text-sm mb-3">
+                <span className="font-medium">Quantidade</span>
+                {effectiveStock <= 5 && effectiveStock > 0 && (
+                  <span className="text-xs text-orange-600">
+                    Apenas {effectiveStock} em estoque
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center border w-max">
+                <button
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  className="p-2 hover:bg-muted transition-colors"
+                  disabled={quantity <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="w-12 text-center text-sm font-medium">{quantity}</span>
+                <button
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  className="p-2 hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  disabled={quantity >= effectiveStock}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <Button
             className="w-full h-14 rounded-none text-base uppercase tracking-widest mb-12 relative overflow-hidden group"
             onClick={handleAddToCart}
-            disabled={
-              isAdding ||
-              (product.product_colors && product.product_colors.length > 0 && !selectedColor) ||
-              !selectedSize
-            }
+            disabled={!canAddToCart}
           >
             <span className={cn('transition-opacity', isAdding ? 'opacity-0' : 'opacity-100')}>
-              Adicionar à Sacola
+              {isTotalOutOfStock
+                ? 'Esgotado'
+                : isVariantOutOfStock
+                  ? 'Variação Esgotada'
+                  : 'Adicionar à Sacola'}
             </span>
             {isAdding && (
               <div className="absolute inset-0 flex items-center justify-center bg-primary">
