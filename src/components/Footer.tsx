@@ -1,9 +1,37 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Instagram, Facebook, Mail, Phone } from 'lucide-react'
+import { Instagram, Facebook, Mail, Phone, Loader2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 export function Footer() {
+  const [email, setEmail] = useState('')
+  const [subscribing, setSubscribing] = useState(false)
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = email.trim()
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Por favor, insira um e-mail válido.')
+      return
+    }
+    setSubscribing(true)
+    const { error } = await supabase.from('newsletter_subscribers').insert([{ email: trimmed }])
+    setSubscribing(false)
+    if (error) {
+      if (error.code === '23505') {
+        toast.info('Você já está inscrito!')
+      } else {
+        toast.error('Erro ao se inscrever. Tente novamente.')
+      }
+      return
+    }
+    toast.success('Obrigado por se inscrever! Você receberá nossas novidades em breve.')
+    setEmail('')
+  }
+
   return (
     <footer className="bg-[#FAFAF8] text-foreground border-t border-muted/50 pt-16 pb-8 font-sans">
       <div className="container mx-auto px-4 flex flex-col items-center">
@@ -17,18 +45,22 @@ export function Footer() {
           </p>
           <form
             className="flex flex-col sm:flex-row gap-0 shadow-sm border border-muted/30 max-w-2xl mx-auto"
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubscribe}
           >
             <Input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Seu melhor e-mail"
               className="bg-white border-0 focus-visible:ring-0 rounded-none h-14 px-6 text-sm flex-1"
+              disabled={subscribing}
             />
             <Button
               type="submit"
               className="rounded-none h-14 px-10 uppercase text-xs tracking-[0.15em] font-semibold bg-[#3A2222] text-white hover:bg-[#2A1818] transition-colors"
+              disabled={subscribing}
             >
-              Assinar
+              {subscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Assinar'}
             </Button>
           </form>
         </div>

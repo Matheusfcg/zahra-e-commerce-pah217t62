@@ -38,6 +38,7 @@ import { Switch } from '@/components/ui/switch'
 import { ProductForm } from '@/components/admin/ProductForm'
 import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
 import { AdminOrders } from '@/components/admin/AdminOrders'
+import { NewsletterManager } from '@/components/admin/NewsletterManager'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -445,6 +446,7 @@ export default function AdminUpload() {
           <TabsTrigger value="orders">Pedidos</TabsTrigger>
           <TabsTrigger value="texts">Textos do Site</TabsTrigger>
           <TabsTrigger value="categories">Pix & Outros</TabsTrigger>
+          <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders">
@@ -712,6 +714,10 @@ export default function AdminUpload() {
               </form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="newsletter">
+          <NewsletterManager />
         </TabsContent>
       </Tabs>
     </div>

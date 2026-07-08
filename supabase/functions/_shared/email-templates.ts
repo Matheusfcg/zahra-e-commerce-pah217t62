@@ -151,3 +151,21 @@ export function invoiceAvailableHtml(
     ${buildFooter()}
   `
 }
+
+export function newsletterHtml(subject: string, content: string): string {
+  const contentHtml = content
+    .split('\n')
+    .map((line) => `<p style="margin: 0 0 16px;">${line}</p>`)
+    .join('')
+
+  return `
+    ${buildHeader(subject)}
+    <div style="font-size: 16px; line-height: 1.6; color: #555;">
+      ${contentHtml}
+    </div>
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="https://www.zahrabrasil.com.br" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 500;">Visitar Loja</a>
+    </div>
+    ${buildFooter()}
+  `
+}
