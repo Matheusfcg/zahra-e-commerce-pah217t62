@@ -125,6 +125,17 @@ const ProductPage = () => {
     return product.quantity
   }, [product, selectedColor, selectedSize])
 
+  const isTotalOutOfStock = useMemo(() => {
+    if (!product) return true
+    if (product.product_variants && product.product_variants.length > 0) {
+      return product.product_variants.every((v) => v.quantity <= 0)
+    }
+    if (product.product_sizes && product.product_sizes.length > 0) {
+      return product.product_sizes.every((s) => s.quantity <= 0)
+    }
+    return product.quantity <= 0
+  }, [product])
+
   if (isLoading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-background">
@@ -143,16 +154,6 @@ const ProductPage = () => {
       </div>
     )
   }
-
-  const isTotalOutOfStock = useMemo(() => {
-    if (product.product_variants && product.product_variants.length > 0) {
-      return product.product_variants.every((v) => v.quantity <= 0)
-    }
-    if (product.product_sizes && product.product_sizes.length > 0) {
-      return product.product_sizes.every((s) => s.quantity <= 0)
-    }
-    return product.quantity <= 0
-  }, [product])
 
   const isVariantOutOfStock = !!selectedSize && effectiveStock <= 0
   const canAddToCart =
