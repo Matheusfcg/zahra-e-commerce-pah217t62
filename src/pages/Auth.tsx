@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
-import { Loader2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react'
 
 type AuthMode = 'login' | 'register' | 'reset'
 
@@ -17,9 +17,23 @@ export default function Auth() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '')
+    if (value.length > 11) value = value.slice(0, 11)
+
+    if (value.length > 2) {
+      value = `(${value.slice(0, 2)}) ${value.slice(2)}`
+    }
+    if (value.length > 10) {
+      value = `${value.slice(0, 10)}-${value.slice(10)}`
+    }
+    setPhone(value)
+  }
 
   const redirectTo = searchParams.get('redirect') || '/'
 
@@ -43,8 +57,15 @@ export default function Auth() {
         errs.password = 'Senha deve ter no mínimo 6 caracteres'
       }
     }
-    if (mode === 'register' && !fullName.trim()) {
-      errs.fullName = 'Nome é obrigatório'
+    if (mode === 'register') {
+      if (!fullName.trim()) {
+        errs.fullName = 'Nome é obrigatório'
+      }
+      if (!phone.trim()) {
+        errs.phone = 'Telefone é obrigatório'
+      } else if (phone.replace(/\D/g, '').length < 10) {
+        errs.phone = 'Telefone inválido'
+      }
     }
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -64,7 +85,7 @@ export default function Auth() {
           navigate(redirectTo, { replace: true })
         }
       } else if (mode === 'register') {
-        const { error } = await signUp(email.trim(), password, { full_name: fullName })
+        const { error } = await signUp(email.trim(), password, { full_name: fullName, phone })
         if (error) {
           toast({ title: error.message || 'Erro ao cadastrar', variant: 'destructive' })
         } else {
@@ -105,20 +126,37 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className={inputCls}
-                    placeholder="Seu nome completo"
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Nome Completo</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className={inputCls}
+                      placeholder="Seu nome completo"
+                    />
+                  </div>
+                  {errors.fullName && <p className="text-xs text-red-600">{errors.fullName}</p>}
                 </div>
-                {errors.fullName && <p className="text-xs text-red-600">{errors.fullName}</p>}
-              </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={handlePhoneChange}
+                      className={inputCls}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

@@ -244,11 +244,11 @@ export function AdminOrders() {
                   {selectedOrder.customer_name || '—'}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">E-mail:</span>{' '}
+                  <span className="text-muted-foreground">E-mail do Cliente:</span>{' '}
                   {selectedOrder.customer_email}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Telefone:</span>{' '}
+                  <span className="text-muted-foreground">Telefone do Cliente:</span>{' '}
                   {selectedOrder.customer_phone || '—'}
                 </div>
                 <div>
@@ -338,6 +338,30 @@ export function AdminOrders() {
                   </div>
                 </div>
               )}
+              <div>
+                <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide">Logística</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-3 rounded-md">
+                  <div>
+                    <span className="text-muted-foreground">Transportadora:</span>{' '}
+                    {selectedOrder.carrier_name || '—'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Método de Envio:</span>{' '}
+                    {selectedOrder.shipping_method || '—'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Valor do Frete:</span>{' '}
+                    {selectedOrder.shipping_cost !== null &&
+                    selectedOrder.shipping_cost !== undefined
+                      ? `R$ ${Number(selectedOrder.shipping_cost).toFixed(2).replace('.', ',')}`
+                      : '—'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Prazo de Entrega:</span>{' '}
+                    {selectedOrder.delivery_days ? `${selectedOrder.delivery_days} dia(s)` : '—'}
+                  </div>
+                </div>
+              </div>
               <div>
                 <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide">Itens</h4>
                 <div className="space-y-3">
