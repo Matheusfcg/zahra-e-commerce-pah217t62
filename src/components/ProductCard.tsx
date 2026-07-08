@@ -50,7 +50,15 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
           <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
         </button>
 
-        {product.quantity <= 0 && (
+        {(() => {
+          let isTotalOutOfStock = product.quantity <= 0
+          if (product.product_variants && product.product_variants.length > 0) {
+            isTotalOutOfStock = product.product_variants.every((v) => v.quantity <= 0)
+          } else if (product.product_sizes && product.product_sizes.length > 0) {
+            isTotalOutOfStock = product.product_sizes.every((s) => s.quantity <= 0)
+          }
+          return isTotalOutOfStock
+        })() && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 pointer-events-none">
             <span className="bg-white text-black px-6 py-1.5 text-xs uppercase tracking-widest font-medium">
               Esgotado

@@ -99,6 +99,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white p-3 rounded-full border border-muted-foreground/20 text-muted-foreground hover:text-[#3A2222] hover:border-[#3A2222] transition-all"
+                aria-label="Instagram da loja Zahra"
               >
                 <Instagram className="h-5 w-5" />
               </a>

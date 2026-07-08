@@ -41,7 +41,16 @@ const ProductPage = () => {
         .then((data) => {
           setProduct(data)
           if (data.product_colors?.length > 0) {
-            setSelectedColor(data.product_colors[0])
+            const availableColor =
+              data.product_colors.find((c) => {
+                if (data.product_variants?.length) {
+                  return data.product_variants.some(
+                    (v) => v.color_name === c.name && v.quantity > 0,
+                  )
+                }
+                return true
+              }) || data.product_colors[0]
+            setSelectedColor(availableColor)
           }
         })
         .catch(console.error)
@@ -135,7 +144,16 @@ const ProductPage = () => {
     )
   }
 
-  const isTotalOutOfStock = product.quantity <= 0
+  const isTotalOutOfStock = useMemo(() => {
+    if (product.product_variants && product.product_variants.length > 0) {
+      return product.product_variants.every((v) => v.quantity <= 0)
+    }
+    if (product.product_sizes && product.product_sizes.length > 0) {
+      return product.product_sizes.every((s) => s.quantity <= 0)
+    }
+    return product.quantity <= 0
+  }, [product])
+
   const isVariantOutOfStock = !!selectedSize && effectiveStock <= 0
   const canAddToCart =
     !isAdding &&
@@ -227,20 +245,37 @@ const ProductPage = () => {
                 <span className="font-medium">Cor: {selectedColor?.name || 'Selecione'}</span>
               </div>
               <div className="flex gap-3">
-                {product.product_colors.map((color) => (
-                  <button
-                    key={color.id}
-                    onClick={() => setSelectedColor(color)}
-                    className={cn(
-                      'w-8 h-8 rounded-full border-2 transition-all',
-                      selectedColor?.id === color.id
-                        ? 'border-primary scale-110'
-                        : 'border-transparent',
-                    )}
-                    style={{ backgroundColor: color.hex_value }}
-                    aria-label={`Selecionar cor ${color.name}`}
-                  />
-                ))}
+                {product.product_colors.map((color) => {
+                  const isColorOutOfStock = product.product_variants?.length
+                    ? !product.product_variants.some(
+                        (v) => v.color_name === color.name && v.quantity > 0,
+                      )
+                    : false
+
+                  return (
+                    <button
+                      key={color.id}
+                      onClick={() => !isColorOutOfStock && setSelectedColor(color)}
+                      disabled={isColorOutOfStock}
+                      className={cn(
+                        'w-8 h-8 rounded-full border-2 transition-all relative overflow-hidden',
+                        selectedColor?.id === color.id
+                          ? 'border-primary scale-110'
+                          : 'border-transparent',
+                        isColorOutOfStock && 'opacity-40 cursor-not-allowed',
+                      )}
+                      style={{ backgroundColor: color.hex_value }}
+                      aria-label={`Selecionar cor ${color.name}`}
+                      title={isColorOutOfStock ? 'Cor esgotada' : color.name}
+                    >
+                      {isColorOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-[2px] bg-red-600/70 rotate-45 transform origin-center" />
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
