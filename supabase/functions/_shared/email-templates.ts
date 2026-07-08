@@ -29,14 +29,11 @@ const buildFooter = (): string => `
 
 function formatShippingAddress(order: any): string {
   const parts: string[] = []
-  if (order.shipping_street)
-    parts.push(`${order.shipping_street}, ${order.shipping_number || 'S/N'}`)
+  if (order.shipping_street) parts.push(`${order.shipping_street}, ${order.shipping_number || 'S/N'}`)
   if (order.shipping_complement) parts.push(order.shipping_complement)
   if (order.shipping_neighborhood) parts.push(order.shipping_neighborhood)
   if (order.shipping_city || order.shipping_state) {
-    parts.push(
-      `${order.shipping_city || ''} ${order.shipping_state ? '- ' + order.shipping_state : ''}`.trim(),
-    )
+    parts.push(`${order.shipping_city || ''} ${order.shipping_state ? '- ' + order.shipping_state : ''}`.trim())
   }
   if (order.shipping_zip_code) parts.push(`CEP: ${order.shipping_zip_code}`)
   return parts.join('<br/>')
@@ -54,12 +51,11 @@ export function orderConfirmationHtml(
   const shippingMethod = order.shipping_method || ''
   const deliveryDays = order.delivery_days
 
-  const itemsHtml = items
-    .map((item: any) => {
-      const images = item.products?.product_images || []
-      images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
-      const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing'
-      return `
+  const itemsHtml = items.map((item: any) => {
+    const images = item.products?.product_images || []
+    images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0))
+    const imageUrl = images[0]?.url || 'https://img.usecurling.com/p/100/100?q=clothing'
+    return `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #eee;">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -71,15 +67,15 @@ export function orderConfirmationHtml(
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">R$ ${Number(item.price_at_purchase).toFixed(2).replace('.', ',')}</td>
       </tr>
     `
-    })
-    .join('')
+  }).join('')
 
   const invoiceHtml = invoiceUrl
     ? `<div style="margin-top: 20px; text-align: center;"><a href="${invoiceUrl}" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 500;">Visualizar Nota Fiscal</a></div>`
     : ''
 
-  const shippingLabel =
-    shippingCost > 0 ? `R$ ${shippingCost.toFixed(2).replace('.', ',')}` : 'Grátis'
+  const shippingLabel = shippingCost > 0
+    ? `R$ ${shippingCost.toFixed(2).replace('.', ',')}`
+    : 'Grátis'
   const shippingInfo = shippingMethod
     ? `${shippingMethod} — ${shippingLabel}${deliveryDays ? ` (${deliveryDays} dias úteis)` : ''}`
     : shippingLabel
