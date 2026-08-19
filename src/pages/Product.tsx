@@ -19,9 +19,11 @@ import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
 import { Loader2, Plus, Minus } from 'lucide-react'
 
+import { optimizeImage } from '@/lib/image'
+
 const getImageUrl = (url: string | undefined | null) => {
-  if (!url) return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing&dpr=2'
-  return url
+  if (!url) return 'https://img.usecurling.com/p/600/750?q=fashion%20clothing'
+  return optimizeImage(url, { width: 600, quality: 80, format: 'webp' })
 }
 
 const ProductPage = () => {
@@ -198,12 +200,15 @@ const ProductPage = () => {
         <div className="w-full lg:w-3/5 lg:border-r overflow-hidden relative group">
           <Carousel className="w-full h-full">
             <CarouselContent>
-              {sortedImages.map((img) => (
+              {sortedImages.map((img, idx) => (
                 <CarouselItem key={img.id}>
                   <div className="aspect-[3/4] overflow-hidden bg-muted lg:h-full lg:aspect-auto">
                     <img
                       src={getImageUrl(img.url)}
                       alt={`${product.name} detail`}
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={idx === 0 ? 'high' : 'auto'}
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   </div>

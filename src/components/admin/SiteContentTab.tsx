@@ -154,7 +154,13 @@ export default function SiteContentTab() {
               </div>
               <div className="w-16 h-12 bg-muted rounded border overflow-hidden shrink-0 flex items-center justify-center">
                 {img ? (
-                  <img src={img} alt={`Banner ${i}`} className="w-full h-full object-cover" />
+                  <img
+                    src={img}
+                    alt={`Banner ${i}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-[10px] text-muted-foreground">Vazio</span>
                 )}

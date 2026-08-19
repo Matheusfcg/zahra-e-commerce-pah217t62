@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Heart, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/services/products'
+import { optimizeImage } from '@/lib/image'
 
 interface ProductCardProps {
   product: Product
@@ -10,16 +11,19 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, isFavorite = false, onToggleFavorite }: ProductCardProps) {
+  const rawImageUrl =
+    product.product_images?.find((img) => img.is_cover)?.url ||
+    product.product_images?.[0]?.url ||
+    'https://img.usecurling.com/p/400/500?q=high%20fashion%20minimalist%20clothing'
+
+  const optimizedImageUrl = optimizeImage(rawImageUrl, { width: 400, quality: 80, format: 'webp' })
+
   return (
     <div className="group flex flex-col gap-3 animate-fade-in">
       <div className="relative aspect-[3/4] overflow-hidden bg-secondary/10">
         <Link to={`/product/${product.slug}`}>
           <img
-            src={
-              product.product_images?.find((img) => img.is_cover)?.url ||
-              product.product_images?.[0]?.url ||
-              'https://img.usecurling.com/p/800/1000?q=high%20fashion%20minimalist%20clothing&dpr=2'
-            }
+            src={optimizedImageUrl}
             alt={product.name}
             loading="lazy"
             decoding="async"

@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast'
 import { generatePixPayload } from '@/lib/pix'
 import { supabase } from '@/lib/supabase/client'
 import { useCartProductImages } from '@/hooks/use-cart-images'
+import { optimizeImage } from '@/lib/image'
 import {
   Carousel,
   CarouselContent,
@@ -740,8 +741,10 @@ const Checkout = () => {
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixPayload)}`}
                           alt="PIX QR Code"
+                          loading="lazy"
+                          decoding="async"
                           className="w-48 h-48 mix-blend-multiply"
-                        />
+                        />{' '}
                       </div>
                       <div className="w-full max-w-sm space-y-2">
                         <Label>Ou copie o código Pix:</Label>
@@ -803,8 +806,15 @@ const Checkout = () => {
                             {itemImages.map((img, i) => (
                               <CarouselItem key={i} className="pl-0 basis-full h-full">
                                 <img
-                                  src={img}
+                                  src={optimizeImage(img, {
+                                    width: 100,
+                                    height: 120,
+                                    quality: 80,
+                                    format: 'webp',
+                                  })}
                                   alt={`${item.name} ${i + 1}`}
+                                  loading={i === 0 ? 'eager' : 'lazy'}
+                                  decoding="async"
                                   className="w-full h-full object-cover"
                                 />
                               </CarouselItem>

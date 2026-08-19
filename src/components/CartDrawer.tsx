@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useCartProductImages } from '@/hooks/use-cart-images'
+import { optimizeImage } from '@/lib/image'
 import {
   Carousel,
   CarouselContent,
@@ -52,8 +53,15 @@ export function CartDrawer() {
                           {itemImages.map((img, i) => (
                             <CarouselItem key={i} className="pl-0 basis-full h-full">
                               <img
-                                src={img}
+                                src={optimizeImage(img, {
+                                  width: 120,
+                                  height: 140,
+                                  quality: 80,
+                                  format: 'webp',
+                                })}
                                 alt={`${item.name} ${i + 1}`}
+                                loading={i === 0 ? 'eager' : 'lazy'}
+                                decoding="async"
                                 className="w-full h-full object-cover"
                               />
                             </CarouselItem>

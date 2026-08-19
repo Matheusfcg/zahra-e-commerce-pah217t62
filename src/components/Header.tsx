@@ -23,6 +23,7 @@ import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
+import { optimizeImage } from '@/lib/image'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -270,8 +271,15 @@ export function Header() {
                       <div className="w-12 h-12 rounded-full bg-[#2D0B0B] flex items-center justify-center flex-shrink-0 text-white">
                         {profile?.avatar_url ? (
                           <img
-                            src={profile.avatar_url}
+                            src={optimizeImage(profile.avatar_url, {
+                              width: 96,
+                              height: 96,
+                              quality: 80,
+                              format: 'webp',
+                            })}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full rounded-full object-cover"
                           />
                         ) : (

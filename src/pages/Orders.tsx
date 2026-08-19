@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { optimizeImage } from '@/lib/image'
 
 type OrderItem = {
   quantity: number
@@ -240,8 +241,15 @@ export default function Orders() {
                         <div key={idx} className="flex items-start gap-4">
                           <div className="w-16 h-20 bg-muted shrink-0 rounded overflow-hidden">
                             <img
-                              src={imageUrl}
+                              src={optimizeImage(imageUrl, {
+                                width: 120,
+                                height: 150,
+                                quality: 80,
+                                format: 'webp',
+                              })}
                               alt={item.products?.name || 'Produto'}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -361,8 +369,15 @@ export default function Orders() {
                       <div className="w-12 h-12 bg-muted rounded overflow-hidden shrink-0">
                         {item.products?.product_images?.[0]?.url && (
                           <img
-                            src={item.products.product_images[0].url}
+                            src={optimizeImage(item.products.product_images[0].url, {
+                              width: 96,
+                              height: 96,
+                              quality: 80,
+                              format: 'webp',
+                            })}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         )}

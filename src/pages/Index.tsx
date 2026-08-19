@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedProducts } from '@/components/FeaturedProducts'
+import { optimizeImage } from '@/lib/image'
 
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>({})
@@ -73,8 +74,8 @@ export default function Index() {
     if (legacy.length > 0) return legacy
 
     return [
-      'https://img.usecurling.com/p/800/1200?q=elegant%20fashion&dpr=2',
-      'https://img.usecurling.com/p/800/1200?q=sophisticated%20clothing&dpr=2',
+      'https://img.usecurling.com/p/600/900?q=elegant%20fashion',
+      'https://img.usecurling.com/p/600/900?q=sophisticated%20clothing',
     ]
   }, [content])
 
@@ -82,7 +83,10 @@ export default function Index() {
     return featuredCategories.map((cat) => ({
       label: cat.name,
       value: cat.name,
-      image: cat.image_url || 'https://img.usecurling.com/p/400/400?q=clothing&color=white',
+      image: optimizeImage(
+        cat.image_url || 'https://img.usecurling.com/p/200/200?q=clothing&color=white',
+        { width: 200, height: 200, quality: 80, format: 'webp' },
+      ),
     }))
   }, [featuredCategories])
 
@@ -107,7 +111,11 @@ export default function Index() {
                 className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
               >
                 <img
-                  src={imageUrl}
+                  src={optimizeImage(imageUrl, {
+                    width: index === 0 ? 600 : 400,
+                    quality: 80,
+                    format: 'webp',
+                  })}
                   alt={`Hero Image ${index + 1}`}
                   loading={index === 0 ? 'eager' : 'lazy'}
                   fetchPriority={index === 0 ? 'high' : 'auto'}
