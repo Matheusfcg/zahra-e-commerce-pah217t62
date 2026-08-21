@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
-import { Loader2, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Eye, EyeOff, Phone, Calendar } from 'lucide-react'
 
 type AuthMode = 'login' | 'register' | 'reset'
 
@@ -18,6 +18,7 @@ export default function Auth() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [birthDate, setBirthDate] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -85,11 +86,15 @@ export default function Auth() {
           navigate(redirectTo, { replace: true })
         }
       } else if (mode === 'register') {
-        const { error } = await signUp(email.trim(), password, { full_name: fullName, phone })
+        const { error } = await signUp(email.trim(), password, {
+          full_name: fullName,
+          phone,
+          birth_date: birthDate || null,
+        })
         if (error) {
           toast({ title: error.message || 'Erro ao cadastrar', variant: 'destructive' })
         } else {
-          toast({ title: 'Conta criada! Verifique seu e-mail para confirmar.' })
+          toast({ title: 'Conta criada com sucesso! Faça login para continuar.' })
           setMode('login')
         }
       } else if (mode === 'reset') {
@@ -142,19 +147,36 @@ export default function Auth() {
                   {errors.fullName && <p className="text-xs text-red-600">{errors.fullName}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      className={inputCls}
-                      placeholder="(00) 00000-0000"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        className={inputCls}
+                        placeholder="(00) 00000-0000"
+                      />
+                    </div>
+                    {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
                   </div>
-                  {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="birthDate"
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
+                        className={inputCls}
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}

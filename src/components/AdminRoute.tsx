@@ -11,13 +11,11 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        supabase
-          .from('user_profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
+        Promise.resolve(
+          supabase.from('user_profiles').select('is_admin').eq('id', user.id).single(),
+        )
           .then(({ data }) => {
-            setIsAdmin(!!data?.is_admin)
+            setIsAdmin(!!(data as any)?.is_admin)
           })
           .catch(() => {
             setIsAdmin(false)

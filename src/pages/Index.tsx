@@ -7,52 +7,55 @@ import { FeaturedProducts } from '@/components/FeaturedProducts'
 import { optimizeImage } from '@/lib/image'
 
 export default function Index() {
-  const [content, setContent] = useState<Record<string, string>>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const [content, setContent] = useState<Record<string, string>>(() => {
+    try {
+      const cached = sessionStorage.getItem('site_content_cache')
+      if (cached) {
+        const { data } = JSON.parse(cached)
+        return data || {}
+      }
+    } catch {
+      // ignore
+    }
+    return {}
+  })
+  const [isLoading, setIsLoading] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('site_content_cache')
+      return !cached
+    } catch {
+      return true
+    }
+  })
   const [featuredCategories, setFeaturedCategories] = useState<any[]>([])
 
   useEffect(() => {
-    supabase
-      .from('categories')
-      .select('*')
-      .eq('is_featured', true)
-      .order('created_at')
-      .then(({ data }) => {
-        if (data) setFeaturedCategories(data)
-      })
-
-    const fetchContent = async () => {
-      const cached = sessionStorage.getItem('site_content_cache')
-      if (cached) {
-        try {
-          const { data, timestamp } = JSON.parse(cached)
-          if (Date.now() - timestamp < 1000 * 60 * 5) {
-            setContent(data)
-            setIsLoading(false)
-            return
-          }
-        } catch {
-          // ignore
-        }
-      }
-      try {
-        const { data } = await supabase.from('site_content').select('section_key, content_value')
-        if (data) {
-          const map = data.reduce(
+    Promise.all([
+      supabase.from('categories').select('*').eq('is_featured', true).order('created_at'),
+      supabase.from('site_content').select('section_key, content_value'),
+    ])
+      .then(([catRes, contentRes]) => {
+        if (catRes.data) setFeaturedCategories(catRes.data)
+        if (contentRes.data) {
+          const map = contentRes.data.reduce(
             (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
             {} as Record<string, string>,
           )
           setContent(map)
-          sessionStorage.setItem(
-            'site_content_cache',
-            JSON.stringify({ data: map, timestamp: Date.now() }),
-          )
+          try {
+            sessionStorage.setItem(
+              'site_content_cache',
+              JSON.stringify({ data: map, timestamp: Date.now() }),
+            )
+          } catch {
+            // ignore
+          }
         }
-      } finally {
         setIsLoading(false)
-      }
-    }
-    fetchContent()
+      })
+      .catch(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   const dynamicHeroBannerImages = useMemo(() => {

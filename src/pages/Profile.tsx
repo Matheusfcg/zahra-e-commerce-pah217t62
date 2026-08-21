@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
-import { Loader2, MapPin, User } from 'lucide-react'
+import { Loader2, MapPin, User, Calendar } from 'lucide-react'
 
 export default function Profile() {
   const { user } = useAuth()
@@ -14,6 +14,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [birthDate, setBirthDate] = useState('')
   const [documentNumber, setDocumentNumber] = useState('')
   const [zipCode, setZipCode] = useState('')
   const [street, setStreet] = useState('')
@@ -36,10 +37,11 @@ export default function Profile() {
       .select('*')
       .eq('id', user.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (data) {
           setFullName(data.full_name || '')
           setPhone(data.phone || '')
+          setBirthDate(data.birth_date || '')
           setDocumentNumber(data.document_number || '')
           setZipCode(data.zip_code || '')
           setStreet(data.street || '')
@@ -105,6 +107,7 @@ export default function Profile() {
       .update({
         full_name: fullName,
         phone,
+        birth_date: birthDate || null,
         document_number: documentNumber,
         zip_code: zipCode,
         street,
@@ -113,7 +116,7 @@ export default function Profile() {
         neighborhood,
         city,
         state,
-      })
+      } as any)
       .eq('id', user.id)
     if (error) toast({ title: 'Erro ao salvar', variant: 'destructive' })
     else toast({ title: 'Perfil atualizado com sucesso!' })
@@ -149,15 +152,29 @@ export default function Profile() {
                 className={inputCls}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
                   className={inputCls}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthDate">Data de Nascimento</Label>
+                <div className="relative">
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className={inputCls}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="doc">CPF/CNPJ</Label>
@@ -165,6 +182,7 @@ export default function Profile() {
                   id="doc"
                   value={documentNumber}
                   onChange={(e) => setDocumentNumber(e.target.value)}
+                  placeholder="000.000.000-00"
                   className={inputCls}
                 />
               </div>

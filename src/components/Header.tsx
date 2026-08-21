@@ -34,12 +34,29 @@ export function Header() {
   const [categories, setCategories] = useState<string[]>([])
 
   useEffect(() => {
+    const cached = sessionStorage.getItem('header_categories_cache')
+    if (cached) {
+      try {
+        setCategories(JSON.parse(cached))
+      } catch {
+        // ignore
+      }
+    }
+
     supabase
       .from('categories')
       .select('name')
       .order('name')
       .then(({ data }) => {
-        if (data) setCategories(data.map((c: any) => c.name))
+        if (data) {
+          const names = data.map((c: any) => c.name)
+          setCategories(names)
+          try {
+            sessionStorage.setItem('header_categories_cache', JSON.stringify(names))
+          } catch {
+            // ignore
+          }
+        }
       })
   }, [])
 

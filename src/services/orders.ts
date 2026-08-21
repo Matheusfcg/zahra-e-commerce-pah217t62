@@ -46,6 +46,10 @@ export type Order = {
   shipping_neighborhood: string | null
   shipping_city: string | null
   shipping_state: string | null
+  email_confirmation_status: string | null
+  email_confirmation_sent_at: string | null
+  email_confirmation_error: string | null
+  estimated_delivery_date: string | null
   order_items: OrderItem[]
 }
 
@@ -55,6 +59,8 @@ const ORDER_SELECT = `
   tracking_code, carrier_name, shipping_method, shipping_cost, delivery_days,
   shipping_zip_code, shipping_street, shipping_number, shipping_complement,
   shipping_neighborhood, shipping_city, shipping_state,
+  email_confirmation_status, email_confirmation_sent_at, email_confirmation_error,
+  estimated_delivery_date,
   order_items (
     quantity, price_at_purchase, product_id, size_name, color_name,
     products (name, product_images(url))
@@ -107,4 +113,25 @@ export async function updateOrderTracking(
     .eq('id', orderId)
     .select()
   return { data, error }
+}
+
+export async function updateOrderEstimatedDelivery(orderId: string, estimatedDate: string | null) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ estimated_delivery_date: estimatedDate } as any)
+    .eq('id', orderId)
+    .select()
+  return { data, error }
+}
+
+export async function resendOrderEmail(
+  orderId: string,
+  eventType: 'order_created' | 'status_changed' | 'invoice_added' = 'order_created',
+) {
+  return await supabase.functions.invoke('process-order-notifications', {
+    body: {
+      order_id: orderId,
+      event_type: eventType,
+    },
+  })
 }

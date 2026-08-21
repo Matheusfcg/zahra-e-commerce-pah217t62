@@ -294,10 +294,20 @@ const Checkout = () => {
 
       clearCart()
 
-      // Trigger Edge Function Notification Asynchronously
+      // Trigger Edge Function Notification Asynchronously with error tracking
       supabase.functions
         .invoke('process-order-notifications', {
-          body: { order_id: order.id },
+          body: {
+            order_id: order.id,
+            event_type: 'order_created',
+          },
+        })
+        .then(({ data, error }) => {
+          if (error || (data && data.success === false)) {
+            console.warn('Falha no envio inicial do e-mail:', error || data?.error)
+          } else {
+            console.log('E-mail de confirmação enviado com sucesso.')
+          }
         })
         .catch((err) => console.error('Edge function trigger error:', err))
 

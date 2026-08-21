@@ -154,6 +154,7 @@ export default function AdminUpload() {
             id: '',
             section_key: req.key,
             content_value: req.value,
+            updated_at: new Date().toISOString(),
           })
         }
       })

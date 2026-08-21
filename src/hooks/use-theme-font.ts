@@ -68,51 +68,30 @@ export function applyThemeFont(fontName: string) {
 
 export function useThemeFont() {
   const [font, setFont] = useState<string>(DEFAULT_FONT)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const cached = sessionStorage.getItem(FONT_CACHE_KEY)
     if (cached) {
       applyThemeFont(cached)
+      setFont(cached)
+    } else {
+      applyThemeFont(DEFAULT_FONT)
     }
 
+    // Fetch in background without blocking render
     ;(supabase as any)
       .from('site_settings')
       .select('setting_value')
       .eq('setting_key', 'main_font')
       .single()
       .then(({ data, error }: any) => {
-        let fontName = cached || DEFAULT_FONT
-        if (!error && data?.setting_value) {
-          fontName = data.setting_value
-          setFont(fontName)
-          applyThemeFont(fontName)
-          setLoading(false)
-        } else {
-          // Legacy fallback
-          supabase
-            .from('site_content')
-            .select('content_value')
-            .eq('section_key', 'primary_font')
-            .single()
-            .then(({ data: legacy }) => {
-              if (legacy?.content_value) {
-                fontName = legacy.content_value
-              }
-              setFont(fontName)
-              applyThemeFont(fontName)
-              setLoading(false)
-            })
-            .catch(() => {
-              setFont(fontName)
-              applyThemeFont(fontName)
-              setLoading(false)
-            })
+        if (!error && data?.setting_value && data.setting_value !== cached) {
+          setFont(data.setting_value)
+          applyThemeFont(data.setting_value)
         }
       })
-      .catch(() => {
-        setLoading(false)
-      })
+      .catch(() => {})
   }, [])
 
   return { font, loading }
