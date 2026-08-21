@@ -47,11 +47,11 @@ Deno.serve(async (req) => {
     const emails = subscribers.map((s: { email: string }) => s.email)
     const html = newsletterHtml(subject, content)
     const configuredFrom =
-      Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Zahrá <contato@zahrabrasil.com.br>'
+      Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
 
     const sendersToTry = [configuredFrom]
-    if (!sendersToTry.includes('Zahrá <contato@zahrabrasil.com.br>')) {
-      sendersToTry.unshift('Zahrá <contato@zahrabrasil.com.br>')
+    if (!sendersToTry.includes('Zahrá <sac@zahrabrasil.com.br>')) {
+      sendersToTry.unshift('Zahrá <sac@zahrabrasil.com.br>')
     }
     if (!sendersToTry.includes('Zahrá <onboarding@resend.dev>')) {
       sendersToTry.push('Zahrá <onboarding@resend.dev>')
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           from: sender,
-          reply_to: 'contato@zahrabrasil.com.br',
+          reply_to: 'sac@zahrabrasil.com.br',
           bcc: emails,
           subject: subject,
           html: html,
