@@ -161,21 +161,19 @@ Deno.serve(async (req: Request) => {
       html = orderConfirmationHtml(customerName, order_id, items || [], orderWithDate)
     }
 
-    // Sender email official: sac@zahrabrasil.com.br (verified domain)
-    const configuredFrom = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
+    // Sender email official: "Zahrá <sac@zahrabrasil.com.br>"
+    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
+    const replyToAddress = 'sac@zahrabrasil.com.br'
 
     // Call Resend API with official sender
     let emailRes: any = null
     let sendSuccess = false
     let lastError = ''
 
-    // List of sender addresses to try: official domain first, then fallback if needed
-    const sendersToTry = [configuredFrom]
+    // List of sender addresses to try: primary official address first, fallback if configured
+    const sendersToTry = [fromAddress]
     if (!sendersToTry.includes('Zahrá <sac@zahrabrasil.com.br>')) {
       sendersToTry.unshift('Zahrá <sac@zahrabrasil.com.br>')
-    }
-    if (!sendersToTry.includes('Zahrá <onboarding@resend.dev>')) {
-      sendersToTry.push('Zahrá <onboarding@resend.dev>')
     }
 
     for (const sender of sendersToTry) {
@@ -189,7 +187,7 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: sender,
             to: customerEmail,
-            reply_to: 'sac@zahrabrasil.com.br',
+            reply_to: replyToAddress,
             subject,
             html,
           }),
