@@ -124,12 +124,18 @@ export function AdminOrders() {
     if (error) {
       toast.error('Erro ao atualizar status do pedido')
     } else {
-      toast.success('Status do pedido atualizado com sucesso!')
+      toast.success('Status do pedido atualizado! Notificação de e-mail enviada.')
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)))
       if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status })
 
       // Also trigger status update email
-      resendOrderEmail(orderId, 'status_changed').catch(() => {})
+      resendOrderEmail(orderId, 'status_changed', {
+        newStatus: status,
+      })
+        .then(() => {
+          loadOrders()
+        })
+        .catch(() => {})
     }
     setUpdatingId(null)
   }
@@ -150,13 +156,15 @@ export function AdminOrders() {
     if (error) {
       toast.error('Erro ao salvar nota fiscal')
     } else {
-      toast.success('Nota fiscal salva e enviada ao cliente com sucesso!')
+      toast.success('Nota fiscal salva! Notificação enviada por e-mail ao cliente.')
       setOrders((prev) =>
         prev.map((o) => (o.id === selectedOrder.id ? { ...o, invoice_url: invoiceUrl } : o)),
       )
       setSelectedOrder({ ...selectedOrder, invoice_url: invoiceUrl })
       if (invoiceUrl) {
-        resendOrderEmail(selectedOrder.id, 'invoice_added').catch(() => {})
+        resendOrderEmail(selectedOrder.id, 'invoice_added')
+          .then(() => loadOrders())
+          .catch(() => {})
       }
     }
     setUpdatingInvoice(false)
@@ -192,7 +200,7 @@ export function AdminOrders() {
     if (error) {
       toast.error('Erro ao atualizar data estimada')
     } else {
-      toast.success('Data estimada para envio atualizada!')
+      toast.success('Data estimada para envio/entrega atualizada com sucesso!')
       setOrders((prev) =>
         prev.map((o) =>
           o.id === selectedOrder.id
@@ -201,6 +209,12 @@ export function AdminOrders() {
         ),
       )
       setSelectedOrder({ ...selectedOrder, estimated_delivery_date: estimatedDeliveryDate || null })
+      // Trigger status/estimate notification if updated
+      resendOrderEmail(selectedOrder.id, 'status_changed', {
+        estimatedDeliveryDate: estimatedDeliveryDate || undefined,
+      })
+        .then(() => loadOrders())
+        .catch(() => {})
     }
     setUpdatingEstimate(false)
   }
@@ -208,6 +222,7 @@ export function AdminOrders() {
   const handleResendEmail = async (
     orderId: string,
     eventType: 'order_created' | 'status_changed' | 'invoice_added' = 'order_created',
+    customToastMessage?: string,
   ) => {
     setResendingEmailId(orderId)
     try {
@@ -216,11 +231,24 @@ export function AdminOrders() {
         const msg = data?.error || error?.message || 'Falha ao disparar e-mail'
         toast.error(`Erro no envio: ${msg}`)
       } else {
-        toast.success('E-mail de confirmação enviado com sucesso para o cliente!')
+        toast.success(
+          customToastMessage ||
+            (eventType === 'order_created'
+              ? 'E-mail de confirmação do pedido enviado com sucesso!'
+              : eventType === 'invoice_added'
+                ? 'E-mail com link da Nota Fiscal enviado com sucesso!'
+                : 'E-mail de atualização de status enviado com sucesso!'),
+        )
         await loadOrders()
         if (selectedOrder?.id === orderId) {
-          const updated = orders.find((o) => o.id === orderId)
-          if (updated) setSelectedOrder(updated)
+          const { data: refreshed } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('id', orderId)
+            .single()
+          if (refreshed) {
+            setSelectedOrder((prev) => (prev ? { ...prev, ...refreshed } : null))
+          }
         }
       }
     } catch (err: any) {
@@ -549,12 +577,31 @@ export function AdminOrders() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">E-mail de Confirmação:</span>
+                    <span className="text-sm text-muted-foreground">Status do E-mail:</span>
                     {renderEmailStatusBadge(selectedOrder)}
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2 border-t border-[#f0ede8]">
+                {selectedOrder.email_confirmation_sent_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Último envio com sucesso em:{' '}
+                    {formatDate(selectedOrder.email_confirmation_sent_at)}
+                  </p>
+                )}
+
+                {selectedOrder.email_confirmation_status === 'error' &&
+                  selectedOrder.email_confirmation_error && (
+                    <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                      <span className="font-semibold block mb-0.5">
+                        Detalhe do erro no disparo:
+                      </span>
+                      <p className="break-words font-mono text-[11px]">
+                        {selectedOrder.email_confirmation_error}
+                      </p>
+                    </div>
+                  )}
+
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[#f0ede8]">
                   <Button
                     size="sm"
                     variant="outline"
@@ -567,7 +614,22 @@ export function AdminOrders() {
                     ) : (
                       <Mail className="h-3.5 w-3.5" />
                     )}
-                    Reenviar E-mail de Confirmação
+                    Reenviar Confirmação
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 text-xs"
+                    disabled={resendingEmailId === selectedOrder.id}
+                    onClick={() => handleResendEmail(selectedOrder.id, 'status_changed')}
+                  >
+                    {resendingEmailId === selectedOrder.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    Reenviar Atualização de Status
                   </Button>
                 </div>
               </div>

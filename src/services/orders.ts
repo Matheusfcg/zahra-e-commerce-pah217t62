@@ -126,12 +126,22 @@ export async function updateOrderEstimatedDelivery(orderId: string, estimatedDat
 
 export async function resendOrderEmail(
   orderId: string,
-  eventType: 'order_created' | 'status_changed' | 'invoice_added' = 'order_created',
+  eventType:
+    | 'order_created'
+    | 'status_changed'
+    | 'invoice_added'
+    | 'resend_confirmation' = 'order_created',
+  options?: {
+    newStatus?: string
+    estimatedDeliveryDate?: string
+  },
 ) {
   return await supabase.functions.invoke('process-order-notifications', {
     body: {
       order_id: orderId,
       event_type: eventType,
+      new_status: options?.newStatus,
+      estimated_delivery_date: options?.estimatedDeliveryDate,
     },
   })
 }

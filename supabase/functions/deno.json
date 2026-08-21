@@ -1,8 +1,8 @@
 {
   "_versions": {
-    "process-order-notifications": 15,
-    "melhor-envio-token-exchange": 20,
-    "melhor-envio-quote": 17,
-    "send-newsletter": 8
+    "process-order-notifications": 16,
+    "melhor-envio-token-exchange": 21,
+    "melhor-envio-quote": 18,
+    "send-newsletter": 9
   }
 }

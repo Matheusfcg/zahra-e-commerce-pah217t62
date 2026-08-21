@@ -1,11 +1,11 @@
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    pending: 'recebido e está aguardando confirmação',
-    processing: 'em processamento',
-    paid: 'confirmado e pago com sucesso',
-    shipped: 'enviado para transporte',
-    delivered: 'entregue no seu endereço',
-    canceled: 'cancelado',
+    pending: 'Recebido e aguardando confirmação',
+    processing: 'Em separação / processamento',
+    paid: 'Pagamento confirmado com sucesso',
+    shipped: 'Enviado para transporte',
+    delivered: 'Entregue com sucesso',
+    canceled: 'Cancelado',
   }
   return labels[status] || status
 }
@@ -214,18 +214,33 @@ export function statusChangeHtml(
   const title = isCanceled
     ? 'Cancelamento de Pedido'
     : isDelivered
-      ? 'Seu pedido foi entregue!'
+      ? 'Seu pedido foi entregue com sucesso!'
       : isShipped
         ? 'Seu pedido está a caminho!'
-        : 'Atualização do seu pedido'
+        : status === 'paid'
+          ? 'Pagamento Confirmado!'
+          : status === 'processing'
+            ? 'Pedido em Separação!'
+            : 'Atualização do seu pedido'
+
+  let messageBody = `Informamos que o seu pedido <strong>#${shortId}</strong> agora está com o status: <strong style="color: #2D0B0B;">${statusLabel}</strong>.`
+  if (isCanceled) {
+    messageBody = `Lamentamos informar que o seu pedido <strong>#${shortId}</strong> foi cancelado. Caso tenha qualquer dúvida ou acredite que isto seja um equívoco, nossa equipe de suporte está à sua total disposição.`
+  } else if (isDelivered) {
+    messageBody = `Temos uma ótima notícia! O seu pedido <strong>#${shortId}</strong> foi entregue no seu endereço. Esperamos que você ame as suas peças da Zahrá!`
+  } else if (isShipped) {
+    messageBody = `Seu pedido <strong>#${shortId}</strong> foi despachado e já está em rota para o seu endereço de entrega.`
+  } else if (status === 'paid') {
+    messageBody = `Seu pagamento referente ao pedido <strong>#${shortId}</strong> foi confirmado com sucesso. Nossas costureiras e equipe de embalagem já estão preparando o seu pacote com todo o carinho.`
+  }
 
   return `
     ${buildHeader(title, `Pedido #${shortId}`)}
     <p style="font-size: 15px; line-height: 1.6; color: #333; margin: 0 0 16px;">
-      Olá <strong>${customerName}</strong>,
+      Olá, <strong>${customerName}</strong>!
     </p>
     <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-      Informamos que o seu pedido <strong>#${shortId}</strong> agora está com o status: <strong style="color: #2D0B0B;">${statusLabel}</strong>.
+      ${messageBody}
     </p>
     ${extraContent}
     <div style="margin-top: 30px; text-align: center;">

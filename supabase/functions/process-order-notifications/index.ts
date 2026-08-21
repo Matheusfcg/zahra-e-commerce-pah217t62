@@ -126,6 +126,11 @@ Deno.serve(async (req: Request) => {
     let subject: string
     let html: string
 
+    const orderWithDate = {
+      ...order,
+      estimated_delivery_date: estimated_delivery_date || order.estimated_delivery_date,
+    }
+
     if (event_type === 'status_changed') {
       const currentStatus = new_status || order.status
       if (currentStatus === 'canceled') {
@@ -134,6 +139,10 @@ Deno.serve(async (req: Request) => {
         subject = `Seu Pedido #${shortId} foi Enviado! - Zahrá`
       } else if (currentStatus === 'delivered') {
         subject = `Seu Pedido #${shortId} foi Entregue! - Zahrá`
+      } else if (currentStatus === 'paid') {
+        subject = `Pagamento Confirmado! Pedido #${shortId} na Zahrá`
+      } else if (currentStatus === 'processing') {
+        subject = `Seu Pedido #${shortId} está em Separação - Zahrá`
       } else {
         subject = `Atualização do seu pedido #${shortId} na Zahrá`
       }
@@ -141,7 +150,7 @@ Deno.serve(async (req: Request) => {
       html = statusChangeHtml(customerName, order_id, currentStatus, {
         trackingCode: order.tracking_code,
         carrierName: order.carrier_name,
-        estimatedDeliveryDate: estimated_delivery_date || order.estimated_delivery_date,
+        estimatedDeliveryDate: orderWithDate.estimated_delivery_date,
       })
     } else if (event_type === 'invoice_added') {
       subject = `Nota Fiscal disponível - Pedido #${shortId} na Zahrá`
@@ -149,46 +158,72 @@ Deno.serve(async (req: Request) => {
     } else {
       // order_created or resend_confirmation
       subject = `Obrigado por comprar na Zahrá! Pedido #${shortId}`
-      html = orderConfirmationHtml(customerName, order_id, items || [], order)
+      html = orderConfirmationHtml(customerName, order_id, items || [], orderWithDate)
     }
 
-    // Call Resend API
-    const emailReq = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Zahrá <pedidos@zahrabrasil.com.br>',
-        to: customerEmail,
-        subject,
-        html,
-      }),
-    })
+    // Configurable sender email or fallback to verified onboarding@resend.dev domain if domain not yet verified
+    const configuredFrom = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <pedidos@zahrabrasil.com.br>'
 
-    if (!emailReq.ok) {
-      const errorText = await emailReq.text()
-      console.error('Erro ao enviar e-mail via Resend:', errorText)
+    // Call Resend API with primary sender
+    let emailRes: any = null
+    let sendSuccess = false
+    let lastError = ''
+
+    // List of sender addresses to try: configured custom domain first, then onboarding@resend.dev
+    const sendersToTry = [configuredFrom]
+    if (configuredFrom !== 'Zahrá <onboarding@resend.dev>') {
+      sendersToTry.push('Zahrá <onboarding@resend.dev>')
+    }
+
+    for (const sender of sendersToTry) {
+      try {
+        const emailReq = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: customerEmail,
+            subject,
+            html,
+          }),
+        })
+
+        if (emailReq.ok) {
+          emailRes = await emailReq.json()
+          sendSuccess = true
+          break
+        } else {
+          lastError = await emailReq.text()
+          console.warn(`Tentativa de envio via '${sender}' falhou: ${lastError}`)
+        }
+      } catch (fetchErr: any) {
+        lastError = fetchErr.message || 'Erro de rede na requisição'
+        console.warn(`Exceção ao tentar envio via '${sender}':`, fetchErr)
+      }
+    }
+
+    if (!sendSuccess) {
+      console.error('Erro final ao enviar e-mail via Resend:', lastError)
 
       await supabase
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error: `Falha no envio Resend: ${errorText}`,
+          email_confirmation_error: `Falha no envio Resend: ${lastError}`,
         })
         .eq('id', order_id)
 
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Falha no envio do e-mail: ${errorText}`,
+          error: `Falha no envio do e-mail: ${lastError}`,
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
-
-    const emailRes = await emailReq.json()
 
     // Mark email as sent
     await supabase

@@ -46,29 +46,40 @@ Deno.serve(async (req) => {
 
     const emails = subscribers.map((s: { email: string }) => s.email)
     const html = newsletterHtml(subject, content)
+    const configuredFrom =
+      Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Zahrá <novidades@zahrabrasil.com.br>'
 
-    const emailReq = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Zahrá <novidades@zahrabrasil.com.br>',
-        bcc: emails,
-        subject: subject,
-        html: html,
-      }),
-    })
+    const sendersToTry = [configuredFrom]
+    if (configuredFrom !== 'Zahrá <onboarding@resend.dev>') {
+      sendersToTry.push('Zahrá <onboarding@resend.dev>')
+    }
 
     let sent = 0
     let failed = 0
 
-    if (emailReq.ok) {
-      sent = emails.length
-    } else {
-      failed = emails.length
-      console.error('Failed to send newsletter:', await emailReq.text())
+    for (const sender of sendersToTry) {
+      const emailReq = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: sender,
+          bcc: emails,
+          subject: subject,
+          html: html,
+        }),
+      })
+
+      if (emailReq.ok) {
+        sent = emails.length
+        failed = 0
+        break
+      } else {
+        failed = emails.length
+        console.error(`Failed to send newsletter with sender ${sender}:`, await emailReq.text())
+      }
     }
 
     return new Response(JSON.stringify({ success: true, sent, failed }), {
