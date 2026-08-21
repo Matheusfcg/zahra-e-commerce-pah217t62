@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast'
 import { generatePixPayload } from '@/lib/pix'
 import { supabase } from '@/lib/supabase/client'
 import { useCartProductImages } from '@/hooks/use-cart-images'
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
 import {
   Carousel,
@@ -815,16 +816,19 @@ const Checkout = () => {
                           <CarouselContent className="-ml-0 h-full">
                             {itemImages.map((img, i) => (
                               <CarouselItem key={i} className="pl-0 basis-full h-full">
-                                <img
+                                <ProgressiveImage
                                   src={optimizeImage(img, {
-                                    width: 100,
-                                    height: 120,
+                                    width: 120,
+                                    height: 150,
                                     quality: 80,
                                     format: 'webp',
                                   })}
                                   alt={`${item.name} ${i + 1}`}
                                   loading={i === 0 ? 'eager' : 'lazy'}
                                   decoding="async"
+                                  width={80}
+                                  height={96}
+                                  containerClassName="w-full h-full"
                                   className="w-full h-full object-cover"
                                 />
                               </CarouselItem>

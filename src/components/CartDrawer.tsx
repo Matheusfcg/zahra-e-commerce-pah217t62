@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useCartProductImages } from '@/hooks/use-cart-images'
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
 import {
   Carousel,
@@ -52,16 +53,19 @@ export function CartDrawer() {
                         <CarouselContent className="-ml-0 h-full">
                           {itemImages.map((img, i) => (
                             <CarouselItem key={i} className="pl-0 basis-full h-full">
-                              <img
+                              <ProgressiveImage
                                 src={optimizeImage(img, {
-                                  width: 120,
-                                  height: 140,
+                                  width: 150,
+                                  height: 180,
                                   quality: 80,
                                   format: 'webp',
                                 })}
                                 alt={`${item.name} ${i + 1}`}
                                 loading={i === 0 ? 'eager' : 'lazy'}
                                 decoding="async"
+                                width={96}
+                                height={112}
+                                containerClassName="w-full h-full"
                                 className="w-full h-full object-cover"
                               />
                             </CarouselItem>

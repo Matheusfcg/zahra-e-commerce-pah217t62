@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedProducts } from '@/components/FeaturedProducts'
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
 
 export default function Index() {
@@ -82,6 +83,34 @@ export default function Index() {
     ]
   }, [content])
 
+  // Inject preload link for LCP hero banner image
+  useEffect(() => {
+    const lcpImage = dynamicHeroBannerImages[0]
+    if (!lcpImage) return
+
+    const lcpUrl = optimizeImage(lcpImage, {
+      width: 800,
+      quality: 80,
+      format: 'webp',
+    })
+
+    const linkId = 'lcp-hero-preload'
+    let link = document.getElementById(linkId) as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.id = linkId
+      link.rel = 'preload'
+      link.as = 'image'
+      link.setAttribute('fetchpriority', 'high')
+      document.head.appendChild(link)
+    }
+    link.href = lcpUrl
+
+    return () => {
+      // Keep preload during life of page
+    }
+  }, [dynamicHeroBannerImages])
+
   const dynamicCategoryNavItems = useMemo(() => {
     return featuredCategories.map((cat) => ({
       label: cat.name,
@@ -96,7 +125,7 @@ export default function Index() {
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
-      <section className="relative w-full h-[75vh] md:h-[85vh] bg-white overflow-hidden group/banner">
+      <section className="relative w-full h-[75vh] md:h-[85vh] bg-[#f2eee9] overflow-hidden group/banner">
         {isLoading ? (
           <div className="flex overflow-hidden w-full h-full gap-1 md:gap-2">
             {[1, 2, 3, 4].map((i) => (
@@ -108,25 +137,35 @@ export default function Index() {
           </div>
         ) : (
           <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
-            {dynamicHeroBannerImages.map((imageUrl, index) => (
-              <div
-                key={index}
-                className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
-              >
-                <img
-                  src={optimizeImage(imageUrl, {
-                    width: index === 0 ? 600 : 400,
-                    quality: 80,
-                    format: 'webp',
-                  })}
-                  alt={`Hero Image ${index + 1}`}
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  fetchPriority={index === 0 ? 'high' : 'auto'}
-                  decoding="async"
-                  className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105 bg-[#e4dfdb]"
-                />
-              </div>
-            ))}
+            {dynamicHeroBannerImages.map((imageUrl, index) => {
+              const isFirst = index === 0
+              const optimizedSrc = optimizeImage(imageUrl, {
+                width: isFirst ? 800 : 500,
+                quality: 80,
+                format: 'webp',
+              })
+
+              return (
+                <div
+                  key={index}
+                  className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
+                >
+                  <ProgressiveImage
+                    src={optimizedSrc}
+                    alt={`Hero Image ${index + 1}`}
+                    priority={isFirst}
+                    loading={isFirst ? 'eager' : 'lazy'}
+                    decoding={isFirst ? 'sync' : 'async'}
+                    width={isFirst ? 800 : 500}
+                    height={1200}
+                    sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
+                    blurColor="bg-[#e4dfdb]"
+                    containerClassName="w-full h-full"
+                    className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105"
+                  />
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -163,11 +202,15 @@ export default function Index() {
                       className="group flex flex-col items-center snap-center shrink-0 w-[140px] md:w-[170px]"
                     >
                       <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
-                        <img
+                        <ProgressiveImage
                           src={item.image}
                           alt={item.label}
                           loading="lazy"
                           decoding="async"
+                          width={170}
+                          height={170}
+                          aspectRatio="1/1"
+                          containerClassName="w-full h-full rounded-full"
                           className="w-full h-full object-cover"
                         />
                       </div>

@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
 
 type OrderItem = {
@@ -240,7 +241,7 @@ export default function Orders() {
                       return (
                         <div key={idx} className="flex items-start gap-4">
                           <div className="w-16 h-20 bg-muted shrink-0 rounded overflow-hidden">
-                            <img
+                            <ProgressiveImage
                               src={optimizeImage(imageUrl, {
                                 width: 120,
                                 height: 150,
@@ -250,6 +251,9 @@ export default function Orders() {
                               alt={item.products?.name || 'Produto'}
                               loading="lazy"
                               decoding="async"
+                              width={64}
+                              height={80}
+                              containerClassName="w-full h-full"
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -368,7 +372,7 @@ export default function Orders() {
                     <div key={i} className="flex gap-3 items-center">
                       <div className="w-12 h-12 bg-muted rounded overflow-hidden shrink-0">
                         {item.products?.product_images?.[0]?.url && (
-                          <img
+                          <ProgressiveImage
                             src={optimizeImage(item.products.product_images[0].url, {
                               width: 96,
                               height: 96,
@@ -378,6 +382,9 @@ export default function Orders() {
                             alt=""
                             loading="lazy"
                             decoding="async"
+                            width={48}
+                            height={48}
+                            containerClassName="w-full h-full"
                             className="w-full h-full object-cover"
                           />
                         )}

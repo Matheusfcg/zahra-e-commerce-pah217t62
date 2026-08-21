@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Heart, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/services/products'
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
 
 interface ProductCardProps {
@@ -20,13 +21,18 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
 
   return (
     <div className="group flex flex-col gap-3 animate-fade-in">
-      <div className="relative aspect-[3/4] overflow-hidden bg-secondary/10">
-        <Link to={`/product/${product.slug}`}>
-          <img
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#f4f1ee]">
+        <Link to={`/product/${product.slug}`} className="block w-full h-full">
+          <ProgressiveImage
             src={optimizedImageUrl}
             alt={product.name}
             loading="lazy"
             decoding="async"
+            width={400}
+            height={533}
+            aspectRatio="3/4"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            containerClassName="w-full h-full"
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
         </Link>
