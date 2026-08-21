@@ -42,6 +42,7 @@ type Order = {
   shipping_method: string | null
   shipping_cost: number | null
   delivery_days: number | null
+  estimated_delivery_date: string | null
   shipping_zip_code: string | null
   shipping_street: string | null
   shipping_number: string | null
@@ -113,11 +114,12 @@ export default function Orders() {
           id, created_at, status, total_amount, payment_method, invoice_url,
           shipping_zip_code, shipping_street, shipping_number, shipping_complement,
           shipping_neighborhood, shipping_city, shipping_state,
-          tracking_code, carrier_name, shipping_method, shipping_cost, delivery_days,
+          tracking_code, carrier_name, shipping_method, shipping_cost, delivery_days, estimated_delivery_date,
           order_items (quantity, price_at_purchase, product_id, size_name, color_name, products (name, product_images(url)))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
+
       if (error) console.error('Error fetching orders:', error)
       if (data) setOrders(data as unknown as Order[])
       setIsLoading(false)
@@ -277,13 +279,53 @@ export default function Orders() {
                       )
                     })}
                   </div>
-                  {order.tracking_code && (
-                    <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm">
-                      <PackageCheck className="w-4 h-4 text-blue-600" />
-                      <span className="text-muted-foreground">Rastreamento:</span>
-                      <span className="font-medium">{order.tracking_code}</span>
-                      {order.carrier_name && (
-                        <span className="text-muted-foreground">({order.carrier_name})</span>
+                  {(order.tracking_code ||
+                    order.shipping_method ||
+                    order.estimated_delivery_date) && (
+                    <div className="mt-4 pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-sm bg-muted/10 p-3 rounded-md">
+                      <div className="flex flex-wrap items-center gap-3">
+                        {order.shipping_method && (
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Truck className="w-4 h-4 text-primary" />
+                            <span>
+                              <strong className="text-foreground">{order.shipping_method}</strong>
+                              {order.shipping_cost != null && Number(order.shipping_cost) > 0
+                                ? ` (R$ ${Number(order.shipping_cost).toFixed(2).replace('.', ',')})`
+                                : ' (Grátis)'}
+                            </span>
+                          </div>
+                        )}
+                        {order.tracking_code && (
+                          <div className="flex items-center gap-1.5">
+                            <PackageCheck className="w-4 h-4 text-blue-600" />
+                            <span className="text-muted-foreground">Rastreio:</span>
+                            <span className="font-mono font-semibold text-foreground">
+                              {order.tracking_code}
+                            </span>
+                            {order.carrier_name && (
+                              <span className="text-muted-foreground text-xs">
+                                ({order.carrier_name})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {(order.estimated_delivery_date || order.delivery_days) && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Clock className="w-3.5 h-3.5" />
+                          {order.estimated_delivery_date ? (
+                            <span>
+                              Previsão:{' '}
+                              <strong className="text-foreground">
+                                {new Date(order.estimated_delivery_date).toLocaleDateString(
+                                  'pt-BR',
+                                )}
+                              </strong>
+                            </span>
+                          ) : (
+                            <span>Prazo estimado: {order.delivery_days} dias úteis</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
@@ -323,23 +365,52 @@ export default function Orders() {
                   </Badge>
                 </div>
               </div>
-              {selectedOrder.shipping_method && (
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Frete:</span>{' '}
-                  {selectedOrder.shipping_method}
-                  {selectedOrder.shipping_cost != null && Number(selectedOrder.shipping_cost) > 0
-                    ? ` — R$ ${Number(selectedOrder.shipping_cost).toFixed(2).replace('.', ',')}`
-                    : ' — Grátis'}
-                  {selectedOrder.delivery_days && ` (${selectedOrder.delivery_days} dias úteis)`}
-                </div>
-              )}
-              {selectedOrder.tracking_code && (
-                <div className="text-sm flex items-center gap-2">
-                  <PackageCheck className="w-4 h-4 text-blue-600" />
-                  <span className="text-muted-foreground">Rastreamento:</span>
-                  <span className="font-medium">{selectedOrder.tracking_code}</span>
-                  {selectedOrder.carrier_name && (
-                    <span className="text-muted-foreground">({selectedOrder.carrier_name})</span>
+              {(selectedOrder.shipping_method ||
+                selectedOrder.tracking_code ||
+                selectedOrder.estimated_delivery_date) && (
+                <div className="bg-muted/20 p-3.5 rounded-lg border space-y-2 text-sm">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Truck className="h-4 w-4 text-primary" /> Informações de Envio & Rastreamento
+                  </h4>
+                  {selectedOrder.shipping_method && (
+                    <div>
+                      <span className="text-muted-foreground">Método de Envio:</span>{' '}
+                      <strong className="text-foreground">{selectedOrder.shipping_method}</strong>
+                      {selectedOrder.shipping_cost != null &&
+                      Number(selectedOrder.shipping_cost) > 0
+                        ? ` — R$ ${Number(selectedOrder.shipping_cost).toFixed(2).replace('.', ',')}`
+                        : ' — Frete Grátis'}
+                      {selectedOrder.delivery_days &&
+                        ` (Prazo: ~${selectedOrder.delivery_days} dias úteis)`}
+                    </div>
+                  )}
+                  {selectedOrder.estimated_delivery_date && (
+                    <div>
+                      <span className="text-muted-foreground">Previsão de Entrega:</span>{' '}
+                      <strong className="text-foreground">
+                        {new Date(selectedOrder.estimated_delivery_date).toLocaleDateString(
+                          'pt-BR',
+                        )}
+                      </strong>
+                    </div>
+                  )}
+                  {selectedOrder.tracking_code ? (
+                    <div className="flex items-center gap-2 pt-1 border-t">
+                      <PackageCheck className="w-4 h-4 text-blue-600" />
+                      <span className="text-muted-foreground">Código de Rastreamento:</span>
+                      <span className="font-mono font-bold text-foreground bg-white px-2 py-0.5 rounded border">
+                        {selectedOrder.tracking_code}
+                      </span>
+                      {selectedOrder.carrier_name && (
+                        <span className="text-muted-foreground text-xs">
+                          ({selectedOrder.carrier_name})
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      O código de rastreamento será informado assim que o pedido for despachado.
+                    </p>
                   )}
                 </div>
               )}

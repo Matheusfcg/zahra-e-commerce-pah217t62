@@ -28,7 +28,7 @@ const buildFooter = (): string => `
       <p style="margin: 0 0 8px;">Dúvidas sobre o seu pedido? Fale com a gente pelo WhatsApp ou responda a este e-mail.</p>
       <p style="margin: 0 0 12px; font-weight: 500;">
         <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
-        <a href="mailto:saczharabrasil@gmail.com" style="color: #2D0B0B; text-decoration: underline;">saczharabrasil@gmail.com</a>
+        <a href="mailto:contato@zahrabrasil.com.br" style="color: #2D0B0B; text-decoration: underline;">contato@zahrabrasil.com.br</a>
       </p>
       <p style="margin: 12px 0 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
         Zahrá Brasil © ${new Date().getFullYear()} — Todos os direitos reservados.
@@ -275,6 +275,21 @@ export function invoiceAvailableHtml(
     <p style="font-size: 13px; color: #777; text-align: center;">
       Caso tenha alguma dúvida referente à sua nota fiscal, entre em contato com a nossa equipe.
     </p>
+    ${buildFooter()}
+  `
+}
+
+export function newsletterHtml(subject: string, content: string): string {
+  return `
+    ${buildHeader(subject)}
+    <div style="font-size: 15px; line-height: 1.7; color: #333; margin: 0 0 24px; white-space: pre-line;">
+      ${content}
+    </div>
+    <div style="margin: 32px 0 20px; text-align: center;">
+      <a href="https://www.zahrabrasil.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 0; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
+        Conferir Novidades
+      </a>
+    </div>
     ${buildFooter()}
   `
 }

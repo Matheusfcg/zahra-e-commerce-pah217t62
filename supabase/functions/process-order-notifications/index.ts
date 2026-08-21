@@ -161,17 +161,20 @@ Deno.serve(async (req: Request) => {
       html = orderConfirmationHtml(customerName, order_id, items || [], orderWithDate)
     }
 
-    // Configurable sender email or fallback to verified onboarding@resend.dev domain if domain not yet verified
-    const configuredFrom = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <pedidos@zahrabrasil.com.br>'
+    // Sender email official: contato@zahrabrasil.com.br (verified domain)
+    const configuredFrom = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <contato@zahrabrasil.com.br>'
 
-    // Call Resend API with primary sender
+    // Call Resend API with official sender
     let emailRes: any = null
     let sendSuccess = false
     let lastError = ''
 
-    // List of sender addresses to try: configured custom domain first, then onboarding@resend.dev
+    // List of sender addresses to try: official domain first, then fallback if needed
     const sendersToTry = [configuredFrom]
-    if (configuredFrom !== 'Zahrá <onboarding@resend.dev>') {
+    if (!sendersToTry.includes('Zahrá <contato@zahrabrasil.com.br>')) {
+      sendersToTry.unshift('Zahrá <contato@zahrabrasil.com.br>')
+    }
+    if (!sendersToTry.includes('Zahrá <onboarding@resend.dev>')) {
       sendersToTry.push('Zahrá <onboarding@resend.dev>')
     }
 
@@ -186,6 +189,7 @@ Deno.serve(async (req: Request) => {
           body: JSON.stringify({
             from: sender,
             to: customerEmail,
+            reply_to: 'contato@zahrabrasil.com.br',
             subject,
             html,
           }),
