@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   fetchEmailTemplates,
   createEmailTemplate,
   updateEmailTemplate,
   deleteEmailTemplate,
+  htmlToPlainText,
+  plainTextToHtml,
   type EmailTemplate,
   type EmailTemplateInput,
 } from '@/services/emailTemplates'
@@ -20,13 +22,16 @@ import {
   Pencil,
   Trash2,
   Mail,
-  Variable,
   Eye,
   Check,
   Copy,
-  Info,
   Sparkles,
   Send,
+  MessageSquare,
+  HelpCircle,
+  Smartphone,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react'
 import {
   Dialog,
@@ -54,58 +59,45 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const SUGGESTED_VARIABLES = [
-  { key: 'nome_cliente', desc: 'Nome do cliente' },
-  { key: 'email_cliente', desc: 'E-mail do cliente' },
-  { key: 'numero_pedido', desc: 'Identificador do pedido (Ex: A8F1B)' },
-  { key: 'valor_total', desc: 'Valor total em R$ (Ex: 199,90)' },
-  { key: 'forma_pagamento', desc: 'Método utilizado (Ex: PIX, Cartão)' },
-  { key: 'status_pedido', desc: 'Status atual por extenso' },
-  { key: 'codigo_rastreio', desc: 'Código de rastreamento' },
-  { key: 'transportadora', desc: 'Nome da transportadora' },
-  { key: 'link_nota_fiscal', desc: 'URL para download do PDF da NF' },
-  { key: 'itens_pedido', desc: 'Tabela formatada com produtos comprados' },
-  { key: 'endereco_entrega', desc: 'Bloco estilizado com endereço de entrega' },
-  { key: 'bloco_rastreamento', desc: 'Card estilizado com código de rastreio' },
-  { key: 'bloco_data_estimada', desc: 'Aviso com prazo previsto de envio/entrega' },
-  { key: 'nome_loja', desc: 'Nome da loja (Zahrá Brasil)' },
+  { key: 'nome_cliente', label: 'Nome da Cliente', desc: 'Ex: Mariana Silva' },
+  { key: 'numero_pedido', label: 'Nº do Pedido', desc: 'Ex: ZH84920' },
+  { key: 'valor_total', label: 'Valor Total', desc: 'Ex: R$ 389,90' },
+  { key: 'forma_pagamento', label: 'Forma de Pagamento', desc: 'Ex: PIX, Cartão' },
+  { key: 'status_pedido', label: 'Status do Pedido', desc: 'Ex: Pagamento Confirmado' },
+  { key: 'codigo_rastreio', label: 'Código de Rastreio', desc: 'Ex: BR984712049BR' },
+  { key: 'transportadora', label: 'Transportadora', desc: 'Ex: Jadlog Express' },
+  { key: 'link_nota_fiscal', label: 'Link da Nota Fiscal', desc: 'URL da NF' },
+  { key: 'email_cliente', label: 'E-mail da Cliente', desc: 'mariana@exemplo.com' },
+  { key: 'nome_loja', label: 'Nome da Loja', desc: 'Zahrá Brasil' },
 ]
 
 export function EmailTemplatesManager() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Edit / Create Dialog
+  // Edit / Create Modal State
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
-  const [formData, setFormData] = useState<{
-    slug: string
-    name: string
-    subject: string
-    body_html: string
-    allowed_variables_str: string
-    description: string
-  }>({
-    slug: '',
-    name: '',
-    subject: '',
-    body_html: '',
-    allowed_variables_str: '',
-    description: '',
-  })
+
+  // Super simplified form data: Only Subject, Plain Text Body, and Friendly Name
+  const [formSubject, setFormSubject] = useState('')
+  const [formBodyText, setFormBodyText] = useState('')
+  const [formName, setFormName] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Preview Dialog
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null)
-  const [previewMode, setPreviewMode] = useState<'preview' | 'html'>('preview')
+  // Textarea ref for placing dynamic variable tags at cursor position
+  const bodyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
-  // Delete Dialog
+  // Live Preview inside Edit Dialog or separate Modal
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null)
+
+  // Delete Dialog State
   const [templateToDelete, setTemplateToDelete] = useState<EmailTemplate | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Copied state indicator
+  // Copied tag feedback
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
 
   const loadTemplates = useCallback(async () => {
@@ -125,67 +117,78 @@ export function EmailTemplatesManager() {
 
   const handleOpenCreate = () => {
     setEditingTemplate(null)
-    setFormData({
-      slug: '',
-      name: '',
-      subject: '',
-      body_html: `<p style="font-size: 15px; line-height: 1.6; color: #333; margin: 0 0 16px;">
-  Olá, <strong>{{nome_cliente}}</strong>!
-</p>
-<p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-  Escreva aqui o conteúdo da sua mensagem personalizada.
-</p>`,
-      allowed_variables_str: 'nome_cliente, email_cliente, nome_loja',
-      description: '',
-    })
+    setFormName('')
+    setFormSubject('')
+    setFormBodyText(
+      `Olá, {{nome_cliente}}!\n\nEscreva aqui a mensagem com todo o carinho para a sua cliente.\n\nQualquer dúvida, estamos à disposição!\nEquipe {{nome_loja}}`,
+    )
     setIsDialogOpen(true)
   }
 
   const handleOpenEdit = (template: EmailTemplate) => {
     setEditingTemplate(template)
-    setFormData({
-      slug: template.slug,
-      name: template.name,
-      subject: template.subject,
-      body_html: template.body_html,
-      allowed_variables_str: (template.allowed_variables || []).join(', '),
-      description: template.description || '',
-    })
+    setFormName(template.name)
+    setFormSubject(template.subject)
+
+    // Extract pure, human-friendly text without HTML code
+    const plain = htmlToPlainText(template.body_html)
+    setFormBodyText(plain)
     setIsDialogOpen(true)
+  }
+
+  const insertVariableIntoBody = (varKey: string) => {
+    const textToInsert = `{{${varKey}}}`
+    const textarea = bodyTextareaRef.current
+
+    if (textarea) {
+      const start = textarea.selectionStart ?? formBodyText.length
+      const end = textarea.selectionEnd ?? formBodyText.length
+      const newText = formBodyText.substring(0, start) + textToInsert + formBodyText.substring(end)
+      setFormBodyText(newText)
+
+      // Restore focus and cursor position after tag insertion
+      setTimeout(() => {
+        textarea.focus()
+        textarea.setSelectionRange(start + textToInsert.length, start + textToInsert.length)
+      }, 50)
+    } else {
+      setFormBodyText((prev) => prev + ` ${textToInsert}`)
+    }
+
+    toast.success(`Tag ${textToInsert} inserida no texto`)
+  }
+
+  const copyVariable = (varKey: string) => {
+    const tag = `{{${varKey}}}`
+    navigator.clipboard.writeText(tag)
+    setCopiedVar(varKey)
+    toast.success(`Copiado: ${tag}`)
+    setTimeout(() => setCopiedVar(null), 2000)
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim() || !formData.subject.trim() || !formData.body_html.trim()) {
-      toast.error('Preencha o nome, o assunto e o corpo do e-mail.')
+
+    if (!formSubject.trim()) {
+      toast.error('Por favor, preencha o assunto do e-mail.')
       return
     }
 
-    const variables = formData.allowed_variables_str
-      .split(',')
-      .map((v) => v.trim().replace(/^\{\{|\}\}$/g, ''))
-      .filter(Boolean)
-
-    let autoSlug = formData.slug.trim()
-    if (!autoSlug) {
-      autoSlug = formData.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '_')
-        .replace(/(^_|_$)+/g, '')
+    if (!formBodyText.trim()) {
+      toast.error('Por favor, preencha o texto do e-mail.')
+      return
     }
+
+    // Convert plain text back to clean, responsive HTML preserving email structure
+    const updatedHtml = plainTextToHtml(formBodyText, editingTemplate?.body_html)
 
     setSaving(true)
 
     if (editingTemplate) {
       const { error } = await updateEmailTemplate(editingTemplate.id, {
-        name: formData.name.trim(),
-        slug: autoSlug,
-        subject: formData.subject.trim(),
-        body_html: formData.body_html,
-        allowed_variables: variables,
-        description: formData.description.trim() || null,
+        name: formName.trim() || editingTemplate.name,
+        subject: formSubject.trim(),
+        body_html: updatedHtml,
       })
       setSaving(false)
       if (error) {
@@ -196,14 +199,26 @@ export function EmailTemplatesManager() {
         loadTemplates()
       }
     } else {
+      const friendlyName = formName.trim() || 'Modelo Personalizado'
+      const autoSlug =
+        friendlyName
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/(^_|_$)+/g, '') +
+        '_' +
+        Math.floor(Math.random() * 1000)
+
       const payload: EmailTemplateInput = {
-        name: formData.name.trim(),
+        name: friendlyName,
         slug: autoSlug,
-        subject: formData.subject.trim(),
-        body_html: formData.body_html,
-        allowed_variables: variables,
-        description: formData.description.trim() || null,
+        subject: formSubject.trim(),
+        body_html: updatedHtml,
+        allowed_variables: ['nome_cliente', 'email_cliente', 'nome_loja', 'numero_pedido'],
+        description: 'Modelo personalizado criado pela loja',
       }
+
       const { error } = await createEmailTemplate(payload)
       setSaving(false)
       if (error) {
@@ -230,25 +245,8 @@ export function EmailTemplatesManager() {
     }
   }
 
-  const copyVariable = (varName: string) => {
-    const text = `{{${varName}}}`
-    navigator.clipboard.writeText(text)
-    setCopiedVar(varName)
-    toast.success(`Copiado: ${text}`)
-    setTimeout(() => setCopiedVar(null), 2000)
-  }
-
-  const insertVariableIntoBody = (varName: string) => {
-    const textToInsert = `{{${varName}}}`
-    setFormData((prev) => ({
-      ...prev,
-      body_html: prev.body_html + textToInsert,
-    }))
-    toast.success(`Variável ${textToInsert} adicionada ao final do texto`)
-  }
-
-  // Render dummy preview with mocked sample values
-  const renderPreviewHtml = (template: EmailTemplate) => {
+  // Render preview formatted with dummy sample values
+  const renderPreviewHtml = (subject: string, rawBodyOrHtml: string) => {
     const mockVars: Record<string, string> = {
       nome_cliente: 'Mariana Silva',
       email_cliente: 'mariana.silva@exemplo.com.br',
@@ -261,33 +259,30 @@ export function EmailTemplatesManager() {
       link_nota_fiscal: '#',
       nome_loja: 'Zahrá Brasil',
       bloco_data_estimada:
-        '<p style="font-size: 14px; background: #fdfbf7; padding: 10px 14px; border-left: 3px solid #2D0B0B; color: #2D0B0B; margin: 16px 0;"><strong>Previsão de envio/entrega:</strong> 3 a 5 dias úteis</p>',
+        '<p style="font-size: 14px; background: #fdfbf7; padding: 10px 14px; border-left: 3px solid #2D0B0B; color: #2D0B0B; margin: 16px 0;"><strong>Previsão de entrega:</strong> 3 a 5 dias úteis</p>',
       bloco_rastreamento:
-        '<div style="margin: 24px 0; padding: 18px; background-color: #f0f7f4; border: 1px solid #cce5d9; border-radius: 4px;"><h4 style="margin: 0 0 8px; color: #1b5e20; font-size: 14px; text-transform: uppercase;">Código de Rastreamento</h4><p style="margin: 0; font-family: monospace; font-size: 18px; font-weight: bold; color: #2D0B0B;">BR984712049BR</p><p style="margin: 6px 0 0; font-size: 13px; color: #555;">Transportadora: <strong>Jadlog Express</strong></p></div>',
+        '<div style="margin: 20px 0; padding: 16px; background-color: #f0f7f4; border: 1px solid #cce5d9; border-radius: 4px;"><h4 style="margin: 0 0 6px; color: #1b5e20; font-size: 13px; text-transform: uppercase;">Código de Rastreamento</h4><p style="margin: 0; font-family: monospace; font-size: 17px; font-weight: bold; color: #2D0B0B;">BR984712049BR</p><p style="margin: 4px 0 0; font-size: 12px; color: #555;">Transportadora: <strong>Jadlog Express</strong></p></div>',
       itens_pedido: `
         <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #eee;">Vestido Midi Elegance Zahrá (Tam: M | Cor: Off-White)</td>
-          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">1</td>
-          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">R$ 259,90</td>
-        </tr>
-        <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #eee;">Blusa Seda Pura Zahrá (Tam: P | Cor: Terracota)</td>
-          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">1</td>
-          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">R$ 130,00</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #eee;">Vestido Midi Elegance Zahrá (M)</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center;">1</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">R$ 259,90</td>
         </tr>
       `,
       endereco_entrega:
-        '<div style="margin-top: 20px; padding: 16px; background-color: #fdfbf7; border: 1px solid #f0ede8; border-radius: 4px;"><h3 style="font-size: 12px; font-weight: 700; margin: 0 0 8px; text-transform: uppercase; color: #2D0B0B;">Endereço de Entrega</h3><p style="font-size: 13px; color: #555; margin: 0;">Av. Paulista, 1000, Apto 42<br/>Bela Vista - São Paulo / SP<br/>CEP: 01310-100</p></div>',
+        '<div style="margin-top: 18px; padding: 14px; background-color: #fdfbf7; border: 1px solid #f0ede8; border-radius: 4px;"><h3 style="font-size: 11px; font-weight: 700; margin: 0 0 6px; text-transform: uppercase; color: #2D0B0B;">Endereço de Entrega</h3><p style="font-size: 12px; color: #555; margin: 0;">Av. Paulista, 1000 - Apto 42<br/>São Paulo / SP - CEP: 01310-100</p></div>',
       botao_nota_fiscal:
-        '<div style="margin-top: 20px; text-align: center;"><a href="#" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">Visualizar Nota Fiscal</a></div>',
+        '<div style="margin-top: 18px; text-align: center;"><a href="#" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">Visualizar Nota Fiscal</a></div>',
       info_frete: 'Frete Expresso — R$ 24,90 (3 dias úteis)',
       conteudo_newsletter:
-        'Conheça os novos modelos exclusivos da coleção de outono com tecidos leves e cortes sofisticados!',
+        'Conheça os novos vestidos e conjuntos sofisticados da Coleção Outono Zahrá!',
       assunto_newsletter: 'Novidades Exclusivas Zahrá',
     }
 
-    let subj = template.subject
-    let body = template.body_html
+    let subj = subject || 'Assunto do E-mail'
+    let body = /<[a-z][\s\S]*>/i.test(rawBodyOrHtml)
+      ? rawBodyOrHtml
+      : plainTextToHtml(rawBodyOrHtml)
 
     for (const [key, val] of Object.entries(mockVars)) {
       const reg = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi')
@@ -298,25 +293,32 @@ export function EmailTemplatesManager() {
     const currentYear = new Date().getFullYear()
 
     return `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 32px 24px; border: 1px solid #f0ede8; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-        <div style="text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #2D0B0B;">
-          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 8px; text-transform: uppercase; font-weight: 700;">ZAHRÁ</h1>
-          <p style="font-size: 11px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">Moda & Elegância</p>
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 28px 22px; border: 1px solid #eae5df; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        <!-- Header da Loja -->
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2D0B0B;">
+          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 6px; text-transform: uppercase; font-weight: 700;">ZAHRÁ</h1>
+          <p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">Moda & Elegância</p>
         </div>
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h2 style="font-family: 'Playfair Display', Georgia, serif; color: #2D0B0B; font-weight: 600; margin: 0 0 6px; font-size: 22px;">${subj}</h2>
+
+        <!-- Assunto Destacado -->
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h2 style="font-family: 'Playfair Display', Georgia, serif; color: #2D0B0B; font-weight: 600; margin: 0 0 6px; font-size: 20px;">${subj}</h2>
         </div>
-        <div>
+
+        <!-- Corpo do E-mail -->
+        <div style="font-size: 15px; line-height: 1.6; color: #333333;">
           ${body}
         </div>
-        <hr style="border: none; border-top: 1px solid #eae6e1; margin: 36px 0 20px;" />
-        <div style="text-align: center; font-size: 13px; color: #7a6e65; line-height: 1.6;">
-          <p style="margin: 0 0 8px;">Dúvidas? Fale com a gente pelo WhatsApp ou responda a este e-mail.</p>
-          <p style="margin: 0 0 12px; font-weight: 500;">
+
+        <!-- Rodapé Profissional Automático -->
+        <hr style="border: none; border-top: 1px solid #eae6e1; margin: 30px 0 18px;" />
+        <div style="text-align: center; font-size: 12px; color: #7a6e65; line-height: 1.6;">
+          <p style="margin: 0 0 6px;">Dúvidas? Responda a este e-mail ou fale no WhatsApp.</p>
+          <p style="margin: 0 0 10px; font-weight: 500;">
             <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
             <a href="mailto:sac@zahrabrasil.com.br" style="color: #2D0B0B; text-decoration: underline;">sac@zahrabrasil.com.br</a>
           </p>
-          <p style="margin: 12px 0 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
+          <p style="margin: 10px 0 0; font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
             Zahrá Brasil © ${currentYear} — Todos os direitos reservados.
           </p>
         </div>
@@ -326,25 +328,26 @@ export function EmailTemplatesManager() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Header Card */}
+      <Card className="border-border/60">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#2D0B0B]/20 bg-[#2D0B0B]/5 text-[#2D0B0B]">
                 <Mail className="h-5 w-5" />
               </div>
               <div>
                 <CardTitle className="text-xl">Modelos de E-mail</CardTitle>
-                <CardDescription>
-                  Gerencie todos os comunicados automáticos da loja, personalize assuntos, mensagens
-                  HTML e utilize variáveis dinâmicas.
+                <CardDescription className="text-xs sm:text-sm">
+                  Edite o assunto e o texto dos e-mails enviados aos clientes de forma simples e
+                  direta.
                 </CardDescription>
               </div>
             </div>
           </div>
           <Button
             onClick={handleOpenCreate}
-            className="bg-[#2D0B0B] hover:bg-[#1a0606] text-white shrink-0"
+            className="bg-[#2D0B0B] hover:bg-[#1a0606] text-white shrink-0 shadow-xs"
           >
             <Plus className="mr-2 h-4 w-4" />
             Novo Modelo
@@ -360,7 +363,7 @@ export function EmailTemplatesManager() {
               <Mail className="mx-auto h-10 w-10 mb-3 text-muted-foreground opacity-50" />
               <h3 className="font-semibold text-base mb-1">Nenhum modelo cadastrado</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Comece criando seu primeiro modelo de e-mail personalizado.
+                Comece criando seu primeiro modelo de e-mail.
               </p>
               <Button onClick={handleOpenCreate} variant="outline" size="sm">
                 <Plus className="mr-2 h-4 w-4" /> Criar Modelo
@@ -371,103 +374,84 @@ export function EmailTemplatesManager() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30">
-                    <TableHead className="w-[220px]">Nome & Identificador</TableHead>
-                    <TableHead>Assunto Padrão</TableHead>
-                    <TableHead className="hidden md:table-cell">Variáveis Disponíveis</TableHead>
+                    <TableHead className="w-[220px]">E-mail / Notificação</TableHead>
+                    <TableHead>Assunto Atual</TableHead>
+                    <TableHead className="hidden md:table-cell">Mensagem (Texto)</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates.map((tpl) => (
-                    <TableRow key={tpl.id} className="hover:bg-muted/10">
-                      <TableCell className="align-top py-4">
-                        <div className="font-medium text-[#2D0B0B]">{tpl.name}</div>
-                        <div className="text-xs font-mono text-muted-foreground mt-0.5">
-                          {tpl.slug}
-                        </div>
-                        {tpl.description && (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {tpl.description}
+                  {templates.map((tpl) => {
+                    const plainBody = htmlToPlainText(tpl.body_html)
+                    return (
+                      <TableRow key={tpl.id} className="hover:bg-muted/10 transition-colors">
+                        <TableCell className="align-top py-4">
+                          <div className="font-medium text-[#2D0B0B]">{tpl.name}</div>
+                          {tpl.slug === 'welcome' && (
+                            <Badge
+                              variant="outline"
+                              className="mt-1.5 text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200 inline-flex items-center gap-1"
+                            >
+                              <ShieldCheck className="h-3 w-3" /> Ao criar conta
+                            </Badge>
+                          )}
+                          {tpl.slug.startsWith('order_') && (
+                            <Badge
+                              variant="outline"
+                              className="mt-1.5 text-[10px] bg-amber-50 text-amber-800 border-amber-200 inline-flex items-center gap-1"
+                            >
+                              Pedido / Notificação
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <div className="text-sm font-medium text-foreground">{tpl.subject}</div>
+                        </TableCell>
+                        <TableCell className="align-top py-4 hidden md:table-cell">
+                          <div className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {plainBody || 'Sem texto definido'}
                           </div>
-                        )}
-                        {tpl.slug === 'welcome' && (
-                          <Badge
-                            variant="outline"
-                            className="mt-2 text-[10px] bg-emerald-50 text-emerald-800 border-emerald-200"
-                          >
-                            Disparo Automático no Cadastro
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="align-top py-4">
-                        <div className="text-sm font-medium text-foreground">{tpl.subject}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                          {tpl.body_html.replace(/<[^>]+>/g, ' ').slice(0, 100)}...
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top py-4 hidden md:table-cell">
-                        <div className="flex flex-wrap gap-1 max-w-sm">
-                          {tpl.allowed_variables && tpl.allowed_variables.length > 0 ? (
-                            tpl.allowed_variables.slice(0, 5).map((v) => (
-                              <button
-                                key={v}
-                                onClick={() => copyVariable(v)}
-                                title={`Clique para copiar {{${v}}}`}
-                                className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border"
+                        </TableCell>
+                        <TableCell className="align-top py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setPreviewTemplate(tpl)}
+                              title="Ver como a cliente recebe"
+                              className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Eye className="mr-1.5 h-3.5 w-3.5" />
+                              Ver
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEdit(tpl)}
+                              title="Editar texto e assunto"
+                              className="h-8 px-3 text-xs border-[#2D0B0B]/30 hover:bg-[#2D0B0B]/5 hover:text-[#2D0B0B]"
+                            >
+                              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                              Editar
+                            </Button>
+                            {!['welcome', 'order_created', 'order_paid', 'order_shipped'].includes(
+                              tpl.slug,
+                            ) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setTemplateToDelete(tpl)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Excluir modelo"
                               >
-                                {copiedVar === v ? (
-                                  <Check className="h-3 w-3 text-emerald-600" />
-                                ) : (
-                                  <Copy className="h-2.5 w-2.5 opacity-60" />
-                                )}
-                                {`{{${v}}}`}
-                              </button>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Nenhuma declarada</span>
-                          )}
-                          {tpl.allowed_variables && tpl.allowed_variables.length > 5 && (
-                            <span className="text-[10px] text-muted-foreground self-center">
-                              +{tpl.allowed_variables.length - 5} mais
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="align-top py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setPreviewTemplate(tpl)
-                              setPreviewMode('preview')
-                            }}
-                            title="Visualizar e-mail"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenEdit(tpl)}
-                            title="Editar modelo"
-                          >
-                            <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setTemplateToDelete(tpl)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            title="Excluir modelo"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -475,126 +459,128 @@ export function EmailTemplatesManager() {
         </CardContent>
       </Card>
 
-      {/* Guide Card with variables list */}
+      {/* Helpful Variables Bar */}
       <Card className="bg-[#fdfbf7] border-[#f0ede8]">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2 text-[#2D0B0B]">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2 text-[#2D0B0B]">
             <Sparkles className="h-4 w-4 text-[#8B4513]" />
-            Guia de Variáveis Dinâmicas
+            Tags Prontas para Inserir no E-mail
           </CardTitle>
           <CardDescription className="text-xs">
-            Você pode inserir qualquer uma dessas tags nos campos de <strong>Assunto</strong> e{' '}
-            <strong>Corpo do E-mail</strong>. O sistema irá substituí-las automaticamente no momento
-            do disparo.
+            Ao digitar o texto ou o assunto, você pode usar essas etiquetas. O sistema troca
+            automaticamente pelos dados reais da cliente!
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+          <div className="flex flex-wrap gap-2">
             {SUGGESTED_VARIABLES.map((item) => (
-              <div
+              <button
                 key={item.key}
+                type="button"
                 onClick={() => copyVariable(item.key)}
-                className="group cursor-pointer p-2 rounded border bg-white hover:border-[#2D0B0B]/40 hover:shadow-xs transition-all flex flex-col justify-between"
+                className="group inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border bg-white hover:bg-[#2D0B0B]/5 hover:border-[#2D0B0B]/30 transition-all text-left shadow-2xs"
+                title={`Clique para copiar {{${item.key}}}`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold text-[#2D0B0B]">
-                    {`{{${item.key}}}`}
-                  </span>
-                  {copiedVar === item.key ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </div>
-                <span className="text-[11px] text-muted-foreground mt-1">{item.desc}</span>
-              </div>
+                <span className="font-medium text-[#2D0B0B]">{item.label}:</span>
+                <span className="font-mono text-[11px] text-muted-foreground group-hover:text-[#2D0B0B]">
+                  {`{{${item.key}}}`}
+                </span>
+                {copiedVar === item.key ? (
+                  <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                ) : (
+                  <Copy className="h-2.5 w-2.5 text-muted-foreground opacity-40 group-hover:opacity-100 shrink-0" />
+                )}
+              </button>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Edit / Create Dialog */}
+      {/* Super Simple Edit / Create Modal */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-[#2D0B0B]" />
               {editingTemplate
-                ? `Editar Modelo: ${editingTemplate.name}`
+                ? `Editar E-mail: ${editingTemplate.name}`
                 : 'Criar Novo Modelo de E-mail'}
             </DialogTitle>
-            <DialogDescription>
-              Configure o assunto, a identificação e o corpo em HTML ou texto com suporte a
-              variáveis dinâmicas.
+            <DialogDescription className="text-xs">
+              Altere o assunto e a mensagem que sua cliente irá receber. O visual bonito e cabeçalho
+              da loja são mantidos automaticamente.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSave} className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Nome do Modelo *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Confirmação de Envio Especial"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="slug">Identificador (Slug único) *</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="Ex: order_shipped_special"
-                  className="font-mono text-sm"
-                  required
-                />
-              </div>
-            </div>
-
+            {/* Title / Name (only if creating new, or editable name) */}
             <div className="space-y-1.5">
-              <Label htmlFor="subject">Assunto do E-mail *</Label>
-              <div className="relative">
-                <Input
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  placeholder="Ex: Seu pedido #{{numero_pedido}} está a caminho, {{nome_cliente}}!"
-                  required
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Dica: Você pode usar variáveis no assunto, ex: <code>{`{{nome_cliente}}`}</code> ou{' '}
-                <code>{`{{numero_pedido}}`}</code>.
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="body_html">Corpo do E-mail (HTML / Texto formatado) *</Label>
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Info className="h-3 w-3" /> O cabeçalho e rodapé da Zahrá são inseridos
-                  automaticamente
-                </span>
-              </div>
-              <Textarea
-                id="body_html"
-                value={formData.body_html}
-                onChange={(e) => setFormData({ ...formData, body_html: e.target.value })}
-                placeholder="<p>Olá, {{nome_cliente}}...</p>"
-                rows={12}
-                className="font-mono text-xs leading-relaxed"
+              <Label htmlFor="template_name" className="text-xs font-semibold text-foreground">
+                Nome de Identificação do E-mail
+              </Label>
+              <Input
+                id="template_name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Ex: Confirmação de Pedido, Boas-vindas, etc."
+                className="text-sm"
                 required
               />
             </div>
 
-            {/* Quick insert variables */}
-            <div className="space-y-1.5 bg-muted/30 p-3 rounded-md border">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                Inserir Variável no Conteúdo
+            {/* 1. Assunto */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="template_subject"
+                className="text-xs font-semibold text-foreground flex items-center justify-between"
+              >
+                <span>1. Assunto do E-mail *</span>
+                <span className="text-[11px] font-normal text-muted-foreground">
+                  (O título que a cliente lê na caixa de entrada)
+                </span>
               </Label>
+              <Input
+                id="template_subject"
+                value={formSubject}
+                onChange={(e) => setFormSubject(e.target.value)}
+                placeholder="Ex: Seu pedido #{{numero_pedido}} está a caminho, {{nome_cliente}}! ✨"
+                className="text-sm font-medium"
+                required
+              />
+            </div>
+
+            {/* 2. Corpo do E-mail (Texto Puro estilo WhatsApp / Bloco de Notas) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="template_body" className="text-xs font-semibold text-foreground">
+                  2. Corpo da Mensagem (Texto) *
+                </Label>
+                <span className="text-[11px] text-muted-foreground">
+                  Escreva naturalmente. Pressione Enter para novas linhas.
+                </span>
+              </div>
+              <Textarea
+                ref={bodyTextareaRef}
+                id="template_body"
+                value={formBodyText}
+                onChange={(e) => setFormBodyText(e.target.value)}
+                placeholder="Olá, {{nome_cliente}}! Ficamos muito felizes em atender você..."
+                rows={10}
+                className="text-sm leading-relaxed font-sans bg-white resize-y"
+                required
+              />
+            </div>
+
+            {/* Click-to-insert Chips bar */}
+            <div className="space-y-2 bg-[#fdfbf7] p-3 rounded-md border border-[#f0ede8]">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-[#2D0B0B] uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-[#8B4513]" /> Inserir dado dinâmico no texto:
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Clique para inserir no cursor
+                </span>
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {SUGGESTED_VARIABLES.map((v) => (
                   <Button
@@ -603,42 +589,34 @@ export function EmailTemplatesManager() {
                     variant="outline"
                     size="sm"
                     onClick={() => insertVariableIntoBody(v.key)}
-                    className="h-7 text-xs font-mono bg-white hover:bg-muted"
+                    className="h-7 text-xs bg-white hover:bg-[#2D0B0B] hover:text-white border-muted-foreground/20 transition-colors"
                   >
-                    + {`{{${v.key}}}`}
+                    + {v.label}
                   </Button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="allowed_variables_str">
-                  Variáveis Permitidas (separadas por vírgula)
-                </Label>
-                <Input
-                  id="allowed_variables_str"
-                  value={formData.allowed_variables_str}
-                  onChange={(e) =>
-                    setFormData({ ...formData, allowed_variables_str: e.target.value })
-                  }
-                  placeholder="nome_cliente, numero_pedido, valor_total"
-                  className="font-mono text-xs"
-                />
+            {/* Live Quick Preview Accordion */}
+            <div className="border rounded-md p-3 bg-muted/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-[#2D0B0B] flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5" /> Como o e-mail vai ficar:
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  (Demonstração visual em tempo real)
+                </span>
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="description">Descrição / Finalidade interna</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ex: Enviado após confirmação de pagamento"
+              <div className="border rounded bg-white p-2 max-h-60 overflow-y-auto">
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: renderPreviewHtml(formSubject, formBodyText),
+                  }}
                 />
               </div>
             </div>
 
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
@@ -655,66 +633,54 @@ export function EmailTemplatesManager() {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Dialog */}
+      {/* Full Preview Dialog (Clean - No source code tab) */}
       <Dialog open={!!previewTemplate} onOpenChange={(open) => !open && setPreviewTemplate(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center justify-between pr-6">
-              <div>
-                <DialogTitle>Pré-visualização: {previewTemplate?.name}</DialogTitle>
-                <DialogDescription className="font-mono text-xs">
-                  {previewTemplate?.slug}
-                </DialogDescription>
-              </div>
-              <Tabs value={previewMode} onValueChange={(v: any) => setPreviewMode(v)}>
-                <TabsList className="h-8">
-                  <TabsTrigger value="preview" className="text-xs">
-                    Visual
-                  </TabsTrigger>
-                  <TabsTrigger value="html" className="text-xs">
-                    HTML Puro
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-[#2D0B0B]" />
+              Visualização do E-mail
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              É exatamente assim que a sua cliente receberá a mensagem no computador ou celular.
+            </DialogDescription>
           </DialogHeader>
 
           {previewTemplate && (
-            <div className="space-y-4 pt-2">
-              <div className="p-3 bg-muted/40 rounded-md border space-y-1">
-                <div className="text-xs text-muted-foreground font-semibold uppercase">Assunto</div>
-                <div className="text-sm font-medium text-foreground">
+            <div className="space-y-4 pt-1">
+              <div className="p-3 bg-muted/30 rounded-md border space-y-1">
+                <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                  Assunto da Mensagem:
+                </div>
+                <div className="text-sm font-semibold text-foreground">
                   {previewTemplate.subject
                     .replace(/\{\{\s*nome_cliente\s*\}\}/gi, 'Mariana Silva')
                     .replace(/\{\{\s*numero_pedido\s*\}\}/gi, 'ZH84920')}
                 </div>
               </div>
 
-              {previewMode === 'preview' ? (
-                <div className="border rounded-md p-2 bg-neutral-100 overflow-x-auto">
-                  <div
-                    className="preview-container"
-                    dangerouslySetInnerHTML={{ __html: renderPreviewHtml(previewTemplate) }}
-                  />
-                </div>
-              ) : (
-                <pre className="p-4 bg-muted/60 rounded-md border text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-[450px]">
-                  {previewTemplate.body_html}
-                </pre>
-              )}
+              <div className="border rounded-md p-3 bg-neutral-100 overflow-x-auto">
+                <div
+                  className="preview-container"
+                  dangerouslySetInnerHTML={{
+                    __html: renderPreviewHtml(previewTemplate.subject, previewTemplate.body_html),
+                  }}
+                />
+              </div>
             </div>
           )}
 
-          <DialogFooter className="pt-4 border-t">
+          <DialogFooter className="pt-3 border-t">
             <Button
               variant="outline"
               onClick={() => {
                 if (previewTemplate) handleOpenEdit(previewTemplate)
                 setPreviewTemplate(null)
               }}
+              className="border-[#2D0B0B]/30 hover:bg-[#2D0B0B]/5 hover:text-[#2D0B0B]"
             >
               <Pencil className="mr-2 h-4 w-4" />
-              Editar Este Modelo
+              Editar Este E-mail
             </Button>
             <Button onClick={() => setPreviewTemplate(null)}>Fechar</Button>
           </DialogFooter>
@@ -730,9 +696,8 @@ export function EmailTemplatesManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Modelo de E-mail</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover o modelo <strong>{templateToDelete?.name}</strong> (
-              {templateToDelete?.slug})? Esta ação não pode ser desfeita. Se o sistema tentar enviar
-              um e-mail com este slug, usará o modelo padrão de fallback.
+              Tem certeza que deseja remover o modelo <strong>{templateToDelete?.name}</strong>?
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
