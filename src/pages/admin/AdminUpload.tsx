@@ -39,6 +39,7 @@ import { ProductForm } from '@/components/admin/ProductForm'
 import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
 import { AdminOrders } from '@/components/admin/AdminOrders'
 import { NewsletterManager } from '@/components/admin/NewsletterManager'
+import { EmailTemplatesManager } from '@/components/admin/EmailTemplatesManager'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -446,6 +447,7 @@ export default function AdminUpload() {
           <TabsTrigger value="product-categories">Categorias</TabsTrigger>
           <TabsTrigger value="orders">Pedidos</TabsTrigger>
           <TabsTrigger value="texts">Textos do Site</TabsTrigger>
+          <TabsTrigger value="email-templates">Modelos de E-mail</TabsTrigger>
           <TabsTrigger value="categories">Pix & Outros</TabsTrigger>
           <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
         </TabsList>
@@ -715,6 +717,10 @@ export default function AdminUpload() {
               </form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="email-templates">
+          <EmailTemplatesManager />
         </TabsContent>
 
         <TabsContent value="newsletter">

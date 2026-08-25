@@ -1,7 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { newsletterHtml } from '../_shared/email-templates.ts'
+import { replaceVariables, wrapInLayout } from '../_shared/email-templates.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,9 +9,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { subject, content } = await req.json()
-    if (!subject || !content) {
-      throw new Error('subject and content are required')
+    const { subject: customSubject, content } = await req.json()
+    if (!content) {
+      throw new Error('O conteúdo da mensagem é obrigatório.')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     if (subError) throw subError
     if (!subscribers || subscribers.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: 'No active subscribers', sent: 0 }),
+        JSON.stringify({ success: true, message: 'Nenhum assinante ativo encontrado.', sent: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -39,13 +39,48 @@ Deno.serve(async (req) => {
     if (!resendKey) {
       console.log('RESEND_API_KEY not configured. Skipping email.')
       return new Response(
-        JSON.stringify({ success: true, message: 'No email key configured', sent: 0 }),
+        JSON.stringify({
+          success: true,
+          message: 'RESEND_API_KEY não configurada no backend.',
+          sent: 0,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
+    // Fetch dynamic newsletter template from database
+    const { data: dbTemplate } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('slug', 'newsletter_broadcast')
+      .single()
+
+    const baseSubject =
+      customSubject || dbTemplate?.subject || 'Novidades e Destaques Exclusivos Zahrá'
+    const baseBody =
+      dbTemplate?.body_html ||
+      `
+      <div style="font-size: 15px; line-height: 1.7; color: #333; margin: 0 0 24px; white-space: pre-line;">
+        {{conteudo_newsletter}}
+      </div>
+      <div style="margin: 32px 0 20px; text-align: center;">
+        <a href="https://www.zahrabrasil.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
+          Conferir Novidades
+        </a>
+      </div>
+    `
+
+    const vars = {
+      conteudo_newsletter: content,
+      assunto_newsletter: baseSubject,
+      nome_loja: 'Zahrá Brasil',
+    }
+
+    const finalSubject = replaceVariables(baseSubject, vars)
+    const formattedContent = replaceVariables(baseBody, vars)
+    const finalHtml = wrapInLayout(finalSubject, undefined, formattedContent)
+
     const emails = subscribers.map((s: { email: string }) => s.email)
-    const html = newsletterHtml(subject, content)
     const fromAddress =
       Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
     const replyToAddress = 'sac@zahrabrasil.com.br'
@@ -69,8 +104,8 @@ Deno.serve(async (req) => {
           from: sender,
           reply_to: replyToAddress,
           bcc: emails,
-          subject: subject,
-          html: html,
+          subject: finalSubject,
+          html: finalHtml,
         }),
       })
 
@@ -87,7 +122,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ success: true, sent, failed }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending newsletter:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,

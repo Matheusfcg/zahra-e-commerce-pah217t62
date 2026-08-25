@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -94,6 +95,17 @@ export default function Auth() {
         if (error) {
           toast({ title: error.message || 'Erro ao cadastrar', variant: 'destructive' })
         } else {
+          // Trigger welcome email directly in background as well (alongside database trigger)
+          supabase.functions
+            .invoke('process-order-notifications', {
+              body: {
+                event_type: 'welcome_email',
+                customer_email: email.trim(),
+                customer_name: fullName.trim() || 'Cliente',
+              },
+            })
+            .catch((err) => console.warn('Welcome notification trigger note:', err))
+
           toast({ title: 'Conta criada com sucesso! Faça login para continuar.' })
           setMode('login')
         }
