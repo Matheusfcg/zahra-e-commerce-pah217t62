@@ -177,7 +177,7 @@ export function Header() {
                       <li>
                         <NavigationMenuLink asChild>
                           <a
-                            href="mailto:saczharabrasil@gmail.com"
+                            href="mailto:mayvesbr@gmail.com"
                             className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
                           >
                             <Mail className="h-4 w-4" /> E-mail
@@ -382,11 +382,11 @@ export function Header() {
                         <Phone className="h-4 w-4" /> (11) 93416-0219
                       </a>
                       <a
-                        href="mailto:saczharabrasil@gmail.com"
+                        href="mailto:mayvesbr@gmail.com"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Mail className="h-4 w-4" /> saczharabrasil@gmail.com
+                        <Mail className="h-4 w-4" /> mayvesbr@gmail.com
                       </a>
                       <a
                         href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"

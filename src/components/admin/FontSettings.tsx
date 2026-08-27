@@ -110,7 +110,7 @@ export function FontSettings() {
             Pré-visualização
           </p>
           <p className="text-2xl font-serif mb-2" style={{ fontFamily: `"${selectedFont}"` }}>
-            ZAHRÁ Brasil
+            Mayve
           </p>
           <p className="text-sm text-muted-foreground" style={{ fontFamily: `"${selectedFont}"` }}>
             A essência do estilo minimalista. Peças exclusivas pensadas para evidenciar a sua beleza

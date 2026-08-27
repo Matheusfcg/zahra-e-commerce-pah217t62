@@ -106,10 +106,10 @@ export function Footer() {
                 <Phone className="h-4 w-4" /> (11) 93416-0219
               </a>
               <a
-                href="mailto:saczharabrasil@gmail.com"
+                href="mailto:mayvesbr@gmail.com"
                 className="flex items-center justify-center gap-2 hover:text-[#3A2222] transition-colors"
               >
-                <Mail className="h-4 w-4" /> saczharabrasil@gmail.com
+                <Mail className="h-4 w-4" /> mayvesbr@gmail.com
               </a>
               <Link
                 to="/troca-e-devolucao"
@@ -131,7 +131,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white p-3 rounded-full border border-muted-foreground/20 text-muted-foreground hover:text-[#3A2222] hover:border-[#3A2222] transition-all"
-                aria-label="Instagram da loja Zahra"
+                aria-label="Instagram da loja Mayve"
               >
                 <Instagram className="h-5 w-5" />
               </a>
@@ -149,7 +149,7 @@ export function Footer() {
 
         {/* Copyright */}
         <div className="w-full text-center mt-4 pt-8 border-t border-muted/50 text-[11px] tracking-wide text-muted-foreground/80">
-          <p>© 2026 Zahra Brasil. Todos os direitos reservados.</p>
+          <p>© 2026 Mayve. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

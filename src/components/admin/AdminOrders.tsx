@@ -444,7 +444,7 @@ export function AdminOrders() {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium text-sm text-[#2D0B0B]">
-                      {o.customer_name || 'Cliente Zahrá'}
+                      {o.customer_name || 'Cliente Mayve'}
                     </div>
                     <div className="text-xs text-muted-foreground">{o.customer_email}</div>
                   </TableCell>
@@ -767,7 +767,7 @@ export function AdminOrders() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate text-[#2D0B0B]">
-                          {item.products?.name || 'Produto Zahrá'}
+                          {item.products?.name || 'Produto Mayve'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Qtd: {item.quantity}
