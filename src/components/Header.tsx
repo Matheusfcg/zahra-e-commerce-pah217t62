@@ -295,6 +295,8 @@ export function Header() {
                               format: 'webp',
                             })}
                             alt=""
+                            width={48}
+                            height={48}
                             loading="lazy"
                             decoding="async"
                             className="w-full h-full rounded-full object-cover"

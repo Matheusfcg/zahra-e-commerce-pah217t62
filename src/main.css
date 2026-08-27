@@ -1,6 +1,18 @@
 /* Global styles - Theme, font, utilities, animations and global components */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap');
 
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  src: local('Inter');
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-display: swap;
+  src: local('Playfair Display');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -63,5 +75,10 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
   }
 }

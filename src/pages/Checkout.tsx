@@ -752,6 +752,8 @@ const Checkout = () => {
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixPayload)}`}
                           alt="PIX QR Code"
+                          width={192}
+                          height={192}
                           loading="lazy"
                           decoding="async"
                           className="w-48 h-48 mix-blend-multiply"

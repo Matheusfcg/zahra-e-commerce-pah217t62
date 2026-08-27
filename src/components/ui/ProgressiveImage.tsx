@@ -60,17 +60,26 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
 
     return (
       <div
-        className={cn(
-          'relative overflow-hidden',
-          blurColor,
-          aspectRatio && `aspect-[${aspectRatio}]`,
-          containerClassName,
-        )}
-        style={aspectRatio ? { aspectRatio } : undefined}
+        className={cn('relative overflow-hidden', blurColor, containerClassName)}
+        style={{
+          ...(aspectRatio ? { aspectRatio } : {}),
+          ...(width && !aspectRatio && !containerClassName?.includes('w-')
+            ? { width: typeof width === 'number' ? `${width}px` : width }
+            : {}),
+          ...(height && !aspectRatio && !containerClassName?.includes('h-')
+            ? { height: typeof height === 'number' ? `${height}px` : height }
+            : {}),
+        }}
       >
-        {/* Shimmer/Pulse blur placeholder underneath */}
+        {/* Shimmer/Pulse blur placeholder underneath - matching dimensions */}
         {showBlurPlaceholder && !isLoaded && !hasError && (
-          <div className="absolute inset-0 z-0 bg-[#ebe7e2] animate-pulse pointer-events-none" />
+          <div
+            className={cn(
+              'absolute inset-0 w-full h-full z-0 animate-pulse pointer-events-none',
+              blurColor || 'bg-[#ebe7e2]',
+            )}
+            style={{ width: '100%', height: '100%' }}
+          />
         )}
 
         {/* The actual image */}

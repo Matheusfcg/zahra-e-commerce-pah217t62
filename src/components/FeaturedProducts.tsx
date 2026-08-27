@@ -22,7 +22,7 @@ export function FeaturedProducts() {
   if (!isLoading && products.length === 0) return null
 
   return (
-    <section className="py-12 md:py-20 bg-white">
+    <section className="py-12 md:py-20 bg-white content-visibility-auto">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between mb-8 md:mb-12">
           <h2 className="font-serif text-2xl md:text-3xl text-[#2D0B0B] uppercase tracking-wide">

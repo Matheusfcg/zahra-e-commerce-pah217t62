@@ -102,6 +102,7 @@ export default function Index() {
       link.rel = 'preload'
       link.as = 'image'
       link.setAttribute('fetchpriority', 'high')
+      link.setAttribute('imagesrcset', lcpUrl)
       document.head.appendChild(link)
     }
     link.href = lcpUrl
@@ -182,7 +183,7 @@ export default function Index() {
 
       {/* Section 2: Categories Grid */}
       {dynamicCategoryNavItems.length > 0 && (
-        <section className="py-12 md:py-20 bg-white">
+        <section className="py-12 md:py-20 bg-white content-visibility-auto">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
             <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
               {isLoading
@@ -228,7 +229,7 @@ export default function Index() {
       <FeaturedProducts />
 
       {/* Section 4: Benefits */}
-      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
+      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12 content-visibility-auto">
         <div className="container mx-auto px-4 max-w-[1200px]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">
             <div className="flex flex-col items-center gap-3">
