@@ -43,11 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const signUp = async (email: string, password: string, metadata?: any) => {
+    const redirectOrigin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: redirectOrigin ? `${redirectOrigin}/` : undefined,
         data: metadata,
       },
     })
@@ -103,8 +104,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const resetPassword = async (email: string) => {
+    const redirectOrigin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: redirectOrigin ? `${redirectOrigin}/` : undefined,
     })
     return { error }
   }
