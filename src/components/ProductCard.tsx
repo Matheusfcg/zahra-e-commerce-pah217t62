@@ -11,6 +11,8 @@ interface ProductCardProps {
   onToggleFavorite?: (id: string) => void
 }
 
+import { prefetchLink } from '@/lib/prefetch'
+
 export function ProductCard({ product, isFavorite = false, onToggleFavorite }: ProductCardProps) {
   const rawImageUrl =
     product.product_images?.find((img) => img.is_cover)?.url ||
@@ -22,7 +24,12 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
   return (
     <div className="group flex flex-col gap-3 animate-fade-in">
       <div className="relative aspect-[3/4] overflow-hidden bg-[#f4f1ee]">
-        <Link to={`/product/${product.slug}`} className="block w-full h-full">
+        <Link
+          to={`/product/${product.slug}`}
+          className="block w-full h-full"
+          onMouseEnter={() => prefetchLink(`/product/${product.slug}`)}
+          onFocus={() => prefetchLink(`/product/${product.slug}`)}
+        >
           <ProgressiveImage
             src={optimizedImageUrl}
             alt={product.name}
@@ -78,7 +85,12 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
       </div>
       <div className="flex flex-col items-center text-center gap-1 mt-3 px-1">
         <h3 className="font-sans text-[13px] font-medium text-[#2D0B0B]">
-          <Link to={`/product/${product.slug}`} className="hover:opacity-70 transition-opacity">
+          <Link
+            to={`/product/${product.slug}`}
+            className="hover:opacity-70 transition-opacity"
+            onMouseEnter={() => prefetchLink(`/product/${product.slug}`)}
+            onFocus={() => prefetchLink(`/product/${product.slug}`)}
+          >
             {product.name}
           </Link>
         </h3>

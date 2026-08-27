@@ -51,21 +51,28 @@ export default function TrocaDevolucao() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
+    const cached = sessionStorage.getItem('exchange_policy_cache')
+    if (cached) {
+      setContent(cached)
+      setIsLoading(false)
+    }
+
     const fetchPolicy = async () => {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('site_content')
           .select('content_value')
           .eq('section_key', 'exchange_return_policy')
-          .single()
+          .maybeSingle()
 
         if (data && data.content_value) {
           setContent(data.content_value)
-        } else {
+          sessionStorage.setItem('exchange_policy_cache', data.content_value)
+        } else if (!cached) {
           setContent(fallbackContent)
         }
       } catch (err) {
-        setContent(fallbackContent)
+        if (!cached) setContent(fallbackContent)
       } finally {
         setIsLoading(false)
       }

@@ -12,23 +12,34 @@ export default function Index() {
     try {
       const cached = sessionStorage.getItem('site_content_cache')
       if (cached) {
-        const { data } = JSON.parse(cached)
-        return data || {}
+        const parsed = JSON.parse(cached)
+        return parsed.data || {}
       }
     } catch {
       // ignore
     }
     return {}
   })
+  const [featuredCategories, setFeaturedCategories] = useState<any[]>(() => {
+    try {
+      const cached = sessionStorage.getItem('featured_categories_cache')
+      if (cached) {
+        return JSON.parse(cached) || []
+      }
+    } catch {
+      // ignore
+    }
+    return []
+  })
   const [isLoading, setIsLoading] = useState(() => {
     try {
-      const cached = sessionStorage.getItem('site_content_cache')
-      return !cached
+      const cachedContent = sessionStorage.getItem('site_content_cache')
+      const cachedCats = sessionStorage.getItem('featured_categories_cache')
+      return !cachedContent || !cachedCats
     } catch {
       return true
     }
   })
-  const [featuredCategories, setFeaturedCategories] = useState<any[]>([])
 
   useEffect(() => {
     Promise.all([
@@ -36,7 +47,14 @@ export default function Index() {
       supabase.from('site_content').select('section_key, content_value'),
     ])
       .then(([catRes, contentRes]) => {
-        if (catRes.data) setFeaturedCategories(catRes.data)
+        if (catRes.data) {
+          setFeaturedCategories(catRes.data)
+          try {
+            sessionStorage.setItem('featured_categories_cache', JSON.stringify(catRes.data))
+          } catch {
+            // ignore
+          }
+        }
         if (contentRes.data) {
           const map = contentRes.data.reduce(
             (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),

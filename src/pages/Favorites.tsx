@@ -53,8 +53,14 @@ export default function FavoritesPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-foreground/50" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <div className="aspect-[3/4] w-full bg-[#f4f1ee] animate-pulse rounded-none" />
+                <div className="h-4 w-3/4 mx-auto bg-[#e8e4e0] animate-pulse rounded" />
+                <div className="h-4 w-1/3 mx-auto bg-[#e8e4e0] animate-pulse rounded" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

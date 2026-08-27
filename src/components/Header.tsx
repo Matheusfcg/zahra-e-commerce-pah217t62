@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ShoppingBag, Menu, User, Phone, Mail, Instagram, Heart, Search } from 'lucide-react'
+import { prefetchLink } from '@/lib/prefetch'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -114,6 +115,7 @@ export function Header() {
                         navigationMenuTriggerStyle(),
                         'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
                       )}
+                      onMouseEnter={() => prefetchLink('/')}
                     >
                       Inicio
                     </Link>
@@ -128,6 +130,7 @@ export function Header() {
                         navigationMenuTriggerStyle(),
                         'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
                       )}
+                      onMouseEnter={() => prefetchLink('/troca-e-devolucao')}
                     >
                       Troca e devolução
                     </Link>
@@ -146,6 +149,9 @@ export function Header() {
                             <Link
                               to={`/produtos?category=${encodeURIComponent(cat)}`}
                               className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                              onMouseEnter={() =>
+                                prefetchLink(`/produtos?category=${encodeURIComponent(cat)}`)
+                              }
                             >
                               {cat}
                             </Link>
@@ -391,7 +397,7 @@ export function Header() {
                         <Mail className="h-4 w-4" /> mayvesbr@gmail.com
                       </a>
                       <a
-                        href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"
+                        href="https://www.instagram.com/mayve__brasil"
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setMobileMenuOpen(false)}

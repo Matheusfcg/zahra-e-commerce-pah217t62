@@ -140,8 +140,33 @@ const ProductPage = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="w-full bg-background pt-20">
+        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-80px)]">
+          {/* Skeleton Left: Images */}
+          <div className="w-full lg:w-3/5 aspect-[3/4] lg:aspect-auto lg:h-[calc(100vh-80px)] bg-[#f4f1ee] animate-pulse" />
+          {/* Skeleton Right: Details */}
+          <div className="w-full lg:w-2/5 p-6 md:p-12 space-y-6">
+            <div className="h-4 w-32 bg-[#e8e4e0] animate-pulse rounded" />
+            <div className="h-8 w-3/4 bg-[#e8e4e0] animate-pulse rounded" />
+            <div className="h-6 w-24 bg-[#e8e4e0] animate-pulse rounded" />
+            <div className="space-y-2 pt-4">
+              <div className="h-4 w-20 bg-[#e8e4e0] animate-pulse rounded" />
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#e8e4e0] animate-pulse" />
+                <div className="w-8 h-8 rounded-full bg-[#e8e4e0] animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-2 pt-2">
+              <div className="h-4 w-20 bg-[#e8e4e0] animate-pulse rounded" />
+              <div className="flex gap-2">
+                <div className="w-12 h-10 bg-[#e8e4e0] animate-pulse rounded" />
+                <div className="w-12 h-10 bg-[#e8e4e0] animate-pulse rounded" />
+                <div className="w-12 h-10 bg-[#e8e4e0] animate-pulse rounded" />
+              </div>
+            </div>
+            <div className="h-14 w-full bg-[#e8e4e0] animate-pulse rounded pt-4" />
+          </div>
+        </div>
       </div>
     )
   }

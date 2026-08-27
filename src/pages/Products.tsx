@@ -7,28 +7,52 @@ import { useFavorites } from '@/hooks/use-favorites'
 import { supabase } from '@/lib/supabase/client'
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchParams] = useSearchParams()
   const category = searchParams.get('category')
   const promotion = searchParams.get('promotion')
   const { favorites, toggleFavorite } = useFavorites()
-  const [siteContent, setSiteContent] = useState<Record<string, string>>({})
+
+  const [siteContent, setSiteContent] = useState<Record<string, string>>(() => {
+    try {
+      const cached = sessionStorage.getItem('site_content_cache')
+      if (cached) return JSON.parse(cached).data || {}
+    } catch {
+      // ignore
+    }
+    return {}
+  })
+
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [currentCategoryInfo, setCurrentCategoryInfo] = useState<{
     name: string
     description: string | null
   } | null>(null)
 
   useEffect(() => {
+    let isMounted = true
     setIsLoading(true)
+
+    const fetchCategoryInfo = category
+      ? supabase
+          .from('categories')
+          .select('name, description')
+          .ilike('name', category)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+
+    const fetchContent =
+      Object.keys(siteContent).length === 0
+        ? supabase.from('site_content').select('section_key, content_value')
+        : Promise.resolve({ data: null })
+
     Promise.all([
       getProducts(category || undefined, promotion === 'true'),
-      supabase.from('site_content').select('*'),
-      category
-        ? supabase.from('categories').select('*').ilike('name', category).maybeSingle()
-        : Promise.resolve({ data: null }),
+      fetchContent,
+      fetchCategoryInfo,
     ])
       .then(([productsData, contentResponse, categoryResponse]) => {
+        if (!isMounted) return
         setProducts(productsData || [])
         if (contentResponse.data) {
           const contentMap = contentResponse.data.reduce(
@@ -36,6 +60,14 @@ export default function ProductsPage() {
             {} as Record<string, string>,
           )
           setSiteContent(contentMap)
+          try {
+            sessionStorage.setItem(
+              'site_content_cache',
+              JSON.stringify({ data: contentMap, timestamp: Date.now() }),
+            )
+          } catch {
+            // ignore
+          }
         }
         if (categoryResponse?.data) {
           setCurrentCategoryInfo(categoryResponse.data)
@@ -44,7 +76,13 @@ export default function ProductsPage() {
         }
       })
       .catch(console.error)
-      .finally(() => setIsLoading(false))
+      .finally(() => {
+        if (isMounted) setIsLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [category, promotion])
 
   const getText = (key: string, fallback: string) => siteContent[key] || fallback
@@ -93,8 +131,14 @@ export default function ProductsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <div className="aspect-[3/4] w-full bg-[#f4f1ee] animate-pulse rounded-none" />
+                <div className="h-4 w-3/4 mx-auto bg-[#e8e4e0] animate-pulse rounded" />
+                <div className="h-4 w-1/3 mx-auto bg-[#e8e4e0] animate-pulse rounded" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">

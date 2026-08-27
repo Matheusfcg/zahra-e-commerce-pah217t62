@@ -127,7 +127,7 @@ export function Footer() {
             </h4>
             <div className="flex items-center gap-5">
               <a
-                href="https://www.instagram.com/zahra__brasil?igsh=bzR5NjV6eHo3d21l"
+                href="https://www.instagram.com/mayve__brasil"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white p-3 rounded-full border border-muted-foreground/20 text-muted-foreground hover:text-[#3A2222] hover:border-[#3A2222] transition-all"
