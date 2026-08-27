@@ -97,7 +97,7 @@ export function Header() {
               className="inline-block shrink-0 flex items-center justify-center h-12 md:h-14"
             >
               <span className="font-serif text-3xl md:text-[32px] tracking-[0.15em] text-[#2D0B0B] uppercase">
-                ZAHRÁ
+                MAYVE
               </span>
             </Link>
           </div>
