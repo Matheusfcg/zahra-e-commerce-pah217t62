@@ -68,10 +68,7 @@ export function wrapInLayout(
   bodyContent: string,
 ): string {
   // If the body already contains the full document wrapper, return as is
-  if (
-    (bodyContent.includes('MAYVE') || bodyContent.includes('ZAHRÁ')) &&
-    bodyContent.includes('font-family')
-  ) {
+  if (bodyContent.includes('MAYVE') && bodyContent.includes('font-family')) {
     return bodyContent
   }
   return `

@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         {{conteudo_newsletter}}
       </div>
       <div style="margin: 32px 0 20px; text-align: center;">
-        <a href="https://www.zahrabrasil.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
+        <a href="https://www.mayves.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #fff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
           Conferir Novidades
         </a>
       </div>

@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
           Explore nosso catálogo e apaixone-se por peças cuidadosamente desenvolvidas para realçar sua beleza e estilo com elegância atemporal.
         </p>
         <div style="margin: 32px 0; text-align: center;">
-          <a href="https://www.zahrabrasil.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
+          <a href="https://www.mayves.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
             Explorar Coleção Mayve
           </a>
         </div>
