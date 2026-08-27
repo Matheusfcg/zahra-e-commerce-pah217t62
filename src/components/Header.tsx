@@ -395,7 +395,7 @@ export function Header() {
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Instagram className="h-4 w-4" /> @zahra__brasil
+                        <Instagram className="h-4 w-4" /> @mayve__brasil
                       </a>
                     </div>
                   </AccordionContent>
