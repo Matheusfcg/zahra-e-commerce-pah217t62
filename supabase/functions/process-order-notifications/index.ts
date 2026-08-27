@@ -85,20 +85,20 @@ Deno.serve(async (req: Request) => {
         .eq('slug', 'welcome')
         .single()
 
-      const defaultSubject = `Bem-vinda à Zahrá, ${clientName}! ✨`
+      const defaultSubject = `Bem-vinda à Mayve, ${clientName}! ✨`
       const defaultBody = `
         <p style="font-size: 16px; line-height: 1.6; color: #333; margin: 0 0 16px;">
           Olá, <strong>{{nome_cliente}}</strong>! É um enorme prazer ter você conosco.
         </p>
         <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-          Sua conta na <strong>Zahrá</strong> foi criada com sucesso com o e-mail <strong>{{email_cliente}}</strong>. Agora você tem acesso exclusivo aos nossos lançamentos, novidades em primeira mão e uma experiência de compra única e sofisticada.
+          Sua conta na <strong>Mayve</strong> foi criada com sucesso com o e-mail <strong>{{email_cliente}}</strong>. Agora você tem acesso exclusivo aos nossos lançamentos, novidades em primeira mão e uma experiência de compra única e sofisticada.
         </p>
         <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 24px;">
           Explore nosso catálogo e apaixone-se por peças cuidadosamente desenvolvidas para realçar sua beleza e estilo com elegância atemporal.
         </p>
         <div style="margin: 32px 0; text-align: center;">
           <a href="https://www.zahrabrasil.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
-            Explorar Coleção Zahrá
+            Explorar Coleção Mayve
           </a>
         </div>
       `
@@ -109,12 +109,12 @@ Deno.serve(async (req: Request) => {
       const vars = {
         nome_cliente: clientName,
         email_cliente: targetEmail,
-        nome_loja: 'Zahrá Brasil',
+        nome_loja: 'Mayve',
       }
 
       const finalSubject = replaceVariables(rawSubject, vars)
       const filledBody = replaceVariables(rawBody, vars)
-      const finalHtml = wrapInLayout('Boas-vindas à Zahrá', undefined, filledBody)
+      const finalHtml = wrapInLayout('Boas-vindas à Mayve', undefined, filledBody)
 
       const resendKey = Deno.env.get('RESEND_API_KEY')
       if (!resendKey) {
@@ -128,12 +128,12 @@ Deno.serve(async (req: Request) => {
         )
       }
 
-      const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
-      const replyToAddress = 'sac@zahrabrasil.com.br'
+      const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Mayve <mayvesbr@gmail.com>'
+      const replyToAddress = 'mayvesbr@gmail.com'
 
       const sendersToTry = [fromAddress]
-      if (!sendersToTry.includes('Zahrá <sac@zahrabrasil.com.br>')) {
-        sendersToTry.unshift('Zahrá <sac@zahrabrasil.com.br>')
+      if (!sendersToTry.includes('Mayve <mayvesbr@gmail.com>')) {
+        sendersToTry.unshift('Mayve <mayvesbr@gmail.com>')
       }
 
       let emailRes = null
@@ -293,7 +293,7 @@ Deno.serve(async (req: Request) => {
             <div style="display: flex; align-items: center; gap: 12px;">
               <img src="${imageUrl}" alt="${item.products?.name || ''}" style="width: 54px; height: 68px; object-fit: cover; border-radius: 2px; border: 1px solid #eee;" />
               <div>
-                <div style="font-weight: 600; color: #2D0B0B; font-size: 14px;">${item.products?.name || 'Produto Zahrá'}</div>
+                <div style="font-weight: 600; color: #2D0B0B; font-size: 14px;">${item.products?.name || 'Produto Mayve'}</div>
                 ${variantDetails ? `<div style="font-size: 12px; color: #888; margin-top: 2px;">${variantDetails}</div>` : ''}
               </div>
             </div>
@@ -347,7 +347,7 @@ Deno.serve(async (req: Request) => {
 
     // Map template slug according to event_type
     let templateSlug = 'order_created'
-    let headerTitle = 'Obrigado por comprar na Zahrá!'
+    let headerTitle = 'Obrigado por comprar na Mayve!'
     const currentStatus = new_status || order.status
 
     if (event_type === 'status_changed') {
@@ -372,7 +372,7 @@ Deno.serve(async (req: Request) => {
       headerTitle = 'Nota Fiscal Disponível'
     } else {
       templateSlug = 'order_created'
-      headerTitle = 'Obrigado por comprar na Zahrá!'
+      headerTitle = 'Obrigado por comprar na Mayve!'
     }
 
     // Query database for template
@@ -408,16 +408,16 @@ Deno.serve(async (req: Request) => {
     // Fallbacks if no template exists in database
     if (!rawSubject) {
       if (templateSlug === 'order_paid')
-        rawSubject = `Pagamento Confirmado! Pedido #{{numero_pedido}} na Zahrá`
+        rawSubject = `Pagamento Confirmado! Pedido #{{numero_pedido}} na Mayve`
       else if (templateSlug === 'order_shipped')
-        rawSubject = `Seu Pedido #{{numero_pedido}} foi Enviado! - Zahrá`
+        rawSubject = `Seu Pedido #{{numero_pedido}} foi Enviado! - Mayve`
       else if (templateSlug === 'order_delivered')
-        rawSubject = `Seu Pedido #{{numero_pedido}} foi Entregue! - Zahrá`
+        rawSubject = `Seu Pedido #{{numero_pedido}} foi Entregue! - Mayve`
       else if (templateSlug === 'order_canceled')
-        rawSubject = `Cancelamento do Pedido #{{numero_pedido}} na Zahrá`
+        rawSubject = `Cancelamento do Pedido #{{numero_pedido}} na Mayve`
       else if (templateSlug === 'invoice_available')
-        rawSubject = `Nota Fiscal disponível - Pedido #{{numero_pedido}} na Zahrá`
-      else rawSubject = `Obrigado por comprar na Zahrá! Pedido #{{numero_pedido}}`
+        rawSubject = `Nota Fiscal disponível - Pedido #{{numero_pedido}} na Mayve`
+      else rawSubject = `Obrigado por comprar na Mayve! Pedido #{{numero_pedido}}`
     }
 
     if (!rawBody) {
@@ -438,12 +438,12 @@ Deno.serve(async (req: Request) => {
     const finalHtml = wrapInLayout(headerTitle, `Pedido #${shortId}`, finalBody)
 
     // Sender config
-    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Zahrá <sac@zahrabrasil.com.br>'
-    const replyToAddress = 'sac@zahrabrasil.com.br'
+    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Mayve <mayvesbr@gmail.com>'
+    const replyToAddress = 'mayvesbr@gmail.com'
 
     const sendersToTry = [fromAddress]
-    if (!sendersToTry.includes('Zahrá <sac@zahrabrasil.com.br>')) {
-      sendersToTry.unshift('Zahrá <sac@zahrabrasil.com.br>')
+    if (!sendersToTry.includes('Mayve <mayvesbr@gmail.com>')) {
+      sendersToTry.unshift('Mayve <mayvesbr@gmail.com>')
     }
 
     let emailRes: any = null

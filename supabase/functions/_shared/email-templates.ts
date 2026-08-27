@@ -38,7 +38,7 @@ export const buildFooter = (): string => `
       <p style="margin: 0 0 8px;">Dúvidas? Fale com a gente pelo WhatsApp ou responda a este e-mail.</p>
       <p style="margin: 0 0 12px; font-weight: 500;">
         <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
-        <a href="mailto:sac@zahrabrasil.com.br" style="color: #2D0B0B; text-decoration: underline;">sac@zahrabrasil.com.br</a>
+        <a href="mailto:mayvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">mayvesbr@gmail.com</a>
       </p>
       <p style="margin: 12px 0 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
         Mayve © ${new Date().getFullYear()} — Todos os direitos reservados.
