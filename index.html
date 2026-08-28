@@ -13,21 +13,43 @@
     <meta name="keywords" content="moda feminina, roupas, acessórios, loja online" />
 
     <!-- Performance Optimizations: Preconnect to Supabase Storage & Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://dagtlwojkqyivnjgveda.supabase.co" crossorigin />
     <link rel="preconnect" href="https://onfkaptmtujiihiunsnu.supabase.co" crossorigin />
     <link rel="preconnect" href="https://img.usecurling.com" crossorigin />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link rel="dns-prefetch" href="https://dagtlwojkqyivnjgveda.supabase.co" />
     <link rel="dns-prefetch" href="https://onfkaptmtujiihiunsnu.supabase.co" />
     <link rel="dns-prefetch" href="https://img.usecurling.com" />
 
+    <!-- Non-blocking asynchronous font loading with display=swap and instant fallback -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&display=swap"
+      />
+    </noscript>
+
     <!-- Inline fallback font to eliminate FOIT / text shift before custom fonts load -->
     <style>
       body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      h1, h2, h3, h4, h5, h6, .font-serif {
+        font-family: 'Playfair Display', Georgia, serif;
       }
     </style>
   </head>

@@ -14,8 +14,11 @@ export default function ProductsPage() {
 
   const [siteContent, setSiteContent] = useState<Record<string, string>>(() => {
     try {
-      const cached = sessionStorage.getItem('site_content_cache')
-      if (cached) return JSON.parse(cached).data || {}
+      const raw = sessionStorage.getItem('site_content_cache_v2')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return parsed.data || {}
+      }
     } catch {
       // ignore
     }
@@ -41,44 +44,29 @@ export default function ProductsPage() {
           .maybeSingle()
       : Promise.resolve({ data: null })
 
-    const fetchContent =
-      Object.keys(siteContent).length === 0
-        ? supabase.from('site_content').select('section_key, content_value')
-        : Promise.resolve({ data: null })
-
-    Promise.all([
-      getProducts(category || undefined, promotion === 'true'),
-      fetchContent,
-      fetchCategoryInfo,
-    ])
-      .then(([productsData, contentResponse, categoryResponse]) => {
-        if (!isMounted) return
-        setProducts(productsData || [])
-        if (contentResponse.data) {
-          const contentMap = contentResponse.data.reduce(
-            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
-            {} as Record<string, string>,
-          )
-          setSiteContent(contentMap)
-          try {
-            sessionStorage.setItem(
-              'site_content_cache',
-              JSON.stringify({ data: contentMap, timestamp: Date.now() }),
-            )
-          } catch {
-            // ignore
+    import('@/services/siteContent').then(({ getSiteContentCached }) => {
+      Promise.all([
+        getProducts(category || undefined, promotion === 'true'),
+        getSiteContentCached(),
+        fetchCategoryInfo,
+      ])
+        .then(([productsData, contentMap, categoryResponse]) => {
+          if (!isMounted) return
+          setProducts(productsData || [])
+          if (contentMap && Object.keys(contentMap).length > 0) {
+            setSiteContent(contentMap)
           }
-        }
-        if (categoryResponse?.data) {
-          setCurrentCategoryInfo(categoryResponse.data)
-        } else {
-          setCurrentCategoryInfo(null)
-        }
-      })
-      .catch(console.error)
-      .finally(() => {
-        if (isMounted) setIsLoading(false)
-      })
+          if (categoryResponse?.data) {
+            setCurrentCategoryInfo(categoryResponse.data)
+          } else {
+            setCurrentCategoryInfo(null)
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          if (isMounted) setIsLoading(false)
+        })
+    })
 
     return () => {
       isMounted = false

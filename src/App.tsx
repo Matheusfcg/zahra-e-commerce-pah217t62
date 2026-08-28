@@ -39,9 +39,11 @@ if (typeof window !== 'undefined') {
 }
 
 const PageFallback = () => (
-  <div className="w-full min-h-[60vh] flex flex-col items-center justify-start pt-28 px-4">
-    <div className="w-full max-w-[1200px] space-y-8 animate-pulse">
-      <div className="h-10 w-48 bg-[#e8e4e0] rounded mx-auto" />
+  <div className="w-full min-h-[80vh] flex flex-col items-center justify-start pt-24 pb-20 px-4">
+    <div className="w-full max-w-[1400px] space-y-8 animate-pulse">
+      {/* Top Banner Skeleton Placeholder */}
+      <div className="w-full h-[60vh] bg-[#f4f1ee] rounded-none mb-8" />
+      <div className="h-8 w-48 bg-[#e8e4e0] rounded mx-auto" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="flex flex-col gap-3">

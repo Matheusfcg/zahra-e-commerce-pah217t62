@@ -32,33 +32,27 @@ export function Header() {
   const location = useLocation()
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [categories, setCategories] = useState<string[]>([])
+  const [categories, setCategories] = useState<string[]>(() => {
+    try {
+      const raw = sessionStorage.getItem('all_categories_cache_v2')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return parsed.data || []
+      }
+    } catch {
+      // ignore
+    }
+    return []
+  })
 
   useEffect(() => {
-    const cached = sessionStorage.getItem('header_categories_cache')
-    if (cached) {
-      try {
-        setCategories(JSON.parse(cached))
-      } catch {
-        // ignore
-      }
-    }
-
-    supabase
-      .from('categories')
-      .select('name')
-      .order('name')
-      .then(({ data }) => {
-        if (data) {
-          const names = data.map((c: any) => c.name)
+    import('@/services/siteContent').then(({ getCategoriesCached }) => {
+      getCategoriesCached().then((names) => {
+        if (names && names.length > 0) {
           setCategories(names)
-          try {
-            sessionStorage.setItem('header_categories_cache', JSON.stringify(names))
-          } catch {
-            // ignore
-          }
         }
       })
+    })
   }, [])
 
   useEffect(() => {

@@ -162,8 +162,26 @@ export default function Orders() {
         </p>
 
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+          <div className="space-y-6 animate-pulse">
+            {[1, 2].map((i) => (
+              <div key={i} className="border rounded-xl overflow-hidden bg-white shadow-sm">
+                <div className="bg-muted/20 px-6 py-4 border-b flex justify-between">
+                  <div className="h-4 w-32 bg-[#e8e4e0] rounded" />
+                  <div className="h-4 w-24 bg-[#e8e4e0] rounded" />
+                  <div className="h-4 w-20 bg-[#e8e4e0] rounded" />
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="flex gap-4">
+                    <div className="w-16 h-20 bg-[#f4f1ee] rounded" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 w-48 bg-[#e8e4e0] rounded" />
+                      <div className="h-3 w-32 bg-[#e8e4e0] rounded" />
+                      <div className="h-4 w-20 bg-[#e8e4e0] rounded" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-muted/10 border border-dashed rounded-xl p-12 text-center flex flex-col items-center">

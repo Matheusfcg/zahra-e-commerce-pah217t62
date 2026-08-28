@@ -1,10 +1,15 @@
 /**
  * Route & Data Prefetching Utility for ultra-snappy navigation
  */
-import { getProducts, getProductBySlug } from '@/services/products'
-import { supabase } from '@/lib/supabase/client'
+import { getProducts, getProductBySlug, getHighlightedProducts } from '@/services/products'
+import {
+  getSiteContentCached,
+  getFeaturedCategoriesCached,
+  getExchangePolicyCached,
+  getCategoriesCached,
+} from '@/services/siteContent'
 
-// Page module import functions for component prefetching
+// Page module dynamic import functions for route chunk prefetching
 const pageLoaders: Record<string, () => Promise<any>> = {
   '/': () => import('@/pages/Index'),
   '/produtos': () => import('@/pages/Products'),
@@ -15,22 +20,28 @@ const pageLoaders: Record<string, () => Promise<any>> = {
   '/perfil': () => import('@/pages/Profile'),
   '/orders': () => import('@/pages/Orders'),
   '/meus-pedidos': () => import('@/pages/Orders'),
+  '/my-orders': () => import('@/pages/Orders'),
   '/admin/upload': () => import('@/pages/admin/AdminUpload'),
   '/admin/appearance': () => import('@/pages/admin/Appearance'),
+  '/shipping-callback': () => import('@/pages/admin/ShippingCallback'),
 }
 
 // Prefetch tracking to prevent duplicate network calls
 const prefetchedUrls = new Set<string>()
+const prefetchedChunks = new Set<string>()
 
 /**
- * Prefetches the code chunk for a given route path
+ * Prefetches the JavaScript code chunk for a given route path
  */
 export function prefetchRouteChunk(path: string) {
   const normalizedPath = path.split('?')[0].split('#')[0]
+  if (prefetchedChunks.has(normalizedPath)) return
+  prefetchedChunks.add(normalizedPath)
+
   if (pageLoaders[normalizedPath]) {
-    pageLoaders[normalizedPath]()
+    pageLoaders[normalizedPath]().catch(() => {})
   } else if (normalizedPath.startsWith('/product/')) {
-    import('@/pages/Product')
+    import('@/pages/Product').catch(() => {})
   }
 }
 
@@ -42,7 +53,10 @@ export function prefetchRouteData(url: string) {
   prefetchedUrls.add(url)
 
   try {
-    const parsed = new URL(url, window.location.origin)
+    const parsed = new URL(
+      url,
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost',
+    )
     const pathname = parsed.pathname
     const searchParams = parsed.searchParams
 
@@ -59,17 +73,19 @@ export function prefetchRouteData(url: string) {
       const category = searchParams.get('category') || undefined
       const isPromotion = searchParams.get('promotion') === 'true'
       getProducts(category, isPromotion).catch(() => {})
+      getSiteContentCached().catch(() => {})
+    }
+
+    // If it's the homepage
+    if (pathname === '/') {
+      getSiteContentCached().catch(() => {})
+      getFeaturedCategoriesCached().catch(() => {})
+      getHighlightedProducts().catch(() => {})
     }
 
     // If it's the exchange policy page
     if (pathname === '/troca-e-devolucao') {
-      Promise.resolve(
-        supabase
-          .from('site_content')
-          .select('content_value')
-          .eq('section_key', 'exchange_return_policy')
-          .maybeSingle(),
-      ).catch(() => {})
+      getExchangePolicyCached().catch(() => {})
     }
   } catch {
     // Ignore invalid URLs
@@ -77,20 +93,21 @@ export function prefetchRouteData(url: string) {
 }
 
 /**
- * Prefetch both route code and route data on hover/focus
+ * Prefetch both route code and route data on interaction (hover/focus/touch/pointerdown)
  */
 export function prefetchLink(url: string) {
+  if (!url) return
   prefetchRouteChunk(url)
   prefetchRouteData(url)
 }
 
 /**
- * Global listener setup for prefetching links on hover / mouseenter / touchstart
+ * Global listener setup for prefetching links on hover / mouseover / pointerdown / touchstart
  */
 export function setupGlobalPrefetchListener() {
   if (typeof window === 'undefined') return
 
-  const handlePointerEnter = (e: MouseEvent | TouchEvent) => {
+  const handleInteraction = (e: Event) => {
     const target = (e.target as HTMLElement)?.closest('a')
     if (!target) return
 
@@ -100,7 +117,8 @@ export function setupGlobalPrefetchListener() {
       href.startsWith('http') ||
       href.startsWith('mailto:') ||
       href.startsWith('tel:') ||
-      href.startsWith('#')
+      href.startsWith('#') ||
+      href.startsWith('javascript:')
     ) {
       return
     }
@@ -108,21 +126,30 @@ export function setupGlobalPrefetchListener() {
     prefetchLink(href)
   }
 
-  window.addEventListener('mouseover', handlePointerEnter, { passive: true })
-  window.addEventListener('touchstart', handlePointerEnter, { passive: true })
+  // Listen to multiple high-intent user interaction events
+  window.addEventListener('mouseover', handleInteraction, { passive: true })
+  window.addEventListener('touchstart', handleInteraction, { passive: true })
+  window.addEventListener('pointerdown', handleInteraction, { passive: true })
 
-  // Idle prefetching for critical main pages
+  // Idle prefetching for critical main paths and essential store data
+  const idlePrefetch = () => {
+    // 1. Chunks
+    prefetchRouteChunk('/produtos')
+    prefetchRouteChunk('/troca-e-devolucao')
+    prefetchRouteChunk('/favoritos')
+    prefetchRouteChunk('/checkout')
+
+    // 2. Critical Data
+    getSiteContentCached().catch(() => {})
+    getCategoriesCached().catch(() => {})
+    getFeaturedCategoriesCached().catch(() => {})
+    getHighlightedProducts().catch(() => {})
+    getProducts(undefined, false).catch(() => {})
+  }
+
   if ('requestIdleCallback' in window) {
-    ;(window as any).requestIdleCallback(() => {
-      prefetchRouteChunk('/produtos')
-      prefetchRouteChunk('/troca-e-devolucao')
-      getProducts(undefined, false).catch(() => {})
-    })
+    ;(window as any).requestIdleCallback(() => idlePrefetch(), { timeout: 3000 })
   } else {
-    setTimeout(() => {
-      prefetchRouteChunk('/produtos')
-      prefetchRouteChunk('/troca-e-devolucao')
-      getProducts(undefined, false).catch(() => {})
-    }, 1500)
+    setTimeout(idlePrefetch, 1200)
   }
 }

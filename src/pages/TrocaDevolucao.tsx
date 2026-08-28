@@ -45,39 +45,40 @@ const formatPolicy = (text: string) => {
   return html
 }
 
+import { getExchangePolicyCached } from '@/services/siteContent'
+
 export default function TrocaDevolucao() {
-  const [content, setContent] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(true)
+  const [content, setContent] = useState<string>(() => {
+    try {
+      const raw = sessionStorage.getItem('exchange_policy_cache_v2')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return parsed.data || ''
+      }
+    } catch {
+      // ignore
+    }
+    return ''
+  })
+  const [isLoading, setIsLoading] = useState(() => !content)
 
   useEffect(() => {
     window.scrollTo(0, 0)
-    const cached = sessionStorage.getItem('exchange_policy_cache')
-    if (cached) {
-      setContent(cached)
-      setIsLoading(false)
-    }
 
-    const fetchPolicy = async () => {
-      try {
-        const { data } = await supabase
-          .from('site_content')
-          .select('content_value')
-          .eq('section_key', 'exchange_return_policy')
-          .maybeSingle()
-
-        if (data && data.content_value) {
-          setContent(data.content_value)
-          sessionStorage.setItem('exchange_policy_cache', data.content_value)
-        } else if (!cached) {
+    getExchangePolicyCached()
+      .then((policy) => {
+        if (policy) {
+          setContent(policy)
+        } else if (!content) {
           setContent(fallbackContent)
         }
-      } catch (err) {
-        if (!cached) setContent(fallbackContent)
-      } finally {
+      })
+      .catch(() => {
+        if (!content) setContent(fallbackContent)
+      })
+      .finally(() => {
         setIsLoading(false)
-      }
-    }
-    fetchPolicy()
+      })
   }, [])
 
   return (
@@ -88,12 +89,18 @@ export default function TrocaDevolucao() {
         </h1>
 
         <div className="bg-white p-6 md:p-10 shadow-sm border border-muted/50 rounded-sm text-[#333] text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-[#2D0B0B]" />
+          {isLoading && !content ? (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-6 w-48 bg-[#e8e4e0] rounded" />
+              <div className="h-4 w-full bg-[#f4f1ee] rounded" />
+              <div className="h-4 w-5/6 bg-[#f4f1ee] rounded" />
+              <div className="h-4 w-3/4 bg-[#f4f1ee] rounded" />
+              <div className="h-6 w-36 bg-[#e8e4e0] rounded mt-8" />
+              <div className="h-4 w-full bg-[#f4f1ee] rounded" />
+              <div className="h-4 w-4/5 bg-[#f4f1ee] rounded" />
             </div>
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: formatPolicy(content) }} />
+            <div dangerouslySetInnerHTML={{ __html: formatPolicy(content || fallbackContent) }} />
           )}
         </div>
       </div>

@@ -1,74 +1,37 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase/client'
 import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedProducts } from '@/components/FeaturedProducts'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage } from '@/lib/image'
+import {
+  getSiteContentCached,
+  getFeaturedCategoriesCached,
+  smartCache,
+} from '@/services/siteContent'
 
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>(() => {
-    try {
-      const cached = sessionStorage.getItem('site_content_cache')
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        return parsed.data || {}
-      }
-    } catch {
-      // ignore
-    }
-    return {}
+    return smartCache.get<Record<string, string>>('site_content_cache_v2') || {}
   })
   const [featuredCategories, setFeaturedCategories] = useState<any[]>(() => {
-    try {
-      const cached = sessionStorage.getItem('featured_categories_cache')
-      if (cached) {
-        return JSON.parse(cached) || []
-      }
-    } catch {
-      // ignore
-    }
-    return []
+    return smartCache.get<any[]>('featured_categories_cache_v2') || []
   })
   const [isLoading, setIsLoading] = useState(() => {
-    try {
-      const cachedContent = sessionStorage.getItem('site_content_cache')
-      const cachedCats = sessionStorage.getItem('featured_categories_cache')
-      return !cachedContent || !cachedCats
-    } catch {
-      return true
-    }
+    const cachedContent = smartCache.get<Record<string, string>>('site_content_cache_v2')
+    const cachedCats = smartCache.get<any[]>('featured_categories_cache_v2')
+    return !cachedContent || !cachedCats
   })
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('categories').select('*').eq('is_featured', true).order('created_at'),
-      supabase.from('site_content').select('section_key, content_value'),
-    ])
-      .then(([catRes, contentRes]) => {
-        if (catRes.data) {
-          setFeaturedCategories(catRes.data)
-          try {
-            sessionStorage.setItem('featured_categories_cache', JSON.stringify(catRes.data))
-          } catch {
-            // ignore
-          }
+    Promise.all([getFeaturedCategoriesCached(), getSiteContentCached()])
+      .then(([cats, siteContentMap]) => {
+        if (cats && cats.length > 0) {
+          setFeaturedCategories(cats)
         }
-        if (contentRes.data) {
-          const map = contentRes.data.reduce(
-            (acc, curr) => ({ ...acc, [curr.section_key]: curr.content_value }),
-            {} as Record<string, string>,
-          )
-          setContent(map)
-          try {
-            sessionStorage.setItem(
-              'site_content_cache',
-              JSON.stringify({ data: map, timestamp: Date.now() }),
-            )
-          } catch {
-            // ignore
-          }
+        if (siteContentMap && Object.keys(siteContentMap).length > 0) {
+          setContent(siteContentMap)
         }
         setIsLoading(false)
       })

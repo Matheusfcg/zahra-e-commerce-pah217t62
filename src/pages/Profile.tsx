@@ -125,8 +125,24 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-20">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-background pt-20 pb-24">
+        <div className="container mx-auto px-4 max-w-2xl space-y-8 animate-pulse">
+          <div className="h-9 w-48 bg-[#e8e4e0] rounded" />
+          <div className="border p-6 space-y-4">
+            <div className="h-6 w-36 bg-[#e8e4e0] rounded" />
+            <div className="h-12 w-full bg-[#f4f1ee] rounded" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="h-12 w-full bg-[#f4f1ee] rounded" />
+              <div className="h-12 w-full bg-[#f4f1ee] rounded" />
+              <div className="h-12 w-full bg-[#f4f1ee] rounded" />
+            </div>
+          </div>
+          <div className="border p-6 space-y-4">
+            <div className="h-6 w-44 bg-[#e8e4e0] rounded" />
+            <div className="h-12 w-1/3 bg-[#f4f1ee] rounded" />
+            <div className="h-12 w-full bg-[#f4f1ee] rounded" />
+          </div>
+        </div>
       </div>
     )
   }
