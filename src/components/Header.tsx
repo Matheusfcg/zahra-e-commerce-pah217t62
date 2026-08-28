@@ -98,7 +98,7 @@ export function Header() {
               className="inline-block shrink-0 flex items-center justify-center h-12 md:h-14"
             >
               <span className="font-serif text-3xl md:text-[32px] tracking-[0.15em] text-[#2D0B0B] uppercase">
-                MAYVE
+                MEYVES
               </span>
             </Link>
           </div>
@@ -183,7 +183,7 @@ export function Header() {
                       <li>
                         <NavigationMenuLink asChild>
                           <a
-                            href="mailto:mayvesbr@gmail.com"
+                            href="mailto:meyvesbr@gmail.com"
                             className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
                           >
                             <Mail className="h-4 w-4" /> E-mail
@@ -390,11 +390,11 @@ export function Header() {
                         <Phone className="h-4 w-4" /> (11) 93416-0219
                       </a>
                       <a
-                        href="mailto:mayvesbr@gmail.com"
+                        href="mailto:meyvesbr@gmail.com"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
                       >
-                        <Mail className="h-4 w-4" /> mayvesbr@gmail.com
+                        <Mail className="h-4 w-4" /> meyvesbr@gmail.com
                       </a>
                       <a
                         href="https://www.instagram.com/mayve__brasil"

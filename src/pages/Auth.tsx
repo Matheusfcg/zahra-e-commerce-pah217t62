@@ -131,7 +131,7 @@ export default function Auth() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <span className="font-serif text-3xl tracking-[0.15em] text-[#2D0B0B] uppercase">
-              MAYVE
+              MEYVES
             </span>
           </Link>
         </div>

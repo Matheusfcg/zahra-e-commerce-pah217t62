@@ -193,7 +193,7 @@ export function plainTextToHtml(plainText: string, originalHtml?: string): strin
     .map((p) => p.trim())
     .filter(Boolean)
 
-  // Cria parágrafos estilizados no padrão Mayve
+  // Cria parágrafos estilizados no padrão Meyves
   const htmlParagraphs = paragraphs.map((paragraph) => {
     // Preserva quebras simples dentro do mesmo parágrafo como <br />
     const withLineBreaks = paragraph.replace(/\n/g, '<br />')

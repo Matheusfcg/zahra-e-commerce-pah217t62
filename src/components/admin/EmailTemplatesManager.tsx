@@ -70,7 +70,7 @@ const SUGGESTED_VARIABLES = [
   { key: 'transportadora', label: 'Transportadora', desc: 'Ex: Jadlog Express' },
   { key: 'link_nota_fiscal', label: 'Link da Nota Fiscal', desc: 'URL da NF' },
   { key: 'email_cliente', label: 'E-mail da Cliente', desc: 'mariana@exemplo.com' },
-  { key: 'nome_loja', label: 'Nome da Loja', desc: 'Mayve' },
+  { key: 'nome_loja', label: 'Nome da Loja', desc: 'Meyves' },
 ]
 
 export function EmailTemplatesManager() {
@@ -257,14 +257,14 @@ export function EmailTemplatesManager() {
       codigo_rastreio: 'BR984712049BR',
       transportadora: 'Melhor Envio (Jadlog Express)',
       link_nota_fiscal: '#',
-      nome_loja: 'Mayve',
+      nome_loja: 'Meyves',
       bloco_data_estimada:
         '<p style="font-size: 14px; background: #fdfbf7; padding: 10px 14px; border-left: 3px solid #2D0B0B; color: #2D0B0B; margin: 16px 0;"><strong>Previsão de entrega:</strong> 3 a 5 dias úteis</p>',
       bloco_rastreamento:
         '<div style="margin: 20px 0; padding: 16px; background-color: #f0f7f4; border: 1px solid #cce5d9; border-radius: 4px;"><h4 style="margin: 0 0 6px; color: #1b5e20; font-size: 13px; text-transform: uppercase;">Código de Rastreamento</h4><p style="margin: 0; font-family: monospace; font-size: 17px; font-weight: bold; color: #2D0B0B;">BR984712049BR</p><p style="margin: 4px 0 0; font-size: 12px; color: #555;">Transportadora: <strong>Jadlog Express</strong></p></div>',
       itens_pedido: `
         <tr>
-          <td style="padding: 10px 8px; border-bottom: 1px solid #eee;">Vestido Midi Elegance Mayve (M)</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #eee;">Vestido Midi Elegance Meyves (M)</td>
           <td style="padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center;">1</td>
           <td style="padding: 10px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">R$ 259,90</td>
         </tr>
@@ -275,8 +275,8 @@ export function EmailTemplatesManager() {
         '<div style="margin-top: 18px; text-align: center;"><a href="#" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">Visualizar Nota Fiscal</a></div>',
       info_frete: 'Frete Expresso — R$ 24,90 (3 dias úteis)',
       conteudo_newsletter:
-        'Conheça os novos vestidos e conjuntos sofisticados da Coleção Outono Mayve!',
-      assunto_newsletter: 'Novidades Exclusivas Mayve',
+        'Conheça os novos vestidos e conjuntos sofisticados da Coleção Outono Meyves!',
+      assunto_newsletter: 'Novidades Exclusivas Meyves',
     }
 
     let subj = subject || 'Assunto do E-mail'
@@ -296,7 +296,7 @@ export function EmailTemplatesManager() {
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 28px 22px; border: 1px solid #eae5df; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
         <!-- Header da Loja -->
         <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2D0B0B;">
-          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 6px; text-transform: uppercase; font-weight: 700;">MAYVE</h1>
+          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 6px; text-transform: uppercase; font-weight: 700;">MEYVES</h1>
           <p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">Moda & Elegância</p>
         </div>
 
@@ -316,10 +316,10 @@ export function EmailTemplatesManager() {
           <p style="margin: 0 0 6px;">Dúvidas? Responda a este e-mail ou fale no WhatsApp.</p>
           <p style="margin: 0 0 10px; font-weight: 500;">
             <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
-            <a href="mailto:mayvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">mayvesbr@gmail.com</a>
+            <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">meyvesbr@gmail.com</a>
           </p>
           <p style="margin: 10px 0 0; font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
-            Mayve © ${currentYear} — Todos os direitos reservados.
+            Meyves © ${currentYear} — Todos os direitos reservados.
           </p>
         </div>
       </div>

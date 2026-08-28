@@ -1,5 +1,5 @@
 /**
- * Image optimization helper utility for Mayve E-commerce
+ * Image optimization helper utility for Meyves E-commerce
  * Handles Supabase Storage dynamic transformations & Curling CDN resizing / WebP conversion
  */
 

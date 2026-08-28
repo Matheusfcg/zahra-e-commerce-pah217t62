@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       .single()
 
     const baseSubject =
-      customSubject || dbTemplate?.subject || 'Novidades e Destaques Exclusivos Mayve'
+      customSubject || dbTemplate?.subject || 'Novidades e Destaques Exclusivos Meyves'
     const baseBody =
       dbTemplate?.body_html ||
       `
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     const vars = {
       conteudo_newsletter: content,
       assunto_newsletter: baseSubject,
-      nome_loja: 'Mayve',
+      nome_loja: 'Meyves',
     }
 
     const finalSubject = replaceVariables(baseSubject, vars)
@@ -81,12 +81,13 @@ Deno.serve(async (req) => {
     const finalHtml = wrapInLayout(finalSubject, undefined, formattedContent)
 
     const emails = subscribers.map((s: { email: string }) => s.email)
-    const fromAddress = Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Mayve <mayvesbr@gmail.com>'
-    const replyToAddress = 'mayvesbr@gmail.com'
+    const fromAddress =
+      Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Meyves <meyvesbr@gmail.com>'
+    const replyToAddress = 'meyvesbr@gmail.com'
 
     const sendersToTry = [fromAddress]
-    if (!sendersToTry.includes('Mayve <mayvesbr@gmail.com>')) {
-      sendersToTry.unshift('Mayve <mayvesbr@gmail.com>')
+    if (!sendersToTry.includes('Meyves <meyvesbr@gmail.com>')) {
+      sendersToTry.unshift('Meyves <meyvesbr@gmail.com>')
     }
 
     let sent = 0
