@@ -142,7 +142,18 @@ export function setupGlobalPrefetchListener() {
     // 2. Critical Data
     getSiteContentCached().catch(() => {})
     getCategoriesCached().catch(() => {})
-    getFeaturedCategoriesCached().catch(() => {})
+    getFeaturedCategoriesCached()
+      .then((cats) => {
+        if (Array.isArray(cats)) {
+          cats.forEach((cat) => {
+            if (cat?.image_url) {
+              const img = new Image()
+              img.src = cat.image_url
+            }
+          })
+        }
+      })
+      .catch(() => {})
     getHighlightedProducts().catch(() => {})
     getProducts(undefined, false).catch(() => {})
   }

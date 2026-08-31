@@ -104,6 +104,33 @@ export default function Index() {
     }))
   }, [featuredCategories])
 
+  // Preload category images eagerly as soon as category data is available
+  useEffect(() => {
+    if (!dynamicCategoryNavItems || dynamicCategoryNavItems.length === 0) return
+
+    dynamicCategoryNavItems.forEach((item, index) => {
+      if (!item.image) return
+
+      // Preload via standard Image object for instant in-memory cache
+      const img = new Image()
+      img.src = item.image
+
+      // Also inject <link rel="preload"> tags for early browser network pipeline discovery
+      const linkId = `cat-img-preload-${index}`
+      let link = document.getElementById(linkId) as HTMLLinkElement | null
+      if (!link) {
+        link = document.createElement('link')
+        link.id = linkId
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = item.image
+        document.head.appendChild(link)
+      } else {
+        link.href = item.image
+      }
+    })
+  }, [dynamicCategoryNavItems])
+
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
@@ -164,7 +191,7 @@ export default function Index() {
 
       {/* Section 2: Categories Grid */}
       {dynamicCategoryNavItems.length > 0 && (
-        <section className="py-12 md:py-20 bg-white content-visibility-auto">
+        <section className="py-12 md:py-20 bg-white">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8 overflow-hidden">
             <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-8 md:gap-14 pb-4 justify-start lg:justify-center items-end">
               {isLoading
@@ -187,7 +214,8 @@ export default function Index() {
                         <ProgressiveImage
                           src={item.image}
                           alt={item.label}
-                          loading="lazy"
+                          priority
+                          loading="eager"
                           decoding="async"
                           width={170}
                           height={170}
