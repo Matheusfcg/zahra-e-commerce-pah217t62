@@ -46,17 +46,24 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
   ) => {
     const [isLoaded, setIsLoaded] = useState(false)
     const [hasError, setHasError] = useState(false)
+    const [currentSrc, setCurrentSrc] = useState(src)
+    const [currentSrcSet, setCurrentSrcSet] = useState(srcSet)
     const imgRef = useRef<HTMLImageElement | null>(null)
+
+    // Synchronize currentSrc / currentSrcSet whenever props change
+    useEffect(() => {
+      setCurrentSrc(src)
+      setCurrentSrcSet(srcSet)
+      setIsLoaded(false)
+      setHasError(false)
+    }, [src, srcSet])
 
     // Check if the image was already cached by the browser and loaded synchronously
     useEffect(() => {
-      setIsLoaded(false)
-      setHasError(false)
-
       if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
         setIsLoaded(true)
       }
-    }, [src])
+    }, [currentSrc])
 
     return (
       <div
@@ -92,7 +99,7 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
               ;(ref as any).current = node
             }
           }}
-          src={src}
+          src={currentSrc}
           alt={alt}
           width={width}
           height={height}
@@ -100,12 +107,24 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
           decoding={decoding}
           fetchPriority={priority ? 'high' : fetchPriority || 'auto'}
           sizes={sizes}
-          srcSet={srcSet}
+          srcSet={currentSrcSet}
           onLoad={(e) => {
             setIsLoaded(true)
             onLoad?.(e)
           }}
           onError={(e) => {
+            // Graceful fallback: If a transformed Supabase URL fails (e.g. 403 FeatureNotEnabled on render endpoint),
+            // automatically fall back to the un-transformed object/public URL so images never break!
+            if (currentSrc && currentSrc.includes('/storage/v1/render/image/public/')) {
+              const fallbackUrl = currentSrc
+                .split('?')[0]
+                .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+              if (fallbackUrl !== currentSrc) {
+                setCurrentSrc(fallbackUrl)
+                setCurrentSrcSet(undefined)
+                return
+              }
+            }
             setHasError(true)
             onError?.(e)
           }}

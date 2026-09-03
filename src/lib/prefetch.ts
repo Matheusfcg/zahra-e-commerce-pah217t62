@@ -1,6 +1,7 @@
 /**
  * Route & Data Prefetching Utility for ultra-snappy navigation
  */
+import { optimizeImage } from '@/lib/image'
 import { getProducts, getProductBySlug, getHighlightedProducts } from '@/services/products'
 import {
   getSiteContentCached,
@@ -147,8 +148,14 @@ export function setupGlobalPrefetchListener() {
         if (Array.isArray(cats)) {
           cats.forEach((cat) => {
             if (cat?.image_url) {
+              const optimized = optimizeImage(cat.image_url, {
+                width: 200,
+                height: 200,
+                quality: 80,
+                format: 'webp',
+              })
               const img = new Image()
-              img.src = cat.image_url
+              img.src = optimized
             }
           })
         }

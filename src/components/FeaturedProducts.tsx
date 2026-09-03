@@ -22,7 +22,7 @@ export function FeaturedProducts() {
   if (!isLoading && products.length === 0) return null
 
   return (
-    <section className="py-12 md:py-20 bg-white content-visibility-auto">
+    <section className="py-12 md:py-20 bg-white">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between mb-8 md:mb-12">
           <h2 className="font-serif text-2xl md:text-3xl text-[#2D0B0B] uppercase tracking-wide">
@@ -51,12 +51,13 @@ export function FeaturedProducts() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
-            {products.map((product) => (
+            {products.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 isFavorite={favorites.has(product.id)}
                 onToggleFavorite={toggleFavorite}
+                priority={index < 2}
               />
             ))}
           </div>

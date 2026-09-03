@@ -19,13 +19,12 @@ import { cn } from '@/lib/utils'
 import { getProductBySlug, type Product, type ProductColor } from '@/services/products'
 import { Loader2, Plus, Minus } from 'lucide-react'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
-import { optimizeImage } from '@/lib/image'
+import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
 
-const getImageUrl = (url: string | undefined | null) => {
+function getImageUrl(url?: string) {
   if (!url) return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing'
   return optimizeImage(url, { width: 800, quality: 80, format: 'webp' })
 }
-
 const ProductPage = () => {
   const { id } = useParams()
   const [product, setProduct] = useState<Product | null>(null)
@@ -232,6 +231,12 @@ const ProductPage = () => {
                     <div className="aspect-[3/4] overflow-hidden bg-[#f4f1ee] lg:h-full lg:aspect-auto relative min-h-[400px]">
                       <ProgressiveImage
                         src={getImageUrl(img.url)}
+                        srcSet={
+                          getOptimizedSrcSet(img.url, [480, 800, 1200], {
+                            quality: 80,
+                            format: 'webp',
+                          }) || undefined
+                        }
                         alt={`${product.name} detail ${idx + 1}`}
                         priority={isFirst}
                         loading={isFirst ? 'eager' : 'lazy'}
@@ -239,6 +244,7 @@ const ProductPage = () => {
                         width={800}
                         height={1067}
                         aspectRatio="3/4"
+                        sizes="(max-width: 1024px) 100vw, 60vw"
                         containerClassName="w-full h-full"
                         className="w-full h-full object-cover"
                       />

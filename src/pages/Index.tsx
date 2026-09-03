@@ -4,7 +4,7 @@ import { Truck, RefreshCw, ShieldCheck, Clock } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedProducts } from '@/components/FeaturedProducts'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
-import { optimizeImage } from '@/lib/image'
+import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
 import {
   getSiteContentCached,
   getFeaturedCategoriesCached,
@@ -74,6 +74,10 @@ export default function Index() {
       quality: 80,
       format: 'webp',
     })
+    const lcpSrcSet = getOptimizedSrcSet(lcpImage, [480, 800, 1200], {
+      quality: 80,
+      format: 'webp',
+    })
 
     const linkId = 'lcp-hero-preload'
     let link = document.getElementById(linkId) as HTMLLinkElement | null
@@ -83,10 +87,17 @@ export default function Index() {
       link.rel = 'preload'
       link.as = 'image'
       link.setAttribute('fetchpriority', 'high')
-      link.setAttribute('imagesrcset', lcpUrl)
+      if (lcpSrcSet) {
+        link.setAttribute('imagesrcset', lcpSrcSet)
+        link.setAttribute('imagesizes', '(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw')
+      }
       document.head.appendChild(link)
     }
     link.href = lcpUrl
+    if (lcpSrcSet) {
+      link.setAttribute('imagesrcset', lcpSrcSet)
+      link.setAttribute('imagesizes', '(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw')
+    }
 
     return () => {
       // Keep preload during life of page
@@ -148,8 +159,13 @@ export default function Index() {
           <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
             {dynamicHeroBannerImages.map((imageUrl, index) => {
               const isFirst = index === 0
+              const targetWidth = isFirst ? 800 : 500
               const optimizedSrc = optimizeImage(imageUrl, {
-                width: isFirst ? 800 : 500,
+                width: targetWidth,
+                quality: 80,
+                format: 'webp',
+              })
+              const heroSrcSet = getOptimizedSrcSet(imageUrl, [360, 600, 900, 1200], {
                 quality: 80,
                 format: 'webp',
               })
@@ -161,11 +177,12 @@ export default function Index() {
                 >
                   <ProgressiveImage
                     src={optimizedSrc}
+                    srcSet={heroSrcSet || undefined}
                     alt={`Hero Image ${index + 1}`}
                     priority={isFirst}
                     loading={isFirst ? 'eager' : 'lazy'}
                     decoding={isFirst ? 'sync' : 'async'}
-                    width={isFirst ? 800 : 500}
+                    width={targetWidth}
                     height={1200}
                     sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
                     blurColor="bg-[#e4dfdb]"
@@ -213,6 +230,12 @@ export default function Index() {
                       <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full overflow-hidden bg-white mb-5 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center border border-gray-200 shadow-sm">
                         <ProgressiveImage
                           src={item.image}
+                          srcSet={
+                            getOptimizedSrcSet(item.image, [140, 200, 340], {
+                              quality: 80,
+                              format: 'webp',
+                            }) || undefined
+                          }
                           alt={item.label}
                           priority
                           loading="eager"
@@ -220,6 +243,7 @@ export default function Index() {
                           width={170}
                           height={170}
                           aspectRatio="1/1"
+                          sizes="(max-width: 768px) 140px, 170px"
                           containerClassName="w-full h-full rounded-full"
                           className="w-full h-full object-cover"
                         />
@@ -238,7 +262,7 @@ export default function Index() {
       <FeaturedProducts />
 
       {/* Section 4: Benefits */}
-      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12 content-visibility-auto">
+      <section className="w-full bg-[#FAFAFA] border-y border-muted/30 py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-[1200px]">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center">
             <div className="flex flex-col items-center gap-3">

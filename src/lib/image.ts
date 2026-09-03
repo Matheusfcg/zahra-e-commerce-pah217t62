@@ -8,16 +8,15 @@ export interface OptimizeImageOptions {
   height?: number
   quality?: number
   format?: 'webp' | 'origin'
+  resize?: 'cover' | 'contain' | 'fill'
 }
 
 /**
  * Optimizes image URLs by appending transform parameters or resizing hints.
- * Supports curling image CDN resizing / WebP conversion.
- *
- * NOTE: Supabase Storage URLs are returned UNCHANGED. The Supabase Image
- * Transformation API (`/storage/v1/render/image/public/...`) is not enabled
- * on this project's tenant — rewriting public URLs to the render endpoint
- * returns HTTP 403 `FeatureNotEnabled` and breaks every hosted image.
+ * Supports:
+ * 1. Supabase Storage URLs: converts `/storage/v1/object/public/` to `/storage/v1/render/image/public/`
+ *    with query params ?width=&quality=&height=&resize=
+ * 2. Curling CDN URLs: rewrites dimensions in pathname /p/{w}/{h}
  */
 export function optimizeImage(
   url: string | null | undefined,
@@ -25,11 +24,40 @@ export function optimizeImage(
 ): string {
   if (!url) return ''
 
-  const { width, height } = options
+  const { width, height, quality = 80, resize, format } = options
 
-  // Supabase Storage public URLs: return as-is. Do NOT rewrite to the render endpoint.
+  // Handle Supabase Storage public URLs
   if (url.includes('/storage/v1/object/public/')) {
-    return url
+    try {
+      const renderBase = url.replace(
+        '/storage/v1/object/public/',
+        '/storage/v1/render/image/public/',
+      )
+      const parsed = new URL(renderBase)
+      if (width) parsed.searchParams.set('width', width.toString())
+      if (height) parsed.searchParams.set('height', height.toString())
+      if (quality) parsed.searchParams.set('quality', quality.toString())
+      if (resize) parsed.searchParams.set('resize', resize)
+      if (format) parsed.searchParams.set('format', format)
+      return parsed.toString()
+    } catch {
+      return url
+    }
+  }
+
+  // If already a render URL, update query parameters
+  if (url.includes('/storage/v1/render/image/public/')) {
+    try {
+      const parsed = new URL(url)
+      if (width) parsed.searchParams.set('width', width.toString())
+      if (height) parsed.searchParams.set('height', height.toString())
+      if (quality) parsed.searchParams.set('quality', quality.toString())
+      if (resize) parsed.searchParams.set('resize', resize)
+      if (format) parsed.searchParams.set('format', format)
+      return parsed.toString()
+    } catch {
+      return url
+    }
   }
 
   // Handle Curling CDN URLs (e.g., https://img.usecurling.com/p/800/1000?q=...)
@@ -49,5 +77,37 @@ export function optimizeImage(
     }
   }
 
+  return url
+}
+
+/**
+ * Generates an HTML srcset string for responsive images across device pixel ratios and viewports.
+ * Returns empty string if the URL is not optimizable (e.g. data URI or unrecognized external URL).
+ */
+export function getOptimizedSrcSet(
+  url: string | null | undefined,
+  widths: number[] = [320, 480, 640, 800, 1024, 1200],
+  options: Omit<OptimizeImageOptions, 'width'> = {},
+): string {
+  if (!url) return ''
+  const isOptimizable =
+    url.includes('/storage/v1/object/public/') ||
+    url.includes('/storage/v1/render/image/public/') ||
+    url.includes('img.usecurling.com/p/')
+
+  if (!isOptimizable) return ''
+
+  return widths.map((w) => `${optimizeImage(url, { ...options, width: w })} ${w}w`).join(', ')
+}
+
+/**
+ * Returns original un-transformed URL (for graceful fallback if transform is unavailable)
+ */
+export function getOriginalStorageUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  if (url.includes('/storage/v1/render/image/public/')) {
+    const withoutParams = url.split('?')[0]
+    return withoutParams.replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+  }
   return url
 }

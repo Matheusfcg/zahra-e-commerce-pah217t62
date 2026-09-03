@@ -3,23 +3,32 @@ import { Heart, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Product } from '@/services/products'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
-import { optimizeImage } from '@/lib/image'
+import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
+import { prefetchLink } from '@/lib/prefetch'
 
 interface ProductCardProps {
   product: Product
   isFavorite?: boolean
   onToggleFavorite?: (id: string) => void
+  priority?: boolean
 }
 
-import { prefetchLink } from '@/lib/prefetch'
-
-export function ProductCard({ product, isFavorite = false, onToggleFavorite }: ProductCardProps) {
+export function ProductCard({
+  product,
+  isFavorite = false,
+  onToggleFavorite,
+  priority = false,
+}: ProductCardProps) {
   const rawImageUrl =
     product.product_images?.find((img) => img.is_cover)?.url ||
     product.product_images?.[0]?.url ||
     'https://img.usecurling.com/p/400/500?q=high%20fashion%20minimalist%20clothing'
 
-  const optimizedImageUrl = optimizeImage(rawImageUrl, { width: 400, quality: 80, format: 'webp' })
+  const optimizedImageUrl = optimizeImage(rawImageUrl, { width: 500, quality: 80, format: 'webp' })
+  const responsiveSrcSet = getOptimizedSrcSet(rawImageUrl, [280, 400, 600, 800], {
+    quality: 80,
+    format: 'webp',
+  })
 
   return (
     <div className="group flex flex-col gap-3 animate-fade-in">
@@ -32,9 +41,11 @@ export function ProductCard({ product, isFavorite = false, onToggleFavorite }: P
         >
           <ProgressiveImage
             src={optimizedImageUrl}
+            srcSet={responsiveSrcSet || undefined}
             alt={product.name}
-            loading="lazy"
-            decoding="async"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
             width={400}
             height={533}
             aspectRatio="3/4"
