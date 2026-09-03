@@ -135,7 +135,7 @@ export function Header() {
                   <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
                     Compre agora
                   </NavigationMenuTrigger>
-                  <NavigationMenuContent>
+                  <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
                     <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
                       {categories.map((cat) => (
                         <li key={cat}>
@@ -160,7 +160,7 @@ export function Header() {
                   <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
                     Fale conosco
                   </NavigationMenuTrigger>
-                  <NavigationMenuContent>
+                  <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
                     <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
                       <li>
                         <NavigationMenuLink asChild>
@@ -193,7 +193,7 @@ export function Header() {
                     <NavigationMenuTrigger className="text-[#3c6e47] font-bold bg-transparent hover:bg-transparent text-[15px]">
                       ADMIN
                     </NavigationMenuTrigger>
-                    <NavigationMenuContent>
+                    <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
                       <ul className="grid w-[200px] gap-1 p-4 bg-white shadow-md border rounded-md">
                         <li>
                           <NavigationMenuLink asChild>
