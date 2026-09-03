@@ -1,6 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ShoppingBag, Menu, User, Phone, Mail, Instagram, Heart, Search } from 'lucide-react'
+import {
+  ShoppingBag,
+  Menu,
+  User,
+  Phone,
+  Mail,
+  Instagram,
+  Heart,
+  Search,
+  ChevronDown,
+} from 'lucide-react'
 import { prefetchLink } from '@/lib/prefetch'
 import { cn } from '@/lib/utils'
 import { ProfileMenu } from '@/components/ProfileMenu'
@@ -11,15 +21,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu'
+
 import { useCart } from '@/contexts/CartContext'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
@@ -32,6 +34,35 @@ export function Header() {
   const location = useLocation()
   const { user } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState<
+    'compre-agora' | 'fale-conosco' | 'admin' | null
+  >(null)
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMouseEnter = (menu: 'compre-agora' | 'fale-conosco' | 'admin') => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    setActiveDropdown(menu)
+  }
+
+  const handleMouseLeave = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null)
+    }, 150)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
+    }
+  }, [])
   const [categories, setCategories] = useState<string[]>(() => {
     try {
       const raw = sessionStorage.getItem('all_categories_cache_v2')
@@ -70,6 +101,7 @@ export function Header() {
 
   useEffect(() => {
     setMobileMenuOpen(false)
+    setActiveDropdown(null)
   }, [location.pathname, location.search, location.hash])
 
   return (
@@ -98,130 +130,201 @@ export function Header() {
           </div>
 
           {/* Center: Desktop Nav */}
-          <div className="hidden lg:flex justify-center lg:flex-[2]">
-            <NavigationMenu>
-              <NavigationMenuList className="space-x-2 xl:space-x-8">
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to="/"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
-                      )}
-                      onMouseEnter={() => prefetchLink('/')}
-                    >
-                      Inicio
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+          <nav
+            className="hidden lg:flex justify-center lg:flex-[2]"
+            aria-label="Navegação principal"
+          >
+            <ul className="flex items-center space-x-2 xl:space-x-8 list-none m-0 p-0">
+              <li>
+                <Link
+                  to="/"
+                  className="inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-[15px] font-medium text-[#2D0B0B] transition-colors hover:opacity-75 focus:outline-none"
+                  onMouseEnter={() => prefetchLink('/')}
+                >
+                  Início
+                </Link>
+              </li>
 
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to="/troca-e-devolucao"
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        'bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]',
-                      )}
-                      onMouseEnter={() => prefetchLink('/troca-e-devolucao')}
-                    >
-                      Troca e devolução
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+              <li>
+                <Link
+                  to="/troca-e-devolucao"
+                  className="inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-[15px] font-medium text-[#2D0B0B] transition-colors hover:opacity-75 focus:outline-none"
+                  onMouseEnter={() => prefetchLink('/troca-e-devolucao')}
+                >
+                  Troca e devolução
+                </Link>
+              </li>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
-                    Compre agora
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
-                    <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
-                      {categories.map((cat) => (
-                        <li key={cat}>
-                          <NavigationMenuLink asChild>
+              {/* Compre agora Dropdown */}
+              <li
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('compre-agora')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  aria-expanded={activeDropdown === 'compre-agora'}
+                  aria-haspopup="true"
+                  className="group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-[15px] font-medium text-[#2D0B0B] transition-colors hover:opacity-75 focus:outline-none"
+                  onClick={() =>
+                    setActiveDropdown((prev) => (prev === 'compre-agora' ? null : 'compre-agora'))
+                  }
+                >
+                  Compre agora
+                  <ChevronDown
+                    className={cn(
+                      'ml-1 h-3.5 w-3.5 transition-transform duration-200',
+                      activeDropdown === 'compre-agora' && 'rotate-180',
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {activeDropdown === 'compre-agora' && (
+                  <div className="absolute top-full left-0 pt-2 z-50">
+                    <div className="w-[240px] rounded-lg border border-gray-100 bg-white p-3 shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 duration-150">
+                      <ul className="flex flex-col gap-1 list-none m-0 p-0">
+                        {categories.length > 0 ? (
+                          categories.map((cat) => (
+                            <li key={cat}>
+                              <Link
+                                to={`/produtos?categoria=${encodeURIComponent(cat)}`}
+                                onClick={() => setActiveDropdown(null)}
+                                className="block select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-[#2D0B0B] hover:bg-muted/60 transition-colors outline-none"
+                                onMouseEnter={() =>
+                                  prefetchLink(`/produtos?categoria=${encodeURIComponent(cat)}`)
+                                }
+                              >
+                                {cat}
+                              </Link>
+                            </li>
+                          ))
+                        ) : (
+                          <li>
                             <Link
-                              to={`/produtos?category=${encodeURIComponent(cat)}`}
-                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
-                              onMouseEnter={() =>
-                                prefetchLink(`/produtos?category=${encodeURIComponent(cat)}`)
-                              }
+                              to="/produtos"
+                              onClick={() => setActiveDropdown(null)}
+                              className="block select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-[#2D0B0B] hover:bg-muted/60 transition-colors outline-none"
                             >
-                              {cat}
+                              Todas as Peças
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </li>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-transparent font-medium text-[15px] text-[#2D0B0B]">
-                    Fale conosco
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
-                    <ul className="grid w-[240px] gap-1 p-4 bg-white shadow-md border rounded-md">
-                      <li>
-                        <NavigationMenuLink asChild>
+              {/* Fale conosco Dropdown */}
+              <li
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('fale-conosco')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  aria-expanded={activeDropdown === 'fale-conosco'}
+                  aria-haspopup="true"
+                  className="group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-[15px] font-medium text-[#2D0B0B] transition-colors hover:opacity-75 focus:outline-none"
+                  onClick={() =>
+                    setActiveDropdown((prev) => (prev === 'fale-conosco' ? null : 'fale-conosco'))
+                  }
+                >
+                  Fale conosco
+                  <ChevronDown
+                    className={cn(
+                      'ml-1 h-3.5 w-3.5 transition-transform duration-200',
+                      activeDropdown === 'fale-conosco' && 'rotate-180',
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {activeDropdown === 'fale-conosco' && (
+                  <div className="absolute top-full left-0 pt-2 z-50">
+                    <div className="w-[240px] rounded-lg border border-gray-100 bg-white p-3 shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 duration-150">
+                      <ul className="flex flex-col gap-1 list-none m-0 p-0">
+                        <li>
                           <a
                             href="https://wa.me/5511934160219"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            onClick={() => setActiveDropdown(null)}
+                            className="flex items-center gap-3 select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none"
                           >
-                            <Phone className="h-4 w-4" /> WhatsApp
+                            <Phone className="h-4 w-4 shrink-0 text-[#2D0B0B]" /> WhatsApp
                           </a>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
+                        </li>
+                        <li>
                           <a
                             href="mailto:meyvesbr@gmail.com"
-                            className="flex items-center gap-3 select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                            onClick={() => setActiveDropdown(null)}
+                            className="flex items-center gap-3 select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none"
                           >
-                            <Mail className="h-4 w-4" /> E-mail
+                            <Mail className="h-4 w-4 shrink-0 text-[#2D0B0B]" /> E-mail
                           </a>
-                        </NavigationMenuLink>
-                      </li>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </li>
 
-                {isAdmin && (
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="text-[#3c6e47] font-bold bg-transparent hover:bg-transparent text-[15px]">
-                      ADMIN
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent className="p-0 border-0 bg-transparent shadow-none">
-                      <ul className="grid w-[200px] gap-1 p-4 bg-white shadow-md border rounded-md">
-                        <li>
-                          <NavigationMenuLink asChild>
+              {/* Admin Dropdown */}
+              {isAdmin && (
+                <li
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter('admin')}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    type="button"
+                    aria-expanded={activeDropdown === 'admin'}
+                    aria-haspopup="true"
+                    className="group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-[15px] font-bold text-[#3c6e47] transition-colors hover:opacity-75 focus:outline-none"
+                    onClick={() => setActiveDropdown((prev) => (prev === 'admin' ? null : 'admin'))}
+                  >
+                    ADMIN
+                    <ChevronDown
+                      className={cn(
+                        'ml-1 h-3.5 w-3.5 transition-transform duration-200',
+                        activeDropdown === 'admin' && 'rotate-180',
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  {activeDropdown === 'admin' && (
+                    <div className="absolute top-full left-0 pt-2 z-50">
+                      <div className="w-[200px] rounded-lg border border-gray-100 bg-white p-3 shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 duration-150">
+                        <ul className="flex flex-col gap-1 list-none m-0 p-0">
+                          <li>
                             <Link
                               to="/admin/upload"
-                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                              onClick={() => setActiveDropdown(null)}
+                              className="block select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none"
                             >
                               Dashboard
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                        <li>
-                          <NavigationMenuLink asChild>
+                          </li>
+                          <li>
                             <Link
                               to="/admin/appearance"
-                              className="block select-none rounded-md px-4 py-3 text-[13px] leading-none no-underline outline-none transition-colors hover:bg-muted hover:text-foreground focus:bg-muted font-medium uppercase tracking-wider"
+                              onClick={() => setActiveDropdown(null)}
+                              className="block select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none"
                             >
                               Aparência
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                )}
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              )}
+            </ul>
+          </nav>
 
           {/* Right: Actions */}
           <div className="flex items-center justify-end lg:flex-1 gap-6">
@@ -344,16 +447,26 @@ export function Header() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="flex flex-col bg-muted/30 py-2">
-                      {categories.map((cat) => (
+                      {categories.length > 0 ? (
+                        categories.map((cat) => (
+                          <Link
+                            key={cat}
+                            to={`/produtos?categoria=${encodeURIComponent(cat)}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="px-8 py-3 text-[13px] hover:bg-muted transition-colors uppercase tracking-wider font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            {cat}
+                          </Link>
+                        ))
+                      ) : (
                         <Link
-                          key={cat}
-                          to={`/produtos?category=${encodeURIComponent(cat)}`}
+                          to="/produtos"
                           onClick={() => setMobileMenuOpen(false)}
                           className="px-8 py-3 text-[13px] hover:bg-muted transition-colors uppercase tracking-wider font-medium text-muted-foreground hover:text-foreground"
                         >
-                          {cat}
+                          Todas as Peças
                         </Link>
-                      ))}
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

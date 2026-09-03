@@ -32,21 +32,23 @@ export default function ProductsPage() {
     description: string | null
   } | null>(null)
 
+  const activeCategory = category || searchParams.get('categoria')
+
   useEffect(() => {
     let isMounted = true
     setIsLoading(true)
 
-    const fetchCategoryInfo = category
+    const fetchCategoryInfo = activeCategory
       ? supabase
           .from('categories')
           .select('name, description')
-          .ilike('name', category)
+          .ilike('name', activeCategory)
           .maybeSingle()
       : Promise.resolve({ data: null })
 
     import('@/services/siteContent').then(({ getSiteContentCached }) => {
       Promise.all([
-        getProducts(category || undefined, promotion === 'true'),
+        getProducts(activeCategory || undefined, promotion === 'true'),
         getSiteContentCached(),
         fetchCategoryInfo,
       ])
@@ -71,7 +73,7 @@ export default function ProductsPage() {
     return () => {
       isMounted = false
     }
-  }, [category, promotion])
+  }, [activeCategory, promotion])
 
   const getText = (key: string, fallback: string) => siteContent[key] || fallback
 
@@ -82,23 +84,23 @@ export default function ProductsPage() {
   if (promotion === 'true') {
     title = 'Promoções'
     subtitle = 'Aproveite nossas ofertas exclusivas.'
-  } else if (category) {
+  } else if (activeCategory) {
     if (currentCategoryInfo?.description) {
-      title = currentCategoryInfo.name || category
+      title = currentCategoryInfo.name || activeCategory
       subtitle = currentCategoryInfo.description
     } else {
-      const catLower = category.toLowerCase()
+      const catLower = activeCategory.toLowerCase()
       if (catLower.includes('conjuntos')) {
-        title = getText('sets_title', getText('tab_name_conjuntos', category))
+        title = getText('sets_title', getText('tab_name_conjuntos', activeCategory))
         subtitle = getText('sets_description', subtitle)
       } else if (catLower.includes('cima')) {
-        title = getText('tops_title', getText('tab_name_partes_de_cima', category))
+        title = getText('tops_title', getText('tab_name_partes_de_cima', activeCategory))
         subtitle = getText('tops_description', subtitle)
       } else if (catLower.includes('baixo')) {
-        title = getText('bottoms_title', getText('tab_name_partes_de_baixo', category))
+        title = getText('bottoms_title', getText('tab_name_partes_de_baixo', activeCategory))
         subtitle = getText('bottoms_description', subtitle)
       } else {
-        title = category
+        title = activeCategory
         subtitle = null
       }
     }
