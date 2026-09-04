@@ -395,6 +395,14 @@ export function EmailTemplatesManager() {
                               <ShieldCheck className="h-3 w-3" /> Ao criar conta
                             </Badge>
                           )}
+                          {tpl.slug === 'first_purchase' && (
+                            <Badge
+                              variant="outline"
+                              className="mt-1.5 text-[10px] bg-purple-50 text-purple-800 border-purple-200 inline-flex items-center gap-1"
+                            >
+                              <Sparkles className="h-3 w-3" /> 1ª Compra
+                            </Badge>
+                          )}
                           {tpl.slug.startsWith('order_') && (
                             <Badge
                               variant="outline"
@@ -434,9 +442,13 @@ export function EmailTemplatesManager() {
                               <Pencil className="mr-1.5 h-3.5 w-3.5" />
                               Editar
                             </Button>
-                            {!['welcome', 'order_created', 'order_paid', 'order_shipped'].includes(
-                              tpl.slug,
-                            ) && (
+                            {![
+                              'welcome',
+                              'order_created',
+                              'order_paid',
+                              'order_shipped',
+                              'first_purchase',
+                            ].includes(tpl.slug) && (
                               <Button
                                 variant="ghost"
                                 size="sm"

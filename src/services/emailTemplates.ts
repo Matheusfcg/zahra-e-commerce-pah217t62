@@ -135,9 +135,10 @@ export async function sendTestEmail(
   targetEmail: string,
   customVariables?: Record<string, string>,
 ) {
+  // Dispara teste usando o template selecionado
   return await supabase.functions.invoke('process-order-notifications', {
     body: {
-      event_type: templateSlug === 'welcome' ? 'welcome_email' : 'welcome_email',
+      event_type: templateSlug === 'welcome' ? 'welcome_email' : 'order_created',
       customer_email: targetEmail,
       customer_name: customVariables?.nome_cliente || 'Cliente Teste',
     },

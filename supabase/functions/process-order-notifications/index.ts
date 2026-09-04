@@ -345,6 +345,32 @@ Deno.serve(async (req: Request) => {
       `
       : ''
 
+    // Check if this is the customer's very first order
+    let isFirstPurchase = false
+    if (event_type === 'order_created' || !event_type) {
+      try {
+        let previousOrdersQuery = supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .neq('id', order_id)
+
+        if (order.user_id) {
+          previousOrdersQuery = previousOrdersQuery.or(
+            `user_id.eq.${order.user_id},customer_email.ilike.${customerEmail.trim()}`,
+          )
+        } else {
+          previousOrdersQuery = previousOrdersQuery.ilike('customer_email', customerEmail.trim())
+        }
+
+        const { count: previousCount, error: countErr } = await previousOrdersQuery
+        if (!countErr && (previousCount === 0 || previousCount === null)) {
+          isFirstPurchase = true
+        }
+      } catch (countError) {
+        console.warn('Erro ao verificar histórico de pedidos para primeira compra:', countError)
+      }
+    }
+
     // Map template slug according to event_type
     let templateSlug = 'order_created'
     let headerTitle = 'Obrigado por comprar na Meyves!'
@@ -371,10 +397,15 @@ Deno.serve(async (req: Request) => {
       templateSlug = 'invoice_available'
       headerTitle = 'Nota Fiscal Disponível'
     } else {
-      templateSlug = 'order_created'
-      headerTitle = 'Obrigado por comprar na Meyves!'
+      // When creating order: if it's the customer's first purchase, use first_purchase template
+      if (isFirstPurchase) {
+        templateSlug = 'first_purchase'
+        headerTitle = 'Parabéns pela sua primeira compra!'
+      } else {
+        templateSlug = 'order_created'
+        headerTitle = 'Obrigado por comprar na Meyves!'
+      }
     }
-
     // Query database for template
     const { data: dbTemplate } = await supabase
       .from('email_templates')
@@ -407,7 +438,9 @@ Deno.serve(async (req: Request) => {
 
     // Fallbacks if no template exists in database
     if (!rawSubject) {
-      if (templateSlug === 'order_paid')
+      if (templateSlug === 'first_purchase')
+        rawSubject = `Parabéns pela sua primeira compra! 🎉 - Meyves`
+      else if (templateSlug === 'order_paid')
         rawSubject = `Pagamento Confirmado! Pedido #{{numero_pedido}} na Meyves`
       else if (templateSlug === 'order_shipped')
         rawSubject = `Seu Pedido #{{numero_pedido}} foi Enviado! - Meyves`
