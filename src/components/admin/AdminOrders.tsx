@@ -186,6 +186,12 @@ export function AdminOrders() {
         ),
       )
       setSelectedOrder({ ...selectedOrder, tracking_code: trackingCode, carrier_name: carrierName })
+      // If tracking code is populated, optionally notify client if order is already shipped or update status to shipped
+      if (trackingCode && selectedOrder.status === 'shipped') {
+        resendOrderEmail(selectedOrder.id, 'status_changed', { newStatus: 'shipped' })
+          .then(() => loadOrders())
+          .catch(() => {})
+      }
     }
     setUpdatingTracking(false)
   }
@@ -601,6 +607,11 @@ export function AdminOrders() {
                     </div>
                   )}
 
+                {selectedOrder.email_confirmation_status === 'sent' && (
+                  <div className="p-2 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                    E-mail transacional entregue ao serviço de envio (Resend) com sucesso!
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[#f0ede8]">
                   <Button
                     size="sm"

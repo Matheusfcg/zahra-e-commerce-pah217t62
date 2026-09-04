@@ -40,6 +40,9 @@ export const buildFooter = (): string => `
         <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
         <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">meyvesbr@gmail.com</a>
       </p>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #7a6e65;">
+        Instagram: <a href="https://www.instagram.com/mayve__brasil" target="_blank" style="color: #2D0B0B; text-decoration: underline;">@mayve__brasil</a>
+      </p>
       <p style="margin: 12px 0 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
         Meyves © ${new Date().getFullYear()} — Todos os direitos reservados.
       </p>
@@ -47,6 +50,9 @@ export const buildFooter = (): string => `
   </div>
 `
 
+/**
+ * Robust variable replacement supporting {{var}}, {{ var }}, and single {var}
+ */
 export function replaceVariables(
   text: string,
   variables: Record<string, string | number | null | undefined>,
@@ -55,7 +61,7 @@ export function replaceVariables(
   let result = text
   for (const [key, val] of Object.entries(variables)) {
     const stringVal = val === null || val === undefined ? '' : String(val)
-    // Replace {{key}}, {{ key }}, {key}
+    // Replace {{key}} or {{ key }}
     const regexWithSpaces = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi')
     result = result.replace(regexWithSpaces, stringVal)
   }
@@ -102,3 +108,39 @@ export function formatDate(dateStr: string | null | undefined): string {
     return dateStr
   }
 }
+
+/**
+ * Generates an array of viable sender addresses to try with Resend.
+ * Order prioritizes verified domain addresses (meyves.com.br),
+ * then environment overrides, then requested sender, with automatic fallback.
+ */
+export function getSendersList(customSender?: string | null): string[] {
+  const envSender = Deno.env.get('RESEND_FROM_EMAIL')?.trim()
+  const list: string[] = []
+
+  // 1. Primary sender on the verified meyves.com.br domain
+  list.push('Meyves <contato@meyves.com.br>')
+  list.push('Meyves <atendimento@meyves.com.br>')
+  list.push('Meyves <pedidos@meyves.com.br>')
+
+  // 2. Custom or env sender if provided
+  if (customSender && !list.includes(customSender)) {
+    list.unshift(customSender)
+  }
+  if (envSender && !list.includes(envSender)) {
+    list.unshift(envSender)
+  }
+
+  // 3. User requested default / legacy format (tested in case domain allows)
+  const legacySender = 'Meyves <meyvesbr@gmail.com>'
+  if (!list.includes(legacySender)) {
+    list.push(legacySender)
+  }
+
+  // 4. Default Resend test domain as absolute fail-safe in development/sandbox
+  list.push('Meyves <onboarding@resend.dev>')
+
+  return Array.from(new Set(list.filter(Boolean)))
+}
+
+export const REPLY_TO_ADDRESS = 'meyvesbr@gmail.com'

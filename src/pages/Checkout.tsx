@@ -295,22 +295,36 @@ const Checkout = () => {
 
       clearCart()
 
-      // Trigger Edge Function Notification Asynchronously with error tracking
-      supabase.functions
-        .invoke('process-order-notifications', {
-          body: {
-            order_id: order.id,
-            event_type: 'order_created',
-          },
-        })
-        .then(({ data, error }) => {
-          if (error || (data && data.success === false)) {
-            console.warn('Falha no envio inicial do e-mail:', error || data?.error)
-          } else {
-            console.log('E-mail de confirmação enviado com sucesso.')
-          }
-        })
-        .catch((err) => console.error('Edge function trigger error:', err))
+      // Trigger Edge Function Notification Asynchronously with error tracking and retry
+      const triggerOrderNotification = (attempt = 1) => {
+        supabase.functions
+          .invoke('process-order-notifications', {
+            body: {
+              order_id: order.id,
+              event_type: 'order_created',
+            },
+          })
+          .then(({ data, error }) => {
+            if (error || (data && data.success === false)) {
+              console.warn(
+                `Falha no envio de confirmação (tentativa ${attempt}):`,
+                error || data?.error,
+              )
+              if (attempt < 2) {
+                setTimeout(() => triggerOrderNotification(attempt + 1), 2500)
+              }
+            } else {
+              console.log('E-mail de confirmação enviado com sucesso.')
+            }
+          })
+          .catch((err) => {
+            console.error('Edge function trigger error:', err)
+            if (attempt < 2) {
+              setTimeout(() => triggerOrderNotification(attempt + 1), 2500)
+            }
+          })
+      }
+      triggerOrderNotification()
 
       // Update UI for PIX Flow
       const payload = generatePixPayload({

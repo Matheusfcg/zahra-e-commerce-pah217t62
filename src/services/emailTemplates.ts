@@ -130,16 +130,44 @@ export async function deleteEmailTemplate(id: string): Promise<{ error: any }> {
   return { error }
 }
 
+export interface EmailLogEntry {
+  id: string
+  template_slug: string | null
+  recipient_email: string
+  recipient_name: string | null
+  subject: string | null
+  from_address: string | null
+  status: string
+  resend_id: string | null
+  error_message: string | null
+  attempts: number
+  metadata: any
+  created_at: string
+}
+
+export async function fetchRecentEmailLogs(
+  limit = 20,
+): Promise<{ data: EmailLogEntry[] | null; error: any }> {
+  const { data, error } = await (supabase as any)
+    .from('email_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  return { data: (data as unknown as EmailLogEntry[]) || null, error }
+}
+
 export async function sendTestEmail(
   templateSlug: string,
   targetEmail: string,
   customVariables?: Record<string, string>,
 ) {
   // Dispara teste usando o template selecionado
+  const isWelcome = templateSlug === 'welcome'
   return await supabase.functions.invoke('process-order-notifications', {
     body: {
-      event_type: templateSlug === 'welcome' ? 'welcome_email' : 'order_created',
-      customer_email: targetEmail,
+      event_type: isWelcome ? 'welcome_email' : 'order_created',
+      customer_email: targetEmail.trim(),
       customer_name: customVariables?.nome_cliente || 'Cliente Teste',
     },
   })

@@ -96,15 +96,46 @@ export default function Auth() {
           toast({ title: error.message || 'Erro ao cadastrar', variant: 'destructive' })
         } else {
           // Trigger welcome email directly in background as well (alongside database trigger)
-          supabase.functions
-            .invoke('process-order-notifications', {
-              body: {
-                event_type: 'welcome_email',
-                customer_email: email.trim(),
-                customer_name: fullName.trim() || 'Cliente',
-              },
-            })
-            .catch((err) => console.warn('Welcome notification trigger note:', err))
+          // Robust retry flow to ensure delivery even if first attempt fails or network blips
+          try {
+            supabase.functions
+              .invoke('process-order-notifications', {
+                body: {
+                  event_type: 'welcome_email',
+                  customer_email: email.trim(),
+                  customer_name: fullName.trim() || 'Cliente',
+                },
+              })
+              .then(({ data, error }) => {
+                if (error || (data && data.success === false)) {
+                  console.warn(
+                    'Tentativa 1 de envio do e-mail de boas-vindas falhou:',
+                    error || data?.error,
+                  )
+                  // Retry once after 2 seconds
+                  setTimeout(() => {
+                    supabase.functions
+                      .invoke('process-order-notifications', {
+                        body: {
+                          event_type: 'welcome_email',
+                          customer_email: email.trim(),
+                          customer_name: fullName.trim() || 'Cliente',
+                        },
+                      })
+                      .catch((retryErr) =>
+                        console.warn('Retry do e-mail de boas-vindas falhou:', retryErr),
+                      )
+                  }, 2000)
+                } else {
+                  console.log('E-mail de boas-vindas disparado com sucesso:', data)
+                }
+              })
+              .catch((err) => {
+                console.warn('Erro ao invocar função de boas-vindas:', err)
+              })
+          } catch (invokeErr) {
+            console.warn('Falha no disparo do e-mail de boas-vindas:', invokeErr)
+          }
 
           toast({ title: 'Conta criada com sucesso! Faça login para continuar.' })
           setMode('login')

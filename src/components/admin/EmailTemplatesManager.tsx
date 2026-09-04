@@ -6,8 +6,11 @@ import {
   deleteEmailTemplate,
   htmlToPlainText,
   plainTextToHtml,
+  fetchRecentEmailLogs,
+  sendTestEmail,
   type EmailTemplate,
   type EmailTemplateInput,
+  type EmailLogEntry,
 } from '@/services/emailTemplates'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,6 +103,17 @@ export function EmailTemplatesManager() {
   // Copied tag feedback
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
 
+  // Test Email State
+  const [testEmailDialogOpen, setTestEmailDialogOpen] = useState(false)
+  const [testTemplate, setTestTemplate] = useState<EmailTemplate | null>(null)
+  const [testEmailAddress, setTestEmailAddress] = useState('meyvesbr@gmail.com')
+  const [sendingTest, setSendingTest] = useState(false)
+
+  // Audit Logs State
+  const [logs, setLogs] = useState<EmailLogEntry[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(false)
+  const [logsDialogOpen, setLogsDialogOpen] = useState(false)
+
   const loadTemplates = useCallback(async () => {
     setLoading(true)
     const { data, error } = await fetchEmailTemplates()
@@ -110,6 +124,52 @@ export function EmailTemplatesManager() {
     }
     setLoading(false)
   }, [])
+
+  const loadLogs = useCallback(async () => {
+    setLoadingLogs(true)
+    const { data, error } = await fetchRecentEmailLogs(30)
+    if (error) {
+      toast.error('Erro ao carregar logs de envio: ' + error.message)
+    } else {
+      setLogs(data || [])
+    }
+    setLoadingLogs(false)
+  }, [])
+
+  const handleOpenTestEmail = (template: EmailTemplate) => {
+    setTestTemplate(template)
+    setTestEmailDialogOpen(true)
+  }
+
+  const handleSendTest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!testTemplate) return
+    if (!testEmailAddress || !testEmailAddress.includes('@')) {
+      toast.error('Digite um e-mail válido para o teste.')
+      return
+    }
+
+    setSendingTest(true)
+    try {
+      const { data, error } = await sendTestEmail(testTemplate.slug, testEmailAddress, {
+        nome_cliente: 'Cliente Teste Meyves',
+      })
+      if (error || (data && data.success === false)) {
+        const msg = data?.error || error?.message || 'Falha no disparo do e-mail de teste'
+        toast.error(`Erro no disparo: ${msg}`)
+      } else {
+        toast.success(
+          `E-mail de teste enviado para ${testEmailAddress}! Verifique a caixa de entrada.`,
+        )
+        setTestEmailDialogOpen(false)
+        loadLogs()
+      }
+    } catch (err: any) {
+      toast.error('Erro ao comunicar com a função de e-mail: ' + err.message)
+    } finally {
+      setSendingTest(false)
+    }
+  }
 
   useEffect(() => {
     loadTemplates()
@@ -345,13 +405,26 @@ export function EmailTemplatesManager() {
               </div>
             </div>
           </div>
-          <Button
-            onClick={handleOpenCreate}
-            className="bg-[#2D0B0B] hover:bg-[#1a0606] text-white shrink-0 shadow-xs"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Modelo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                loadLogs()
+                setLogsDialogOpen(true)
+              }}
+              className="border-[#2D0B0B]/30 hover:bg-[#2D0B0B]/5 hover:text-[#2D0B0B] text-xs h-9"
+            >
+              <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+              Auditoria de Envios
+            </Button>
+            <Button
+              onClick={handleOpenCreate}
+              className="bg-[#2D0B0B] hover:bg-[#1a0606] text-white shrink-0 shadow-xs text-xs h-9"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Novo Modelo
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -422,6 +495,16 @@ export function EmailTemplatesManager() {
                         </TableCell>
                         <TableCell className="align-top py-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenTestEmail(tpl)}
+                              title="Enviar e-mail de teste para sua caixa de entrada"
+                              className="h-8 px-2.5 text-xs text-muted-foreground hover:text-[#2D0B0B]"
+                            >
+                              <Send className="mr-1 h-3.5 w-3.5" />
+                              Testar
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -728,6 +811,160 @@ export function EmailTemplatesManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Test Email Modal */}
+      <Dialog open={testEmailDialogOpen} onOpenChange={setTestEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-[#2D0B0B]" />
+              Enviar E-mail de Teste
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Envie um disparo real do modelo <strong>{testTemplate?.name}</strong> para validar se
+              está chegando na caixa de entrada.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSendTest} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="test_email" className="text-xs font-semibold">
+                E-mail de Destino para Teste
+              </Label>
+              <Input
+                id="test_email"
+                type="email"
+                value={testEmailAddress}
+                onChange={(e) => setTestEmailAddress(e.target.value)}
+                placeholder="seu-email@gmail.com"
+                required
+              />
+              <p className="text-[11px] text-muted-foreground">
+                O e-mail será disparado imediatamente utilizando o backend Resend configurado.
+              </p>
+            </div>
+
+            <DialogFooter className="pt-2 gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setTestEmailDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={sendingTest}
+                className="bg-[#2D0B0B] hover:bg-[#1a0606] text-white"
+              >
+                {sendingTest && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enviar Agora
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Audit Logs Modal */}
+      <Dialog open={logsDialogOpen} onOpenChange={setLogsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-[#2D0B0B]" />
+              Auditoria de Envios de E-mail (Logs Reais)
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Histórico detalhado de disparos efetuados pelo sistema, incluindo status do Resend e
+              eventuais falhas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {logs.length} último(s) registro(s) encontrados
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadLogs}
+                disabled={loadingLogs}
+                className="text-xs h-8"
+              >
+                {loadingLogs ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                Atualizar Logs
+              </Button>
+            </div>
+
+            {loadingLogs ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-[#2D0B0B]" />
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-12 border rounded-md bg-muted/20 text-muted-foreground text-xs">
+                Nenhum log de disparo gravado ainda.
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden text-xs">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40">
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead>Modelo</TableHead>
+                      <TableHead>Destinatário</TableHead>
+                      <TableHead>Remetente Usado</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {logs.map((log) => (
+                      <TableRow key={log.id} className="hover:bg-muted/20">
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#2D0B0B]">
+                          {log.template_slug || '—'}
+                        </TableCell>
+                        <TableCell className="font-mono text-[11px]">
+                          {log.recipient_email}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-[11px] truncate max-w-[160px]">
+                          {log.from_address || '—'}
+                        </TableCell>
+                        <TableCell>
+                          {log.status === 'sent' ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
+                            >
+                              Enviado
+                            </Badge>
+                          ) : log.status === 'error' ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]"
+                              title={log.error_message || ''}
+                            >
+                              Erro
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"
+                            >
+                              {log.status}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-2 border-t">
+            <Button onClick={() => setLogsDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

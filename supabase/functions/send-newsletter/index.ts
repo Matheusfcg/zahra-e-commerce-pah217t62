@@ -1,7 +1,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { replaceVariables, wrapInLayout } from '../_shared/email-templates.ts'
+import {
+  replaceVariables,
+  wrapInLayout,
+  getSendersList,
+  REPLY_TO_ADDRESS,
+} from '../_shared/email-templates.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,7 +22,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing')
+      throw new Error('Configuração do Supabase ausente no backend.')
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -37,7 +42,7 @@ Deno.serve(async (req) => {
 
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (!resendKey) {
-      console.log('RESEND_API_KEY not configured. Skipping email.')
+      console.warn('RESEND_API_KEY não configurada. Disparo de newsletter ignorado.')
       return new Response(
         JSON.stringify({
           success: true,
@@ -80,48 +85,72 @@ Deno.serve(async (req) => {
     const formattedContent = replaceVariables(baseBody, vars)
     const finalHtml = wrapInLayout(finalSubject, undefined, formattedContent)
 
-    const emails = subscribers.map((s: { email: string }) => s.email)
-    const fromAddress =
-      Deno.env.get('RESEND_NEWSLETTER_FROM_EMAIL') || 'Meyves <meyvesbr@gmail.com>'
-    const replyToAddress = 'meyvesbr@gmail.com'
-
-    const sendersToTry = [fromAddress]
-    if (!sendersToTry.includes('Meyves <meyvesbr@gmail.com>')) {
-      sendersToTry.unshift('Meyves <meyvesbr@gmail.com>')
-    }
+    const emails = subscribers.map((s: { email: string }) => s.email).filter(Boolean)
+    const sendersToTry = getSendersList()
 
     let sent = 0
     let failed = 0
+    let successfulSender = ''
+    let lastError = ''
 
     for (const sender of sendersToTry) {
-      const emailReq = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: sender,
-          reply_to: replyToAddress,
-          bcc: emails,
-          subject: finalSubject,
-          html: finalHtml,
-        }),
-      })
+      try {
+        const emailReq = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: sender,
+            reply_to: REPLY_TO_ADDRESS,
+            bcc: emails,
+            subject: finalSubject,
+            html: finalHtml,
+          }),
+        })
 
-      if (emailReq.ok) {
-        sent = emails.length
-        failed = 0
-        break
-      } else {
-        failed = emails.length
-        console.error(`Failed to send newsletter with sender ${sender}:`, await emailReq.text())
+        if (emailReq.ok) {
+          sent = emails.length
+          failed = 0
+          successfulSender = sender
+          break
+        } else {
+          lastError = await emailReq.text()
+          console.warn(`[send-newsletter] Tentativa via '${sender}' falhou: ${lastError}`)
+        }
+      } catch (err: any) {
+        lastError = err.message || 'Erro de rede'
       }
     }
 
-    return new Response(JSON.stringify({ success: true, sent, failed }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Log to email_logs
+    try {
+      await supabase.from('email_logs').insert({
+        template_slug: 'newsletter_broadcast',
+        recipient_email: `${emails.length} assinantes (BCC)`,
+        subject: finalSubject,
+        from_address: successfulSender || null,
+        status: sent > 0 ? 'sent' : 'error',
+        error_message: sent > 0 ? null : lastError,
+        metadata: { total_subscribers: emails.length },
+      })
+    } catch (logErr) {
+      console.warn('Erro ao registrar log de newsletter:', logErr)
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: sent > 0,
+        sent,
+        failed: sent > 0 ? 0 : emails.length,
+        from: successfulSender,
+        error: sent > 0 ? null : lastError,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   } catch (error: any) {
     console.error('Error sending newsletter:', error)
     return new Response(JSON.stringify({ error: error.message }), {

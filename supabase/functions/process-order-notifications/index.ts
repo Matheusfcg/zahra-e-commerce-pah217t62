@@ -7,6 +7,8 @@ import {
   wrapInLayout,
   formatShippingAddress,
   formatDate,
+  getSendersList,
+  REPLY_TO_ADDRESS,
 } from '../_shared/email-templates.ts'
 
 interface EmailRequestBody {
@@ -22,6 +24,120 @@ interface EmailRequestBody {
   customer_email?: string
   customer_name?: string
   user_id?: string
+}
+
+interface ResendSendResult {
+  success: boolean
+  id?: string
+  from?: string
+  error?: string
+  attempts: number
+}
+
+// Helper to send email via Resend with multiple fallbacks and retry
+async function sendEmailWithFallback(
+  resendKey: string,
+  sendersToTry: string[],
+  recipient: string,
+  subject: string,
+  html: string,
+): Promise<ResendSendResult> {
+  let lastError = ''
+  let attempts = 0
+
+  for (const sender of sendersToTry) {
+    attempts++
+    console.log(
+      `[sendEmailWithFallback] Tentativa ${attempts}: enviando para ${recipient} via '${sender}'`,
+    )
+    try {
+      const emailReq = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: sender,
+          to: recipient,
+          reply_to: REPLY_TO_ADDRESS,
+          subject,
+          html,
+        }),
+      })
+
+      if (emailReq.ok) {
+        const json = await emailReq.json()
+        console.log(
+          `[sendEmailWithFallback] Sucesso com sender '${sender}', ID Resend: ${json?.id}`,
+        )
+        return {
+          success: true,
+          id: json?.id,
+          from: sender,
+          attempts,
+        }
+      } else {
+        lastError = await emailReq.text()
+        console.warn(`[sendEmailWithFallback] Falha com sender '${sender}': ${lastError}`)
+      }
+    } catch (fetchErr: any) {
+      lastError = fetchErr.message || 'Erro de rede na chamada ao Resend'
+      console.warn(`[sendEmailWithFallback] Exceção com sender '${sender}':`, lastError)
+    }
+
+    // Small backoff before trying fallback sender
+    await new Promise((r) => setTimeout(r, 150))
+  }
+
+  return {
+    success: false,
+    error: lastError,
+    attempts,
+  }
+}
+
+// Log execution to public.email_logs table
+async function logEmailAttempt(
+  supabase: any,
+  data: {
+    template_slug: string
+    recipient_email: string
+    recipient_name?: string
+    subject: string
+    from_address?: string
+    status: 'sent' | 'error' | 'skipped'
+    resend_id?: string
+    error_message?: string
+    attempts?: number
+    metadata?: Record<string, any>
+  },
+) {
+  try {
+    const { error } = await supabase.from('email_logs').insert({
+      template_slug: data.template_slug,
+      recipient_email: data.recipient_email,
+      recipient_name: data.recipient_name || null,
+      subject: data.subject,
+      from_address: data.from_address || null,
+      status: data.status,
+      resend_id: data.resend_id || null,
+      error_message: data.error_message || null,
+      attempts: data.attempts || 1,
+      metadata: data.metadata || {},
+    })
+    if (error) {
+      console.warn('[logEmailAttempt] Aviso ao salvar log no banco:', error.message)
+    }
+  } catch (err) {
+    console.warn('[logEmailAttempt] Exceção ao gravar email_logs:', err)
+  }
+}
+
+function isValidEmail(email?: string | null): boolean {
+  if (!email || typeof email !== 'string') return false
+  const trimmed = email.trim()
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
 }
 
 Deno.serve(async (req: Request) => {
@@ -55,6 +171,7 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Configuração do Supabase ausente nas variáveis de ambiente.')
       return new Response(
         JSON.stringify({
           success: false,
@@ -66,17 +183,20 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Handler for welcome email (sent when a new customer registers)
+    // =========================================================================
+    // 1. FLUXO: BOAS-VINDAS (CADASTRO DE NOVO CLIENTE)
+    // =========================================================================
     if (event_type === 'welcome_email') {
-      const targetEmail = incomingEmail
-      if (!targetEmail || !targetEmail.includes('@')) {
+      const targetEmail = incomingEmail?.trim()
+      if (!isValidEmail(targetEmail)) {
+        console.warn(`[welcome_email] E-mail de cliente inválido: ${targetEmail}`)
         return new Response(
           JSON.stringify({ success: false, error: 'E-mail do cliente inválido.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
 
-      const clientName = incomingName || 'Cliente'
+      const clientName = incomingName?.trim() || 'Cliente'
 
       // Fetch dynamic template from database
       const { data: dbTemplate } = await supabase
@@ -85,22 +205,51 @@ Deno.serve(async (req: Request) => {
         .eq('slug', 'welcome')
         .single()
 
-      const defaultSubject = `Bem-vinda à Meyves, ${clientName}! ✨`
+      const defaultSubject = `Você acaba de se tornar uma MEYVE GIRL`
       const defaultBody = `
-        <p style="font-size: 16px; line-height: 1.6; color: #333; margin: 0 0 16px;">
-          Olá, <strong>{{nome_cliente}}</strong>! É um enorme prazer ter você conosco.
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          HEY, MEYVE GIRL! 💋
         </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-          Sua conta na <strong>Meyves</strong> foi criada com sucesso com o e-mail <strong>{{email_cliente}}</strong>. Agora você tem acesso exclusivo aos nossos lançamentos, novidades em primeira mão e uma experiência de compra única e sofisticada.
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Você acaba de entrar oficialmente para o nosso universo.
         </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 24px;">
-          Explore nosso catálogo e apaixone-se por peças cuidadosamente desenvolvidas para realçar sua beleza e estilo com elegância atemporal.
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Bem-vinda à Meyve!
         </p>
-        <div style="margin: 32px 0; text-align: center;">
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Por aqui, a gente acredita que look bom é aquele que faz você se olhar no espelho e pensar: <em>"Nossa, eu fiquei maravilhosa."</em> Sem esforço, com presença, elegância e aquele toque sofisticado que não passa despercebido.
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Então já prepara o coração, porque você vai receber primeiro:
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          •Novidades antes de todo mundo<br />
+          •Peças exclusivas que mal chegam e já têm fila<br />
+          •Lançamentos pensados para virar desejo<br />
+          •Ofertas e condições exclusivas<br />
+          •Inspirações para montar aquele look que parece caro, pensado e impecável
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          E um aviso:<br />você provavelmente vai entrar “só para dar uma olhadinha” e sair querendo tudo.
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Mas faz parte. A gente não julga. 🤝🏻
+        </p>
+        <div style="margin: 28px 0; text-align: center;">
           <a href="https://www.meyves.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
             Explorar Coleção Meyves
           </a>
         </div>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Agora conta pra gente: o que você está mais ansiosa para encontrar por aqui?<br />
+          Um vestido marcante? Uma alfaiataria impecável? Ou aquele look que resolve seu final de semana em segundos?
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Bem-vinda ao universo Meyve.
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
+          Com amor,<br />Sua nova melhor amiga de compras 🤍
+        </p>
       `
 
       const rawSubject = dbTemplate?.subject || defaultSubject
@@ -108,7 +257,7 @@ Deno.serve(async (req: Request) => {
 
       const vars = {
         nome_cliente: clientName,
-        email_cliente: targetEmail,
+        email_cliente: targetEmail!,
         nome_loja: 'Meyves',
       }
 
@@ -118,7 +267,15 @@ Deno.serve(async (req: Request) => {
 
       const resendKey = Deno.env.get('RESEND_API_KEY')
       if (!resendKey) {
-        console.warn('RESEND_API_KEY não configurada no ambiente.')
+        console.warn('[welcome_email] RESEND_API_KEY não configurada no ambiente.')
+        await logEmailAttempt(supabase, {
+          template_slug: 'welcome',
+          recipient_email: targetEmail!,
+          recipient_name: clientName,
+          subject: finalSubject,
+          status: 'skipped',
+          error_message: 'RESEND_API_KEY não configurada no backend',
+        })
         return new Response(
           JSON.stringify({
             success: true,
@@ -128,68 +285,53 @@ Deno.serve(async (req: Request) => {
         )
       }
 
-      const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Meyves <meyvesbr@gmail.com>'
-      const replyToAddress = 'meyvesbr@gmail.com'
+      const sendersToTry = getSendersList()
+      const sendResult = await sendEmailWithFallback(
+        resendKey,
+        sendersToTry,
+        targetEmail!,
+        finalSubject,
+        finalHtml,
+      )
 
-      const sendersToTry = [fromAddress]
-      if (!sendersToTry.includes('Meyves <meyvesbr@gmail.com>')) {
-        sendersToTry.unshift('Meyves <meyvesbr@gmail.com>')
-      }
-
-      let emailRes = null
-      let sendSuccess = false
-      let lastError = ''
-
-      for (const sender of sendersToTry) {
-        try {
-          const emailReq = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${resendKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: sender,
-              to: targetEmail,
-              reply_to: replyToAddress,
-              subject: finalSubject,
-              html: finalHtml,
-            }),
-          })
-
-          if (emailReq.ok) {
-            emailRes = await emailReq.json()
-            sendSuccess = true
-            break
-          } else {
-            lastError = await emailReq.text()
-            console.warn(`Tentativa de envio de boas-vindas via '${sender}' falhou: ${lastError}`)
-          }
-        } catch (fetchErr: any) {
-          lastError = fetchErr.message || 'Erro de rede'
-        }
-      }
+      await logEmailAttempt(supabase, {
+        template_slug: 'welcome',
+        recipient_email: targetEmail!,
+        recipient_name: clientName,
+        subject: finalSubject,
+        from_address: sendResult.from,
+        status: sendResult.success ? 'sent' : 'error',
+        resend_id: sendResult.id,
+        error_message: sendResult.error,
+        attempts: sendResult.attempts,
+        metadata: { clientName, event_type },
+      })
 
       return new Response(
         JSON.stringify({
-          success: sendSuccess,
-          message: sendSuccess
+          success: sendResult.success,
+          message: sendResult.success
             ? 'E-mail de boas-vindas enviado com sucesso!'
             : 'Falha ao enviar e-mail de boas-vindas.',
-          data: emailRes,
-          error: sendSuccess ? null : lastError,
+          data: sendResult.id ? { id: sendResult.id, from: sendResult.from } : null,
+          error: sendResult.success ? null : sendResult.error,
         }),
         {
-          status: sendSuccess ? 200 : 502,
+          status: sendResult.success ? 200 : 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
     }
 
-    // Otherwise, order-related event
+    // =========================================================================
+    // 2. FLUXOS RELACIONADOS A PEDIDOS
+    // =========================================================================
     if (!order_id) {
       return new Response(
-        JSON.stringify({ success: false, error: 'O campo order_id é obrigatório.' }),
+        JSON.stringify({
+          success: false,
+          error: 'O campo order_id é obrigatório para notificações de pedidos.',
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -218,17 +360,19 @@ Deno.serve(async (req: Request) => {
       .eq('order_id', order_id)
 
     if (itemsError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Erro ao buscar itens do pedido: ${itemsError.message}`,
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+      console.warn(`[order_email] Erro ao buscar itens do pedido ${order_id}:`, itemsError.message)
     }
 
-    const customerEmail = order.customer_email || incomingEmail
-    if (!customerEmail || !customerEmail.includes('@')) {
+    const customerEmail = (order.customer_email || incomingEmail)?.trim()
+    if (!isValidEmail(customerEmail)) {
+      await supabase
+        .from('orders')
+        .update({
+          email_confirmation_status: 'error',
+          email_confirmation_error: 'E-mail do cliente inválido ou ausente.',
+        })
+        .eq('id', order_id)
+
       return new Response(
         JSON.stringify({
           success: false,
@@ -238,19 +382,29 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    const customerName = order.customer_name || incomingName || 'Cliente'
+    const customerName = (order.customer_name || incomingName)?.trim() || 'Cliente'
     const shortId = order_id.split('-')[0].toUpperCase()
 
     const resendKey = Deno.env.get('RESEND_API_KEY')
     if (!resendKey) {
-      console.warn('RESEND_API_KEY não configurada no ambiente.')
+      console.warn('[order_email] RESEND_API_KEY não configurada no ambiente.')
       await supabase
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error: 'Chave RESEND_API_KEY não configurada.',
+          email_confirmation_error: 'Chave RESEND_API_KEY não configurada no ambiente.',
         })
         .eq('id', order_id)
+
+      await logEmailAttempt(supabase, {
+        template_slug: event_type,
+        recipient_email: customerEmail!,
+        recipient_name: customerName,
+        subject: `Pedido #${shortId}`,
+        status: 'skipped',
+        error_message: 'Chave RESEND_API_KEY não configurada.',
+        metadata: { order_id },
+      })
 
       return new Response(
         JSON.stringify({
@@ -311,7 +465,7 @@ Deno.serve(async (req: Request) => {
 
     const invoiceBtn = invoiceUrl
       ? `<div style="margin-top: 24px; text-align: center;">
-          <a href="${invoiceUrl}" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 0; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">Visualizar Nota Fiscal</a>
+          <a href="${invoiceUrl}" target="_blank" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 12px 24px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">Visualizar Nota Fiscal</a>
         </div>`
       : ''
 
@@ -345,9 +499,9 @@ Deno.serve(async (req: Request) => {
       `
       : ''
 
-    // Check if this is the customer's very first order
+    // Check if this is the customer's very first purchase
     let isFirstPurchase = false
-    if (event_type === 'order_created' || !event_type) {
+    if (event_type === 'order_created' || event_type === 'resend_confirmation' || !event_type) {
       try {
         let previousOrdersQuery = supabase
           .from('orders')
@@ -365,13 +519,14 @@ Deno.serve(async (req: Request) => {
         const { count: previousCount, error: countErr } = await previousOrdersQuery
         if (!countErr && (previousCount === 0 || previousCount === null)) {
           isFirstPurchase = true
+          console.log(`[order_email] Primeira compra identificada para o cliente ${customerEmail}`)
         }
       } catch (countError) {
-        console.warn('Erro ao verificar histórico de pedidos para primeira compra:', countError)
+        console.warn('[order_email] Erro ao verificar histórico de primeira compra:', countError)
       }
     }
 
-    // Map template slug according to event_type
+    // Slug and header mappings for all order statuses
     let templateSlug = 'order_created'
     let headerTitle = 'Obrigado por comprar na Meyves!'
     const currentStatus = new_status || order.status
@@ -397,7 +552,7 @@ Deno.serve(async (req: Request) => {
       templateSlug = 'invoice_available'
       headerTitle = 'Nota Fiscal Disponível'
     } else {
-      // When creating order: if it's the customer's first purchase, use first_purchase template
+      // Order created / resend: If first purchase, trigger first_purchase template
       if (isFirstPurchase) {
         templateSlug = 'first_purchase'
         headerTitle = 'Parabéns pela sua primeira compra!'
@@ -406,6 +561,7 @@ Deno.serve(async (req: Request) => {
         headerTitle = 'Obrigado por comprar na Meyves!'
       }
     }
+
     // Query database for template
     const { data: dbTemplate } = await supabase
       .from('email_templates')
@@ -413,14 +569,14 @@ Deno.serve(async (req: Request) => {
       .eq('slug', templateSlug)
       .single()
 
-    // Variable map
+    // Complete variable map covering all templates
     const templateVariables: Record<string, string | number | null | undefined> = {
       nome_cliente: customerName,
       numero_pedido: shortId,
       id_pedido: order_id,
       email_cliente: customerEmail,
       valor_total: totalAmount.toFixed(2).replace('.', ','),
-      forma_pagamento: order.payment_method || 'PIX',
+      forma_pagamento: (order.payment_method || 'PIX').toUpperCase(),
       info_frete: shippingInfo,
       status_pedido: getStatusLabel(currentStatus),
       codigo_rastreio: order.tracking_code || '',
@@ -431,6 +587,7 @@ Deno.serve(async (req: Request) => {
       bloco_data_estimada: estimatedDateBlock,
       bloco_rastreamento: trackingBlock,
       botao_nota_fiscal: invoiceBtn,
+      nome_loja: 'Meyves',
     }
 
     let rawSubject = dbTemplate?.subject
@@ -470,85 +627,64 @@ Deno.serve(async (req: Request) => {
     const finalBody = replaceVariables(rawBody, templateVariables)
     const finalHtml = wrapInLayout(headerTitle, `Pedido #${shortId}`, finalBody)
 
-    // Sender config
-    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'Meyves <meyvesbr@gmail.com>'
-    const replyToAddress = 'meyvesbr@gmail.com'
+    const sendersToTry = getSendersList()
+    const sendResult = await sendEmailWithFallback(
+      resendKey,
+      sendersToTry,
+      customerEmail!,
+      finalSubject,
+      finalHtml,
+    )
 
-    const sendersToTry = [fromAddress]
-    if (!sendersToTry.includes('Meyves <meyvesbr@gmail.com>')) {
-      sendersToTry.unshift('Meyves <meyvesbr@gmail.com>')
-    }
-
-    let emailRes: any = null
-    let sendSuccess = false
-    let lastError = ''
-
-    for (const sender of sendersToTry) {
-      try {
-        const emailReq = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: sender,
-            to: customerEmail,
-            reply_to: replyToAddress,
-            subject: finalSubject,
-            html: finalHtml,
-          }),
+    // Update order confirmation status
+    if (sendResult.success) {
+      await supabase
+        .from('orders')
+        .update({
+          email_confirmation_status: 'sent',
+          email_confirmation_sent_at: new Date().toISOString(),
+          email_confirmation_error: null,
         })
-
-        if (emailReq.ok) {
-          emailRes = await emailReq.json()
-          sendSuccess = true
-          break
-        } else {
-          lastError = await emailReq.text()
-          console.warn(`Tentativa de envio via '${sender}' falhou: ${lastError}`)
-        }
-      } catch (fetchErr: any) {
-        lastError = fetchErr.message || 'Erro de rede na requisição'
-        console.warn(`Exceção ao tentar envio via '${sender}':`, fetchErr)
-      }
-    }
-
-    if (!sendSuccess) {
-      console.error('Erro final ao enviar e-mail via Resend:', lastError)
-
+        .eq('id', order_id)
+    } else {
       await supabase
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error: `Falha no envio Resend: ${lastError}`,
+          email_confirmation_error: `Falha no envio Resend: ${sendResult.error}`,
         })
         .eq('id', order_id)
+    }
 
+    // Always log attempt in public.email_logs
+    await logEmailAttempt(supabase, {
+      template_slug: templateSlug,
+      recipient_email: customerEmail!,
+      recipient_name: customerName,
+      subject: finalSubject,
+      from_address: sendResult.from,
+      status: sendResult.success ? 'sent' : 'error',
+      resend_id: sendResult.id,
+      error_message: sendResult.error,
+      attempts: sendResult.attempts,
+      metadata: { order_id, event_type, is_first_purchase: isFirstPurchase },
+    })
+
+    if (!sendResult.success) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Falha no envio do e-mail: ${lastError}`,
+          error: `Falha no envio do e-mail: ${sendResult.error}`,
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    // Mark email as sent
-    await supabase
-      .from('orders')
-      .update({
-        email_confirmation_status: 'sent',
-        email_confirmation_sent_at: new Date().toISOString(),
-        email_confirmation_error: null,
-      })
-      .eq('id', order_id)
-
     return new Response(
       JSON.stringify({
         success: true,
         message: 'E-mail enviado com sucesso com base no modelo dinâmico.',
-        data: emailRes,
+        data: { id: sendResult.id, from: sendResult.from },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
