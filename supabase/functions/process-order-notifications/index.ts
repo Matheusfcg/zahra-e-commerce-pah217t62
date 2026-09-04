@@ -387,16 +387,11 @@ Deno.serve(async (req: Request) => {
         transportadora: 'Correios',
         link_nota_fiscal: 'https://www.meyves.com.br',
         itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
-        endereco_entrega:
-          'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
-        bloco_data_estimada:
-          '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
-        bloco_rastreamento:
-          '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
-        botao_nota_fiscal:
-          '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
-        conteudo_newsletter:
-          'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
+        endereco_entrega: 'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
+        bloco_data_estimada: '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
+        bloco_rastreamento: '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
+        botao_nota_fiscal: '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
+        conteudo_newsletter: 'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
         assunto_newsletter: 'Novidades Exclusivas Meyves',
         nome_loja: 'Meyves',
       }
@@ -405,11 +400,7 @@ Deno.serve(async (req: Request) => {
       const rawBody = dbTemplate?.body_html || `<p>Este é um teste do modelo ${templateSlug}.</p>`
       const finalSubject = replaceVariables(rawSubject, dummyVars)
       const finalBody = replaceVariables(rawBody, dummyVars)
-      const finalHtml = wrapInLayout(
-        'Teste de Notificação Meyves',
-        `Modelo: ${templateSlug}`,
-        finalBody,
-      )
+      const finalHtml = wrapInLayout('Teste de Notificação Meyves', `Modelo: ${templateSlug}`, finalBody)
 
       const sendersToTry = getSendersList()
       const sendResult = await sendEmailWithFallback(
@@ -505,8 +496,7 @@ Deno.serve(async (req: Request) => {
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error:
-            'Chave RESEND_API_KEY não configurada no ambiente nem em site_settings.',
+          email_confirmation_error: 'Chave RESEND_API_KEY não configurada no ambiente nem em site_settings.',
         })
         .eq('id', order_id!)
 
