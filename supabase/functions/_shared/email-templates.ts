@@ -118,29 +118,63 @@ export function getSendersList(customSender?: string | null): string[] {
   const envSender = Deno.env.get('RESEND_FROM_EMAIL')?.trim()
   const list: string[] = []
 
-  // 1. Primary sender on the verified meyves.com.br domain
-  list.push('Meyves <contato@meyves.com.br>')
-  list.push('Meyves <atendimento@meyves.com.br>')
-  list.push('Meyves <pedidos@meyves.com.br>')
-
-  // 2. Custom or env sender if provided
-  if (customSender && !list.includes(customSender)) {
-    list.unshift(customSender)
+  // 1. Prioritize custom or environment override if supplied
+  if (customSender) {
+    list.push(customSender)
   }
   if (envSender && !list.includes(envSender)) {
-    list.unshift(envSender)
+    list.push(envSender)
   }
 
-  // 3. User requested default / legacy format (tested in case domain allows)
-  const legacySender = 'Meyves <meyvesbr@gmail.com>'
-  if (!list.includes(legacySender)) {
-    list.push(legacySender)
+  // 2. Primary sender addresses on the official meyves.com.br domain
+  if (!list.includes('Meyves <contato@meyves.com.br>')) {
+    list.push('Meyves <contato@meyves.com.br>')
+  }
+  if (!list.includes('Meyves <atendimento@meyves.com.br>')) {
+    list.push('Meyves <atendimento@meyves.com.br>')
+  }
+  if (!list.includes('Meyves <pedidos@meyves.com.br>')) {
+    list.push('Meyves <pedidos@meyves.com.br>')
   }
 
-  // 4. Default Resend test domain as absolute fail-safe in development/sandbox
+  // 3. Fail-safe fallback sandbox sender provided by Resend (useful if domain is not yet verified)
   list.push('Meyves <onboarding@resend.dev>')
 
   return Array.from(new Set(list.filter(Boolean)))
+}
+
+/**
+ * Checks verification status of domains on Resend account.
+ */
+export async function checkResendDomainStatus(
+  resendKey: string,
+  domainName = 'meyves.com.br',
+): Promise<{
+  found: boolean
+  status?: string
+  raw?: any
+  error?: string
+}> {
+  try {
+    const res = await fetch('https://api.resend.com/domains', {
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+      },
+    })
+    if (!res.ok) {
+      const errTxt = await res.text()
+      return { found: false, error: `HTTP ${res.status}: ${errTxt}` }
+    }
+    const data = await res.json()
+    const domains: any[] = data?.data || []
+    const match = domains.find((d: any) => d.name?.toLowerCase() === domainName.toLowerCase())
+    if (!match) {
+      return { found: false, raw: domains }
+    }
+    return { found: true, status: match.status, raw: match }
+  } catch (err: any) {
+    return { found: false, error: err.message || 'Erro ao consultar domínios no Resend' }
+  }
 }
 
 export const REPLY_TO_ADDRESS = 'meyvesbr@gmail.com'

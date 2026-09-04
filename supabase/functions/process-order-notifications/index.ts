@@ -10,9 +10,11 @@ import {
   getSendersList,
   REPLY_TO_ADDRESS,
   getResendApiKey,
+  checkResendDomainStatus,
 } from '../_shared/email-templates.ts'
 
 interface EmailRequestBody {
+  action?: 'send' | 'process_pending' | 'check_domain'
   order_id?: string
   event_type?: string
   new_status?: string
@@ -21,6 +23,7 @@ interface EmailRequestBody {
   customer_name?: string
   user_id?: string
   test_mode?: boolean
+  specific_log_id?: string
 }
 
 interface ResendSendResult {
@@ -75,16 +78,27 @@ async function sendEmailWithFallback(
           attempts,
         }
       } else {
-        lastError = await emailReq.text()
+        const status = emailReq.status
+        const text = await emailReq.text()
+        lastError = `[HTTP ${status}] ${text}`
         console.warn(`[sendEmailWithFallback] Falha com sender '${sender}': ${lastError}`)
+
+        try {
+          const parsed = JSON.parse(text)
+          if (parsed?.message) {
+            lastError = `[HTTP ${status}] ${parsed.message}`
+          }
+        } catch {
+          // ignore json parse error
+        }
       }
     } catch (fetchErr: any) {
       lastError = fetchErr.message || 'Erro de rede na chamada ao Resend'
       console.warn(`[sendEmailWithFallback] Exceção com sender '${sender}':`, lastError)
     }
 
-    // Small backoff before trying fallback sender
-    await new Promise((r) => setTimeout(r, 150))
+    // Backoff before trying fallback sender
+    await new Promise((r) => setTimeout(r, 200))
   }
 
   return {
@@ -98,12 +112,13 @@ async function sendEmailWithFallback(
 async function logEmailAttempt(
   supabase: any,
   data: {
+    id?: string
     template_slug: string
     recipient_email: string
     recipient_name?: string
     subject: string
     from_address?: string
-    status: 'sent' | 'error' | 'skipped'
+    status: 'sent' | 'error' | 'skipped' | 'pending'
     resend_id?: string
     error_message?: string
     attempts?: number
@@ -111,6 +126,27 @@ async function logEmailAttempt(
   },
 ) {
   try {
+    if (data.id) {
+      const { error } = await supabase
+        .from('email_logs')
+        .update({
+          template_slug: data.template_slug,
+          recipient_email: data.recipient_email,
+          recipient_name: data.recipient_name || null,
+          subject: data.subject,
+          from_address: data.from_address || null,
+          status: data.status,
+          resend_id: data.resend_id || null,
+          error_message: data.error_message || null,
+          attempts: data.attempts || 1,
+          metadata: data.metadata || {},
+        })
+        .eq('id', data.id)
+
+      if (!error) return
+      console.warn('[logEmailAttempt] Aviso ao atualizar log existente:', error.message)
+    }
+
     const { error } = await supabase.from('email_logs').insert({
       template_slug: data.template_slug,
       recipient_email: data.recipient_email,
@@ -137,33 +173,65 @@ function isValidEmail(email?: string | null): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
 }
 
+function buildTemplateHtml(
+  templateSlug: string,
+  dbTemplate: any,
+  vars: Record<string, any>,
+  headerTitle: string,
+  subtitle?: string,
+): { subject: string; html: string } {
+  let rawSubject = dbTemplate?.subject
+  let rawBody = dbTemplate?.body_html
+
+  if (!rawSubject) {
+    if (templateSlug === 'welcome') rawSubject = 'Você acaba de se tornar uma MEYVE GIRL'
+    else if (templateSlug === 'first_purchase')
+      rawSubject = 'Parabéns pela sua primeira compra! 🎉 - Meyves'
+    else if (templateSlug === 'order_paid')
+      rawSubject = 'Pagamento Confirmado! Pedido #{{numero_pedido}} na Meyves'
+    else if (templateSlug === 'order_shipped')
+      rawSubject = 'Seu Pedido #{{numero_pedido}} foi Enviado! - Meyves'
+    else if (templateSlug === 'order_delivered')
+      rawSubject = 'Seu Pedido #{{numero_pedido}} foi Entregue! - Meyves'
+    else if (templateSlug === 'order_canceled')
+      rawSubject = 'Cancelamento do Pedido #{{numero_pedido}} na Meyves'
+    else if (templateSlug === 'invoice_available')
+      rawSubject = 'Nota Fiscal disponível - Pedido #{{numero_pedido}} na Meyves'
+    else if (templateSlug === 'newsletter_broadcast')
+      rawSubject = 'Novidades e Destaques Exclusivos Meyves'
+    else rawSubject = 'Obrigado por comprar na Meyves! Pedido #{{numero_pedido}}'
+  }
+
+  if (!rawBody) {
+    rawBody = `
+      <p style="font-size: 15px; line-height: 1.6; color: #333; margin: 0 0 16px;">
+        Olá, <strong>{{nome_cliente}}</strong>!
+      </p>
+      <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
+        Esta é uma notificação do seu pedido <strong>#{{numero_pedido}}</strong> da Meyves.
+      </p>
+    `
+  }
+
+  const finalSubject = replaceVariables(rawSubject, vars)
+  const finalBody = replaceVariables(rawBody, vars)
+  const finalHtml = wrapInLayout(headerTitle, subtitle, finalBody)
+
+  return { subject: finalSubject, html: finalHtml }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    let body: EmailRequestBody
+    let body: EmailRequestBody = {}
     try {
       body = await req.json()
     } catch {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Formato de corpo da requisição inválido (JSON esperado).',
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+      body = {}
     }
-
-    const {
-      order_id,
-      event_type = 'order_created',
-      new_status,
-      estimated_delivery_date,
-      customer_email: incomingEmail,
-      customer_name: incomingName,
-    } = body
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -179,10 +247,178 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey)
+    const resendKey = await getResendApiKey(supabase)
 
     // =========================================================================
-    // 1. FLUXO: BOAS-VINDAS (CADASTRO DE NOVO CLIENTE)
+    // ACTION: CHECK DOMAIN VERIFICATION
     // =========================================================================
+    if (body.action === 'check_domain') {
+      if (!resendKey) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            configured: false,
+            error: 'RESEND_API_KEY não configurada.',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      const domainInfo = await checkResendDomainStatus(resendKey, 'meyves.com.br')
+      return new Response(
+        JSON.stringify({
+          success: true,
+          configured: true,
+          domain: 'meyves.com.br',
+          verification: domainInfo,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // =========================================================================
+    // ACTION: PROCESS PENDING LOGS (PROCESSOR DE FILA / RETRY ROBUSTO)
+    // =========================================================================
+    if (body.action === 'process_pending') {
+      if (!resendKey) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'RESEND_API_KEY não está configurada para processar pendências.',
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      let pendingQuery = supabase
+        .from('email_logs')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+
+      if (body.specific_log_id) {
+        pendingQuery = pendingQuery.eq('id', body.specific_log_id)
+      } else {
+        pendingQuery = pendingQuery.limit(20)
+      }
+
+      const { data: pendingRows, error: pendingErr } = await pendingQuery
+      if (pendingErr) {
+        return new Response(JSON.stringify({ success: false, error: pendingErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const results: any[] = []
+      const sendersToTry = getSendersList()
+
+      for (const row of pendingRows || []) {
+        const rowSlug = row.template_slug || 'welcome'
+        const recipient = row.recipient_email
+        const clientName = row.recipient_name || 'Cliente Meyves'
+
+        // Fetch template
+        const { data: dbTemplate } = await supabase
+          .from('email_templates')
+          .select('*')
+          .eq('slug', rowSlug)
+          .maybeSingle()
+
+        const dummyVars: Record<string, any> = {
+          nome_cliente: clientName,
+          numero_pedido: 'TESTE-101',
+          id_pedido: 'teste-101',
+          email_cliente: recipient,
+          valor_total: '189,90',
+          forma_pagamento: 'PIX',
+          info_frete: 'Sedex — Grátis (2 dias úteis)',
+          status_pedido: 'Em processamento',
+          codigo_rastreio: 'BR123456789MEY',
+          transportadora: 'Correios',
+          link_nota_fiscal: 'https://www.meyves.com.br',
+          itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
+          endereco_entrega:
+            'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
+          bloco_data_estimada:
+            '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
+          bloco_rastreamento:
+            '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
+          botao_nota_fiscal:
+            '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
+          conteudo_newsletter: 'Novidades exclusivas na coleção Meyves.',
+          assunto_newsletter: 'Destaques Exclusivos Meyves',
+          nome_loja: 'Meyves',
+        }
+
+        const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
+          rowSlug,
+          dbTemplate,
+          dummyVars,
+          row.subject || 'Notificação Meyves',
+          `Modelo: ${rowSlug}`,
+        )
+
+        const sendResult = await sendEmailWithFallback(
+          resendKey,
+          sendersToTry,
+          recipient,
+          row.subject || finalSubject,
+          finalHtml,
+        )
+
+        const currentAttempts = (row.attempts || 1) + 1
+        const newStatus = sendResult.success ? 'sent' : 'error'
+
+        await logEmailAttempt(supabase, {
+          id: row.id,
+          template_slug: rowSlug,
+          recipient_email: recipient,
+          recipient_name: clientName,
+          subject: row.subject || finalSubject,
+          from_address: sendResult.from || row.from_address,
+          status: newStatus,
+          resend_id: sendResult.id,
+          error_message: sendResult.error,
+          attempts: currentAttempts,
+          metadata: {
+            ...row.metadata,
+            processed_at: new Date().toISOString(),
+            retry_count: currentAttempts,
+          },
+        })
+
+        results.push({
+          id: row.id,
+          template_slug: rowSlug,
+          status: newStatus,
+          resend_id: sendResult.id,
+          error: sendResult.error,
+        })
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          processed_count: results.length,
+          results,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // =========================================================================
+    // DEFAULT DISPATCH LOGIC: WELCOME, TESTS OR ORDER NOTIFICATIONS
+    // =========================================================================
+    const {
+      order_id,
+      event_type = 'order_created',
+      new_status,
+      estimated_delivery_date,
+      customer_email: incomingEmail,
+      customer_name: incomingName,
+    } = body
+
+    // 1. FLUXO: BOAS-VINDAS (CADASTRO DE NOVO CLIENTE)
     if (event_type === 'welcome_email') {
       const targetEmail = incomingEmail?.trim()
       if (!isValidEmail(targetEmail)) {
@@ -195,62 +431,11 @@ Deno.serve(async (req: Request) => {
 
       const clientName = incomingName?.trim() || 'Cliente'
 
-      // Fetch dynamic template from database
       const { data: dbTemplate } = await supabase
         .from('email_templates')
         .select('*')
         .eq('slug', 'welcome')
-        .single()
-
-      const defaultSubject = `Você acaba de se tornar uma MEYVE GIRL`
-      const defaultBody = `
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          HEY, MEYVE GIRL! 💋
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Você acaba de entrar oficialmente para o nosso universo.
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Bem-vinda à Meyve!
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Por aqui, a gente acredita que look bom é aquele que faz você se olhar no espelho e pensar: <em>"Nossa, eu fiquei maravilhosa."</em> Sem esforço, com presença, elegância e aquele toque sofisticado que não passa despercebido.
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Então já prepara o coração, porque você vai receber primeiro:
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          •Novidades antes de todo mundo<br />
-          •Peças exclusivas que mal chegam e já têm fila<br />
-          •Lançamentos pensados para virar desejo<br />
-          •Ofertas e condições exclusivas<br />
-          •Inspirações para montar aquele look que parece caro, pensado e impecável
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          E um aviso:<br />você provavelmente vai entrar “só para dar uma olhadinha” e sair querendo tudo.
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Mas faz parte. A gente não julga. 🤝🏻
-        </p>
-        <div style="margin: 28px 0; text-align: center;">
-          <a href="https://www.meyves.com.br/produtos" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em;">
-            Explorar Coleção Meyves
-          </a>
-        </div>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Agora conta pra gente: o que você está mais ansiosa para encontrar por aqui?<br />
-          Um vestido marcante? Uma alfaiataria impecável? Ou aquele look que resolve seu final de semana em segundos?
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Bem-vinda ao universo Meyve.
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #333333; margin: 0 0 16px;">
-          Com amor,<br />Sua nova melhor amiga de compras 🤍
-        </p>
-      `
-
-      const rawSubject = dbTemplate?.subject || defaultSubject
-      const rawBody = dbTemplate?.body_html || defaultBody
+        .maybeSingle()
 
       const vars = {
         nome_cliente: clientName,
@@ -258,11 +443,13 @@ Deno.serve(async (req: Request) => {
         nome_loja: 'Meyves',
       }
 
-      const finalSubject = replaceVariables(rawSubject, vars)
-      const filledBody = replaceVariables(rawBody, vars)
-      const finalHtml = wrapInLayout('Boas-vindas à Meyves', undefined, filledBody)
+      const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
+        'welcome',
+        dbTemplate,
+        vars,
+        'Boas-vindas à Meyves',
+      )
 
-      const resendKey = await getResendApiKey(supabase)
       if (!resendKey) {
         console.warn('[welcome_email] RESEND_API_KEY não configurada no ambiente.')
         await logEmailAttempt(supabase, {
@@ -309,7 +496,7 @@ Deno.serve(async (req: Request) => {
           success: sendResult.success,
           message: sendResult.success
             ? 'E-mail de boas-vindas enviado com sucesso!'
-            : 'Falha ao enviar e-mail de boas-vindas.',
+            : `Falha ao enviar e-mail de boas-vindas: ${sendResult.error}`,
           data: sendResult.id ? { id: sendResult.id, from: sendResult.from } : null,
           error: sendResult.success ? null : sendResult.error,
         }),
@@ -320,9 +507,7 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // =========================================================================
     // 2. FLUXOS RELACIONADOS A PEDIDOS OU TESTES DE MODELO
-    // =========================================================================
     const isTestMode = Boolean(body.test_mode)
     const targetEmail = incomingEmail?.trim()
 
@@ -336,7 +521,7 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Se for modo de teste de modelo (disparado pelo painel administrativo)
+    // Modo de teste de modelo (disparado pelo admin)
     if (isTestMode) {
       if (!isValidEmail(targetEmail)) {
         return new Response(
@@ -354,7 +539,6 @@ Deno.serve(async (req: Request) => {
         .eq('slug', templateSlug)
         .maybeSingle()
 
-      const resendKey = await getResendApiKey(supabase)
       if (!resendKey) {
         await logEmailAttempt(supabase, {
           template_slug: templateSlug,
@@ -376,8 +560,8 @@ Deno.serve(async (req: Request) => {
 
       const dummyVars: Record<string, any> = {
         nome_cliente: clientName,
-        numero_pedido: 'TESTE-1234',
-        id_pedido: 'test-uuid-1234',
+        numero_pedido: 'TESTE-101',
+        id_pedido: 'test-uuid-101',
         email_cliente: targetEmail,
         valor_total: '189,90',
         forma_pagamento: 'PIX',
@@ -387,20 +571,27 @@ Deno.serve(async (req: Request) => {
         transportadora: 'Correios',
         link_nota_fiscal: 'https://www.meyves.com.br',
         itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
-        endereco_entrega: 'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
-        bloco_data_estimada: '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
-        bloco_rastreamento: '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
-        botao_nota_fiscal: '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
-        conteudo_newsletter: 'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
+        endereco_entrega:
+          'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
+        bloco_data_estimada:
+          '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
+        bloco_rastreamento:
+          '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
+        botao_nota_fiscal:
+          '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
+        conteudo_newsletter:
+          'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
         assunto_newsletter: 'Novidades Exclusivas Meyves',
         nome_loja: 'Meyves',
       }
 
-      const rawSubject = dbTemplate?.subject || `[Teste Meyves] Modelo: ${templateSlug}`
-      const rawBody = dbTemplate?.body_html || `<p>Este é um teste do modelo ${templateSlug}.</p>`
-      const finalSubject = replaceVariables(rawSubject, dummyVars)
-      const finalBody = replaceVariables(rawBody, dummyVars)
-      const finalHtml = wrapInLayout('Teste de Notificação Meyves', `Modelo: ${templateSlug}`, finalBody)
+      const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
+        templateSlug,
+        dbTemplate,
+        dummyVars,
+        'Teste de Notificação Meyves',
+        `Modelo: ${templateSlug}`,
+      )
 
       const sendersToTry = getSendersList()
       const sendResult = await sendEmailWithFallback(
@@ -455,17 +646,13 @@ Deno.serve(async (req: Request) => {
     }
 
     // Fetch order items
-    const { data: items, error: itemsError } = await supabase
+    const { data: items } = await supabase
       .from('order_items')
       .select(`
         quantity, price_at_purchase, size_name, color_name,
         products (name, slug, product_images (url, display_order))
       `)
       .eq('order_id', order_id!)
-
-    if (itemsError) {
-      console.warn(`[order_email] Erro ao buscar itens do pedido ${order_id}:`, itemsError.message)
-    }
 
     const customerEmail = (order.customer_email || incomingEmail)?.trim()
     if (!isValidEmail(customerEmail)) {
@@ -489,14 +676,14 @@ Deno.serve(async (req: Request) => {
     const customerName = (order.customer_name || incomingName)?.trim() || 'Cliente'
     const shortId = order_id!.split('-')[0].toUpperCase()
 
-    const resendKey = await getResendApiKey(supabase)
     if (!resendKey) {
       console.warn('[order_email] RESEND_API_KEY não configurada no ambiente.')
       await supabase
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error: 'Chave RESEND_API_KEY não configurada no ambiente nem em site_settings.',
+          email_confirmation_error:
+            'Chave RESEND_API_KEY não configurada no ambiente nem em site_settings.',
         })
         .eq('id', order_id!)
 
@@ -603,7 +790,7 @@ Deno.serve(async (req: Request) => {
       `
       : ''
 
-    // Check if this is the customer's very first purchase
+    // Primeira compra?
     let isFirstPurchase = false
     if (event_type === 'order_created' || event_type === 'resend_confirmation' || !event_type) {
       try {
@@ -623,14 +810,12 @@ Deno.serve(async (req: Request) => {
         const { count: previousCount, error: countErr } = await previousOrdersQuery
         if (!countErr && (previousCount === 0 || previousCount === null)) {
           isFirstPurchase = true
-          console.log(`[order_email] Primeira compra identificada para o cliente ${customerEmail}`)
         }
       } catch (countError) {
         console.warn('[order_email] Erro ao verificar histórico de primeira compra:', countError)
       }
     }
 
-    // Slug and header mappings for all order statuses
     let templateSlug = 'order_created'
     let headerTitle = 'Obrigado por comprar na Meyves!'
     const currentStatus = new_status || order.status
@@ -656,7 +841,6 @@ Deno.serve(async (req: Request) => {
       templateSlug = 'invoice_available'
       headerTitle = 'Nota Fiscal Disponível'
     } else {
-      // Order created / resend: If first purchase, trigger first_purchase template
       if (isFirstPurchase) {
         templateSlug = 'first_purchase'
         headerTitle = 'Parabéns pela sua primeira compra!'
@@ -666,14 +850,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Query database for template
     const { data: dbTemplate } = await supabase
       .from('email_templates')
       .select('*')
       .eq('slug', templateSlug)
-      .single()
+      .maybeSingle()
 
-    // Complete variable map covering all templates
     const templateVariables: Record<string, string | number | null | undefined> = {
       nome_cliente: customerName,
       numero_pedido: shortId,
@@ -694,42 +876,13 @@ Deno.serve(async (req: Request) => {
       nome_loja: 'Meyves',
     }
 
-    let rawSubject = dbTemplate?.subject
-    let rawBody = dbTemplate?.body_html
-
-    // Fallbacks if no template exists in database
-    if (!rawSubject) {
-      if (templateSlug === 'first_purchase')
-        rawSubject = `Parabéns pela sua primeira compra! 🎉 - Meyves`
-      else if (templateSlug === 'order_paid')
-        rawSubject = `Pagamento Confirmado! Pedido #{{numero_pedido}} na Meyves`
-      else if (templateSlug === 'order_shipped')
-        rawSubject = `Seu Pedido #{{numero_pedido}} foi Enviado! - Meyves`
-      else if (templateSlug === 'order_delivered')
-        rawSubject = `Seu Pedido #{{numero_pedido}} foi Entregue! - Meyves`
-      else if (templateSlug === 'order_canceled')
-        rawSubject = `Cancelamento do Pedido #{{numero_pedido}} na Meyves`
-      else if (templateSlug === 'invoice_available')
-        rawSubject = `Nota Fiscal disponível - Pedido #{{numero_pedido}} na Meyves`
-      else rawSubject = `Obrigado por comprar na Meyves! Pedido #{{numero_pedido}}`
-    }
-
-    if (!rawBody) {
-      rawBody = `
-        <p style="font-size: 15px; line-height: 1.6; color: #333; margin: 0 0 16px;">
-          Olá, <strong>{{nome_cliente}}</strong>!
-        </p>
-        <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-          Seu pedido <strong>#{{numero_pedido}}</strong> está com o status: <strong>{{status_pedido}}</strong>.
-        </p>
-        {{bloco_rastreamento}}
-        {{bloco_data_estimada}}
-      `
-    }
-
-    const finalSubject = replaceVariables(rawSubject, templateVariables)
-    const finalBody = replaceVariables(rawBody, templateVariables)
-    const finalHtml = wrapInLayout(headerTitle, `Pedido #${shortId}`, finalBody)
+    const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
+      templateSlug,
+      dbTemplate,
+      templateVariables,
+      headerTitle,
+      `Pedido #${shortId}`,
+    )
 
     const sendersToTry = getSendersList()
     const sendResult = await sendEmailWithFallback(
@@ -740,7 +893,6 @@ Deno.serve(async (req: Request) => {
       finalHtml,
     )
 
-    // Update order confirmation status
     if (sendResult.success) {
       await supabase
         .from('orders')
@@ -760,7 +912,6 @@ Deno.serve(async (req: Request) => {
         .eq('id', order_id)
     }
 
-    // Always log attempt in public.email_logs
     await logEmailAttempt(supabase, {
       template_slug: templateSlug,
       recipient_email: customerEmail!,

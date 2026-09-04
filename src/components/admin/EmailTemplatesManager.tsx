@@ -8,6 +8,8 @@ import {
   plainTextToHtml,
   fetchRecentEmailLogs,
   sendTestEmail,
+  processPendingEmailLogs,
+  checkDomainStatus,
   type EmailTemplate,
   type EmailTemplateInput,
   type EmailLogEntry,
@@ -35,6 +37,7 @@ import {
   Smartphone,
   ArrowRight,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react'
 import {
   Dialog,
@@ -113,6 +116,9 @@ export function EmailTemplatesManager() {
   const [logs, setLogs] = useState<EmailLogEntry[]>([])
   const [loadingLogs, setLoadingLogs] = useState(false)
   const [logsDialogOpen, setLogsDialogOpen] = useState(false)
+  const [processingPending, setProcessingPending] = useState(false)
+  const [domainStatus, setDomainStatus] = useState<any>(null)
+  const [checkingDomain, setCheckingDomain] = useState(false)
 
   const loadTemplates = useCallback(async () => {
     setLoading(true)
@@ -135,6 +141,48 @@ export function EmailTemplatesManager() {
     }
     setLoadingLogs(false)
   }, [])
+
+  const handleProcessPending = async () => {
+    setProcessingPending(true)
+    try {
+      const { data, error } = await processPendingEmailLogs()
+      if (error || (data && data.success === false)) {
+        toast.error('Falha ao reprocessar pendências: ' + (data?.error || error?.message))
+      } else {
+        toast.success(`Processamento concluído: ${data?.processed_count || 0} e-mails processados!`)
+        loadLogs()
+      }
+    } catch (err: any) {
+      toast.error('Erro ao acionar reprocessamento: ' + err.message)
+    } finally {
+      setProcessingPending(false)
+    }
+  }
+
+  const handleCheckDomain = async () => {
+    setCheckingDomain(true)
+    try {
+      const { data, error } = await checkDomainStatus()
+      if (error) {
+        toast.error('Erro ao verificar domínio no Resend: ' + error.message)
+      } else {
+        setDomainStatus(data)
+        if (data?.verification?.found) {
+          toast.success(
+            `Domínio ${data.domain}: status '${data.verification.status || 'verificado'}' no Resend`,
+          )
+        } else if (data?.verification?.error) {
+          toast.warning(`Aviso do Resend: ${data.verification.error}`)
+        } else {
+          toast.info(`Domínio ${data.domain} não encontrado listado no Resend.`)
+        }
+      }
+    } catch (err: any) {
+      toast.error('Erro ao verificar domínio: ' + err.message)
+    } finally {
+      setCheckingDomain(false)
+    }
+  }
 
   const handleOpenTestEmail = (template: EmailTemplate) => {
     setTestTemplate(template)
@@ -876,21 +924,89 @@ export function EmailTemplatesManager() {
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">
-                {logs.length} último(s) registro(s) encontrados
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadLogs}
-                disabled={loadingLogs}
-                className="text-xs h-8"
-              >
-                {loadingLogs ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                Atualizar Logs
-              </Button>
+            {/* Top Toolbar in Audit Logs Modal */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-muted/30 rounded-md border text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground font-medium">
+                  {logs.length} último(s) registro(s)
+                </span>
+                {logs.some((l) => l.status === 'pending') && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                    {logs.filter((l) => l.status === 'pending').length} pendente(s)
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckDomain}
+                  disabled={checkingDomain}
+                  className="h-8 text-xs bg-white"
+                  title="Verifica se o domínio meyves.com.br está verificado no Resend"
+                >
+                  {checkingDomain ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <ShieldCheck className="h-3.5 w-3.5 mr-1 text-[#2D0B0B]" />
+                  )}
+                  Checar Domínio Resend
+                </Button>
+                {logs.some((l) => l.status === 'pending') && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleProcessPending}
+                    disabled={processingPending}
+                    className="h-8 text-xs bg-[#2D0B0B] text-white hover:bg-[#1a0606]"
+                    title="Dispara imediatamente envio das notificações que ficaram pendentes"
+                  >
+                    {processingPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Send className="h-3 w-3 mr-1" />
+                    )}
+                    Disparar Pendentes Agora
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadLogs}
+                  disabled={loadingLogs}
+                  className="h-8 text-xs"
+                >
+                  {loadingLogs ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Atualizar
+                </Button>
+              </div>
             </div>
+
+            {domainStatus && (
+              <div className="p-2.5 rounded-md border text-xs bg-[#fdfbf7] border-[#f0ede8] flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-[#2D0B0B]">
+                    Status do Domínio meyves.com.br no Resend:{' '}
+                  </span>
+                  <span className="font-mono">
+                    {domainStatus?.verification?.found
+                      ? domainStatus?.verification?.status || 'registrado'
+                      : domainStatus?.verification?.error || 'não cadastrado'}
+                  </span>
+                </div>
+                {domainStatus?.verification?.found ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                    Conectado
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">Pendente / Não validado</Badge>
+                )}
+              </div>
+            )}
 
             {loadingLogs ? (
               <div className="flex justify-center py-12">
@@ -922,35 +1038,61 @@ export function EmailTemplatesManager() {
                           {log.template_slug || '—'}
                         </TableCell>
                         <TableCell className="font-mono text-[11px]">
-                          {log.recipient_email}
+                          <div>{log.recipient_email}</div>
+                          {log.resend_id && (
+                            <div className="text-[10px] text-emerald-700 font-mono mt-0.5">
+                              ID: {log.resend_id}
+                            </div>
+                          )}
+                          {log.error_message && (
+                            <div
+                              className="text-[10px] text-rose-600 line-clamp-2 mt-0.5 font-sans"
+                              title={log.error_message}
+                            >
+                              {log.error_message}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-[11px] truncate max-w-[160px]">
                           {log.from_address || '—'}
                         </TableCell>
                         <TableCell>
-                          {log.status === 'sent' ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
-                            >
-                              Enviado
-                            </Badge>
-                          ) : log.status === 'error' ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]"
-                              title={log.error_message || ''}
-                            >
-                              Erro
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"
-                            >
-                              {log.status}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {log.status === 'sent' ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
+                              >
+                                Enviado
+                              </Badge>
+                            ) : log.status === 'error' ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]"
+                                title={log.error_message || ''}
+                              >
+                                Erro
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"
+                              >
+                                {log.status}
+                              </Badge>
+                            )}
+                            {log.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => processPendingEmailLogs(log.id).then(loadLogs)}
+                                className="h-6 px-1.5 text-[10px] text-[#2D0B0B] hover:underline"
+                                title="Enviar esta linha pendente agora"
+                              >
+                                Enviar
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

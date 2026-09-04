@@ -165,10 +165,28 @@ export async function sendTestEmail(
   // Dispara teste usando o template selecionado
   return await supabase.functions.invoke('process-order-notifications', {
     body: {
+      action: 'send',
       event_type: templateSlug,
       customer_email: targetEmail.trim(),
       customer_name: customVariables?.nome_cliente || 'Cliente Teste',
       test_mode: true,
+    },
+  })
+}
+
+export async function processPendingEmailLogs(specificLogId?: string) {
+  return await supabase.functions.invoke('process-order-notifications', {
+    body: {
+      action: 'process_pending',
+      specific_log_id: specificLogId,
+    },
+  })
+}
+
+export async function checkDomainStatus() {
+  return await supabase.functions.invoke('process-order-notifications', {
+    body: {
+      action: 'check_domain',
     },
   })
 }
