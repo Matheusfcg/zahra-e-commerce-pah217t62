@@ -144,3 +144,30 @@ export function getSendersList(customSender?: string | null): string[] {
 }
 
 export const REPLY_TO_ADDRESS = 'meyvesbr@gmail.com'
+
+/**
+ * Retrieves the Resend API Key dynamically:
+ * 1. From Edge Function environment variable RESEND_API_KEY
+ * 2. Fallback from public.site_settings table where setting_key = 'resend_api_key'
+ */
+export async function getResendApiKey(supabaseClient?: any): Promise<string | null> {
+  const envKey = Deno.env.get('RESEND_API_KEY')?.trim()
+  if (envKey) return envKey
+
+  if (supabaseClient) {
+    try {
+      const { data } = await supabaseClient
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'resend_api_key')
+        .maybeSingle()
+      if (data?.setting_value?.trim()) {
+        return data.setting_value.trim()
+      }
+    } catch (err) {
+      console.warn('[getResendApiKey] Erro ao consultar site_settings:', err)
+    }
+  }
+
+  return null
+}

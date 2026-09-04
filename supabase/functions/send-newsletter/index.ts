@@ -6,6 +6,7 @@ import {
   wrapInLayout,
   getSendersList,
   REPLY_TO_ADDRESS,
+  getResendApiKey,
 } from '../_shared/email-templates.ts'
 
 Deno.serve(async (req) => {
@@ -40,13 +41,26 @@ Deno.serve(async (req) => {
       )
     }
 
-    const resendKey = Deno.env.get('RESEND_API_KEY')
+    const resendKey = await getResendApiKey(supabase)
     if (!resendKey) {
       console.warn('RESEND_API_KEY não configurada. Disparo de newsletter ignorado.')
+      try {
+        await supabase.from('email_logs').insert({
+          template_slug: 'newsletter_broadcast',
+          recipient_email: `${subscribers.length} assinantes (BCC)`,
+          subject: customSubject || 'Novidades e Destaques Exclusivos Meyves',
+          status: 'skipped',
+          error_message: 'RESEND_API_KEY não configurada no backend ou site_settings',
+          metadata: { total_subscribers: subscribers.length },
+        })
+      } catch (logErr) {
+        console.warn('Erro ao registrar log de newsletter:', logErr)
+      }
+
       return new Response(
         JSON.stringify({
-          success: true,
-          message: 'RESEND_API_KEY não configurada no backend.',
+          success: false,
+          error: 'A chave da API Resend (RESEND_API_KEY) não está configurada.',
           sent: 0,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

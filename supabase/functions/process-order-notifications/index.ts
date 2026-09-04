@@ -9,21 +9,18 @@ import {
   formatDate,
   getSendersList,
   REPLY_TO_ADDRESS,
+  getResendApiKey,
 } from '../_shared/email-templates.ts'
 
 interface EmailRequestBody {
   order_id?: string
-  event_type?:
-    | 'order_created'
-    | 'status_changed'
-    | 'invoice_added'
-    | 'resend_confirmation'
-    | 'welcome_email'
+  event_type?: string
   new_status?: string
   estimated_delivery_date?: string
   customer_email?: string
   customer_name?: string
   user_id?: string
+  test_mode?: boolean
 }
 
 interface ResendSendResult {
@@ -265,7 +262,7 @@ Deno.serve(async (req: Request) => {
       const filledBody = replaceVariables(rawBody, vars)
       const finalHtml = wrapInLayout('Boas-vindas à Meyves', undefined, filledBody)
 
-      const resendKey = Deno.env.get('RESEND_API_KEY')
+      const resendKey = await getResendApiKey(supabase)
       if (!resendKey) {
         console.warn('[welcome_email] RESEND_API_KEY não configurada no ambiente.')
         await logEmailAttempt(supabase, {
@@ -274,14 +271,14 @@ Deno.serve(async (req: Request) => {
           recipient_name: clientName,
           subject: finalSubject,
           status: 'skipped',
-          error_message: 'RESEND_API_KEY não configurada no backend',
+          error_message: 'RESEND_API_KEY não configurada no backend nem em site_settings',
         })
         return new Response(
           JSON.stringify({
-            success: true,
-            message: 'Chave RESEND não configurada, e-mail ignorado com segurança.',
+            success: false,
+            error: 'Chave RESEND_API_KEY não configurada no backend ou banco de dados.',
           }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
 
@@ -324,9 +321,12 @@ Deno.serve(async (req: Request) => {
     }
 
     // =========================================================================
-    // 2. FLUXOS RELACIONADOS A PEDIDOS
+    // 2. FLUXOS RELACIONADOS A PEDIDOS OU TESTES DE MODELO
     // =========================================================================
-    if (!order_id) {
+    const isTestMode = Boolean(body.test_mode)
+    const targetEmail = incomingEmail?.trim()
+
+    if (!order_id && !isTestMode) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -336,11 +336,124 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    // Se for modo de teste de modelo (disparado pelo painel administrativo)
+    if (isTestMode) {
+      if (!isValidEmail(targetEmail)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'E-mail de destino para teste inválido.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      const clientName = incomingName?.trim() || 'Cliente Teste'
+      const templateSlug = event_type || 'order_created'
+
+      const { data: dbTemplate } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('slug', templateSlug)
+        .maybeSingle()
+
+      const resendKey = await getResendApiKey(supabase)
+      if (!resendKey) {
+        await logEmailAttempt(supabase, {
+          template_slug: templateSlug,
+          recipient_email: targetEmail!,
+          recipient_name: clientName,
+          subject: dbTemplate?.subject || `Teste ${templateSlug}`,
+          status: 'skipped',
+          error_message: 'RESEND_API_KEY não configurada no backend nem em site_settings',
+          metadata: { test_mode: true },
+        })
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Chave RESEND_API_KEY não configurada no backend ou banco de dados.',
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      const dummyVars: Record<string, any> = {
+        nome_cliente: clientName,
+        numero_pedido: 'TESTE-1234',
+        id_pedido: 'test-uuid-1234',
+        email_cliente: targetEmail,
+        valor_total: '189,90',
+        forma_pagamento: 'PIX',
+        info_frete: 'Sedex — Grátis (2 dias úteis)',
+        status_pedido: 'Em processamento',
+        codigo_rastreio: 'BR123456789MEY',
+        transportadora: 'Correios',
+        link_nota_fiscal: 'https://www.meyves.com.br',
+        itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
+        endereco_entrega:
+          'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
+        bloco_data_estimada:
+          '<p style="padding: 10px; background: #fdfbf7; border-left: 3px solid #2D0B0B;">Previsão de entrega: 3 a 5 dias úteis</p>',
+        bloco_rastreamento:
+          '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
+        botao_nota_fiscal:
+          '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
+        conteudo_newsletter:
+          'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
+        assunto_newsletter: 'Novidades Exclusivas Meyves',
+        nome_loja: 'Meyves',
+      }
+
+      const rawSubject = dbTemplate?.subject || `[Teste Meyves] Modelo: ${templateSlug}`
+      const rawBody = dbTemplate?.body_html || `<p>Este é um teste do modelo ${templateSlug}.</p>`
+      const finalSubject = replaceVariables(rawSubject, dummyVars)
+      const finalBody = replaceVariables(rawBody, dummyVars)
+      const finalHtml = wrapInLayout(
+        'Teste de Notificação Meyves',
+        `Modelo: ${templateSlug}`,
+        finalBody,
+      )
+
+      const sendersToTry = getSendersList()
+      const sendResult = await sendEmailWithFallback(
+        resendKey,
+        sendersToTry,
+        targetEmail!,
+        finalSubject,
+        finalHtml,
+      )
+
+      await logEmailAttempt(supabase, {
+        template_slug: templateSlug,
+        recipient_email: targetEmail!,
+        recipient_name: clientName,
+        subject: finalSubject,
+        from_address: sendResult.from,
+        status: sendResult.success ? 'sent' : 'error',
+        resend_id: sendResult.id,
+        error_message: sendResult.error,
+        attempts: sendResult.attempts,
+        metadata: { test_mode: true },
+      })
+
+      return new Response(
+        JSON.stringify({
+          success: sendResult.success,
+          message: sendResult.success
+            ? `E-mail de teste (${templateSlug}) enviado com sucesso!`
+            : `Falha ao enviar e-mail de teste: ${sendResult.error}`,
+          data: sendResult.id ? { id: sendResult.id, from: sendResult.from } : null,
+          error: sendResult.success ? null : sendResult.error,
+        }),
+        {
+          status: sendResult.success ? 200 : 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
     // Fetch order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
-      .eq('id', order_id)
+      .eq('id', order_id!)
       .single()
 
     if (orderError || !order) {
@@ -357,7 +470,7 @@ Deno.serve(async (req: Request) => {
         quantity, price_at_purchase, size_name, color_name,
         products (name, slug, product_images (url, display_order))
       `)
-      .eq('order_id', order_id)
+      .eq('order_id', order_id!)
 
     if (itemsError) {
       console.warn(`[order_email] Erro ao buscar itens do pedido ${order_id}:`, itemsError.message)
@@ -371,7 +484,7 @@ Deno.serve(async (req: Request) => {
           email_confirmation_status: 'error',
           email_confirmation_error: 'E-mail do cliente inválido ou ausente.',
         })
-        .eq('id', order_id)
+        .eq('id', order_id!)
 
       return new Response(
         JSON.stringify({
@@ -383,18 +496,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const customerName = (order.customer_name || incomingName)?.trim() || 'Cliente'
-    const shortId = order_id.split('-')[0].toUpperCase()
+    const shortId = order_id!.split('-')[0].toUpperCase()
 
-    const resendKey = Deno.env.get('RESEND_API_KEY')
+    const resendKey = await getResendApiKey(supabase)
     if (!resendKey) {
       console.warn('[order_email] RESEND_API_KEY não configurada no ambiente.')
       await supabase
         .from('orders')
         .update({
           email_confirmation_status: 'error',
-          email_confirmation_error: 'Chave RESEND_API_KEY não configurada no ambiente.',
+          email_confirmation_error:
+            'Chave RESEND_API_KEY não configurada no ambiente nem em site_settings.',
         })
-        .eq('id', order_id)
+        .eq('id', order_id!)
 
       await logEmailAttempt(supabase, {
         template_slug: event_type,
@@ -402,7 +516,7 @@ Deno.serve(async (req: Request) => {
         recipient_name: customerName,
         subject: `Pedido #${shortId}`,
         status: 'skipped',
-        error_message: 'Chave RESEND_API_KEY não configurada.',
+        error_message: 'Chave RESEND_API_KEY não configurada no backend nem em site_settings.',
         metadata: { order_id },
       })
 
