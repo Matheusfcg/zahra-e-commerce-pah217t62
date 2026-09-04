@@ -421,10 +421,14 @@ export function EmailTemplatesManager() {
         <!-- Rodapé Profissional Automático -->
         <hr style="border: none; border-top: 1px solid #eae6e1; margin: 30px 0 18px;" />
         <div style="text-align: center; font-size: 12px; color: #7a6e65; line-height: 1.6;">
-          <p style="margin: 0 0 6px;">Dúvidas? Responda a este e-mail ou fale no WhatsApp.</p>
-          <p style="margin: 0 0 10px; font-weight: 500;">
+          <p style="margin: 0 0 6px;">Dúvidas ou atendimento? Responda a este e-mail diretamente ou chame no WhatsApp.</p>
+          <p style="margin: 0 0 6px; font-weight: 500;">
+            <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">E-mail Principal: meyvesbr@gmail.com</a>
+          </p>
+          <p style="margin: 0 0 10px; font-size: 11px; color: #7a6e65;">
             <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
-            <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">meyvesbr@gmail.com</a>
+            <span style="color: #999;">•</span>
+            <span style="margin-left: 12px;">E-mail Reserva: contato@meyves.com.br</span>
           </p>
           <p style="margin: 10px 0 0; font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
             Meyves © ${currentYear} — Todos os direitos reservados.

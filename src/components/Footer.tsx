@@ -105,12 +105,24 @@ export function Footer() {
               >
                 <Phone className="h-4 w-4" /> (11) 93416-0219
               </a>
-              <a
-                href="mailto:meyvesbr@gmail.com"
-                className="flex items-center justify-center gap-2 hover:text-[#3A2222] transition-colors"
-              >
-                <Mail className="h-4 w-4" /> meyvesbr@gmail.com
-              </a>
+              <div className="flex flex-col items-center gap-1">
+                <a
+                  href="mailto:meyvesbr@gmail.com"
+                  className="flex items-center justify-center gap-2 hover:text-[#3A2222] transition-colors"
+                  title="E-mail Principal para atendimento"
+                >
+                  <Mail className="h-4 w-4" /> meyvesbr@gmail.com
+                </a>
+                <span className="text-[11px] text-muted-foreground/75">
+                  Reserva:{' '}
+                  <a
+                    href="mailto:contato@meyves.com.br"
+                    className="hover:underline hover:text-[#3A2222]"
+                  >
+                    contato@meyves.com.br
+                  </a>
+                </span>
+              </div>
               <Link
                 to="/troca-e-devolucao"
                 className="block hover:text-[#3A2222] transition-colors text-center"

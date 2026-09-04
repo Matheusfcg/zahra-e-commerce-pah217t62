@@ -35,10 +35,14 @@ export const buildHeader = (title: string, subtitle?: string): string => `
 export const buildFooter = (): string => `
     <hr style="border: none; border-top: 1px solid #eae6e1; margin: 36px 0 20px;" />
     <div style="text-align: center; font-size: 13px; color: #7a6e65; line-height: 1.6;">
-      <p style="margin: 0 0 8px;">Dúvidas? Fale com a gente pelo WhatsApp ou responda a este e-mail.</p>
-      <p style="margin: 0 0 12px; font-weight: 500;">
+      <p style="margin: 0 0 8px;">Dúvidas ou atendimento? Responda a este e-mail diretamente ou chame no WhatsApp.</p>
+      <p style="margin: 0 0 6px; font-weight: 500;">
+        <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">E-mail Principal: meyvesbr@gmail.com</a>
+      </p>
+      <p style="margin: 0 0 12px; font-size: 12px; color: #7a6e65;">
         <a href="https://wa.me/5511934160219" style="color: #2D0B0B; text-decoration: underline; margin-right: 12px;">WhatsApp (11) 93416-0219</a>
-        <a href="mailto:meyvesbr@gmail.com" style="color: #2D0B0B; text-decoration: underline;">meyvesbr@gmail.com</a>
+        <span style="color: #999;">•</span>
+        <span style="margin-left: 12px;">E-mail Reserva: contato@meyves.com.br</span>
       </p>
       <p style="margin: 4px 0 0; font-size: 12px; color: #7a6e65;">
         Instagram: <a href="https://www.instagram.com/mayve__brasil" target="_blank" style="color: #2D0B0B; text-decoration: underline;">@mayve__brasil</a>
@@ -110,34 +114,51 @@ export function formatDate(dateStr: string | null | undefined): string {
 }
 
 /**
- * Generates an array of viable sender addresses to try with Resend.
- * Order prioritizes verified domain addresses (meyves.com.br),
- * then environment overrides, then requested sender, with automatic fallback.
+ * Primary reply-to and customer care email address.
+ * ALL incoming replies and customer responses MUST arrive here.
+ */
+export const PRIMARY_CUSTOMER_EMAIL = 'meyvesbr@gmail.com'
+export const SECONDARY_RESERVE_EMAIL = 'contato@meyves.com.br'
+
+/**
+ * Global Reply-To header address across 100% of transaction flows.
+ */
+export const REPLY_TO_ADDRESS = PRIMARY_CUSTOMER_EMAIL
+
+/**
+ * Generates an ordered array of viable sender addresses to try with Resend.
+ *
+ * Requirements:
+ * 1. contato@meyves.com.br is the default From sender (domain-verified requirement on Resend).
+ * 2. Automatic fallbacks: if contato@ fails, fallback to pedidos@meyves.com.br and atendimento@meyves.com.br.
+ * 3. As a test/fail-safe fallback, onboarding@resend.dev is available if custom domain is unverified.
  */
 export function getSendersList(customSender?: string | null): string[] {
   const envSender = Deno.env.get('RESEND_FROM_EMAIL')?.trim()
   const list: string[] = []
 
-  // 1. Prioritize custom or environment override if supplied
-  if (customSender) {
-    list.push(customSender)
+  // 1. Prioritize custom sender or environment override if provided
+  if (customSender?.trim()) {
+    list.push(customSender.trim())
   }
   if (envSender && !list.includes(envSender)) {
     list.push(envSender)
   }
 
-  // 2. Primary sender addresses on the official meyves.com.br domain
+  // 2. Default sender: contato@meyves.com.br
   if (!list.includes('Meyves <contato@meyves.com.br>')) {
     list.push('Meyves <contato@meyves.com.br>')
+  }
+
+  // 3. Fallback domain addresses on meyves.com.br
+  if (!list.includes('Meyves <pedidos@meyves.com.br>')) {
+    list.push('Meyves <pedidos@meyves.com.br>')
   }
   if (!list.includes('Meyves <atendimento@meyves.com.br>')) {
     list.push('Meyves <atendimento@meyves.com.br>')
   }
-  if (!list.includes('Meyves <pedidos@meyves.com.br>')) {
-    list.push('Meyves <pedidos@meyves.com.br>')
-  }
 
-  // 3. Fail-safe fallback sandbox sender provided by Resend (useful if domain is not yet verified)
+  // 4. Fail-safe fallback sandbox sender provided by Resend (useful if domain is not yet verified in DNS)
   list.push('Meyves <onboarding@resend.dev>')
 
   return Array.from(new Set(list.filter(Boolean)))
@@ -177,7 +198,16 @@ export async function checkResendDomainStatus(
   }
 }
 
-export const REPLY_TO_ADDRESS = 'meyvesbr@gmail.com'
+/**
+ * Standard email headers to guarantee Reply-To: meyvesbr@gmail.com
+ * and proper store metadata.
+ */
+export function getStandardEmailHeaders(): Record<string, string> {
+  return {
+    'Reply-To': PRIMARY_CUSTOMER_EMAIL,
+    'X-Entity-Ref-ID': 'meyves-store',
+  }
+}
 
 /**
  * Retrieves the Resend API Key dynamically:

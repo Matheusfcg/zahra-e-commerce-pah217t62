@@ -6,6 +6,8 @@ import {
   wrapInLayout,
   getSendersList,
   REPLY_TO_ADDRESS,
+  PRIMARY_CUSTOMER_EMAIL,
+  getStandardEmailHeaders,
   getResendApiKey,
 } from '../_shared/email-templates.ts'
 
@@ -118,6 +120,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: sender,
             reply_to: REPLY_TO_ADDRESS,
+            headers: getStandardEmailHeaders(),
             bcc: emails,
             subject: finalSubject,
             html: finalHtml,

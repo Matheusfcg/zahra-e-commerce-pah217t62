@@ -261,8 +261,15 @@ export function Header() {
                             href="mailto:meyvesbr@gmail.com"
                             onClick={() => setActiveDropdown(null)}
                             className="flex items-center gap-3 select-none rounded-md px-3.5 py-2.5 text-[13px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors outline-none"
+                            title="E-mail principal: meyvesbr@gmail.com"
                           >
-                            <Mail className="h-4 w-4 shrink-0 text-[#2D0B0B]" /> E-mail
+                            <Mail className="h-4 w-4 shrink-0 text-[#2D0B0B]" />
+                            <div className="flex flex-col text-left">
+                              <span>E-mail</span>
+                              <span className="text-[10px] lowercase text-muted-foreground/80 tracking-normal font-normal">
+                                meyvesbr@gmail.com
+                              </span>
+                            </div>
                           </a>
                         </li>
                       </ul>
@@ -500,8 +507,15 @@ export function Header() {
                         href="mailto:meyvesbr@gmail.com"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 hover:text-foreground"
+                        title="E-mail principal"
                       >
-                        <Mail className="h-4 w-4" /> meyvesbr@gmail.com
+                        <Mail className="h-4 w-4" />
+                        <div className="flex flex-col text-left">
+                          <span>meyvesbr@gmail.com</span>
+                          <span className="text-[11px] text-muted-foreground/75">
+                            Reserva: contato@meyves.com.br
+                          </span>
+                        </div>
                       </a>
                       <a
                         href="https://www.instagram.com/mayve__brasil"

@@ -9,6 +9,8 @@ import {
   formatDate,
   getSendersList,
   REPLY_TO_ADDRESS,
+  PRIMARY_CUSTOMER_EMAIL,
+  getStandardEmailHeaders,
   getResendApiKey,
   checkResendDomainStatus,
 } from '../_shared/email-templates.ts'
@@ -61,6 +63,7 @@ async function sendEmailWithFallback(
           from: sender,
           to: recipient,
           reply_to: REPLY_TO_ADDRESS,
+          headers: getStandardEmailHeaders(),
           subject,
           html,
         }),
