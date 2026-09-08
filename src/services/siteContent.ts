@@ -75,10 +75,10 @@ export const smartCache = {
 }
 
 const CACHE_KEYS = {
-  SITE_CONTENT: 'site_content_cache_v2',
-  FEATURED_CATEGORIES: 'featured_categories_cache_v2',
-  ALL_CATEGORIES: 'all_categories_cache_v2',
-  EXCHANGE_POLICY: 'exchange_policy_cache_v2',
+  SITE_CONTENT: 'site_content_cache_v3',
+  FEATURED_CATEGORIES: 'featured_categories_cache_v3',
+  ALL_CATEGORIES: 'all_categories_cache_v3',
+  EXCHANGE_POLICY: 'exchange_policy_cache_v3',
 }
 
 /**

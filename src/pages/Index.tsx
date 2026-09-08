@@ -14,14 +14,14 @@ import {
 
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>(() => {
-    return smartCache.get<Record<string, string>>('site_content_cache_v2') || {}
+    return smartCache.get<Record<string, string>>('site_content_cache_v3') || {}
   })
   const [featuredCategories, setFeaturedCategories] = useState<any[]>(() => {
-    return smartCache.get<any[]>('featured_categories_cache_v2') || []
+    return smartCache.get<any[]>('featured_categories_cache_v3') || []
   })
   const [isLoading, setIsLoading] = useState(() => {
-    const cachedContent = smartCache.get<Record<string, string>>('site_content_cache_v2')
-    const cachedCats = smartCache.get<any[]>('featured_categories_cache_v2')
+    const cachedContent = smartCache.get<Record<string, string>>('site_content_cache_v3')
+    const cachedCats = smartCache.get<any[]>('featured_categories_cache_v3')
     return !cachedContent || !cachedCats
   })
 
@@ -42,21 +42,27 @@ export default function Index() {
   }, [])
 
   const heroConfig = useMemo(() => {
-    // If a custom banner image or hero_banner_image is provided in site_content
-    let bannerImg: string | undefined = content.hero_banner_image || undefined
-    if (!bannerImg && content.hero_images) {
+    // If a custom banner image or hero_banner_image is explicitly set and not empty or legacy
+    let bannerImg: string | undefined = undefined
+    if (content.hero_banner_image && content.hero_banner_image.trim() !== '') {
+      bannerImg = content.hero_banner_image.trim()
+    } else if (content.hero_images) {
       try {
         const parsed = JSON.parse(content.hero_images)
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]) {
-          bannerImg = parsed[0]
+        if (
+          Array.isArray(parsed) &&
+          parsed.length > 0 &&
+          parsed[0] &&
+          typeof parsed[0] === 'string' &&
+          parsed[0].trim() !== ''
+        ) {
+          bannerImg = parsed[0].trim()
         }
       } catch {
         /* ignore */
       }
     }
-    if (!bannerImg && content.hero_banner_1) {
-      bannerImg = content.hero_banner_1
-    }
+    // Ignore legacy hero_banner_1 / hero_banner_2 as they had old Zahra or single-model photos
 
     // Check if hero_title has legacy text "Essência da Elegância" or empty
     const rawTitle = content.hero_title
@@ -71,9 +77,14 @@ export default function Index() {
     const buttonText =
       !rawButton || rawButton.toLowerCase().includes('explorar') ? 'COMPRE AGORA' : rawButton
 
+    const eyebrow =
+      !content.hero_eyebrow || content.hero_eyebrow.trim() === ''
+        ? 'HEY, GIRL!'
+        : content.hero_eyebrow
+
     return {
       bannerImage: bannerImg,
-      eyebrow: content.hero_eyebrow || 'HEY, GIRL!',
+      eyebrow,
       title,
       buttonText,
       buttonLink: content.hero_button_link || '/produtos',
