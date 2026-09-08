@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
-import heroBannerAsset from '@/assets/image-6b726.png'
+import heroBannerAsset from '@/assets/image-1a8b2.png'
 
 export interface HeroBannerProps {
   bannerImage?: string
@@ -21,6 +21,7 @@ export function HeroBanner({
   buttonLink = '/produtos',
   isLoading = false,
 }: HeroBannerProps) {
+  // Use the new reference asset image-1a8b2.png (two models: left in white, right in brown, neutral background)
   const activeBannerImage = bannerImage || heroBannerAsset
   const hasCustomText =
     (eyebrow && eyebrow !== 'HEY, GIRL!') || (title && title !== 'BEM-VINDA À MEYVE.')
@@ -116,14 +117,14 @@ export function HeroBanner({
           Overlay:
           1. Accessible, semantic hidden headings for screen readers.
           2. Transparent interactive overlay with the styled "COMPRE AGORA" CTA button
-             perfectly matching the visual design and position.
+             perfectly matching the visual position on the reference image.
           3. If the user overrides eyebrow or title via CMS with custom values different from the default,
              we render a refined typography overlay over the banner.
         */}
         <div className="relative z-10 w-full max-w-[1400px] mx-auto px-4 flex flex-col items-center justify-center text-center pointer-events-none">
           {/* Check if user customized the title/eyebrow in CMS */}
           {hasCustomText ? (
-            <div className="flex flex-col items-center py-4 px-3 sm:py-6 sm:px-8 max-w-xl transition-all duration-500 bg-[#E6E2DE]/90 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none rounded">
+            <div className="flex flex-col items-center py-4 px-3 sm:py-6 sm:px-8 max-w-xl transition-all duration-500 bg-[#E6E2DE]/90 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none rounded animate-in fade-in slide-in-from-bottom-2 duration-700">
               <div className="space-y-1 sm:space-y-2 mb-5 sm:mb-6 md:mb-7">
                 <h2 className="text-[#2D0B0B] font-sans font-bold text-2xl sm:text-3xl md:text-5xl lg:text-[54px] tracking-tight leading-none uppercase drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)]">
                   {eyebrow}
@@ -137,11 +138,13 @@ export function HeroBanner({
                 to={buttonLink}
                 className="pointer-events-auto inline-flex items-center justify-center bg-[#2D0B0B] text-white hover:bg-[#4A1B1B] active:scale-[0.98] font-sans font-medium text-xs sm:text-sm tracking-[0.22em] uppercase py-3.5 px-8 sm:py-4 sm:px-10 border border-[#2D0B0B] shadow-md hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 rounded-none cursor-pointer group"
               >
-                <span>{buttonText}</span>
+                <span className="relative z-10 transition-transform duration-300 group-hover:scale-105">
+                  {buttonText}
+                </span>
               </Link>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-4 sm:py-6">
+            <div className="flex flex-col items-center justify-center py-4 sm:py-6 animate-in fade-in duration-700">
               {/* Visually hidden semantic text for SEO & accessibility */}
               <h2 className="sr-only">HEY, GIRL!</h2>
               <h1 className="sr-only">BEM-VINDA À MEYVE.</h1>

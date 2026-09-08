@@ -58,11 +58,24 @@ export default function Index() {
       bannerImg = content.hero_banner_1
     }
 
+    // Check if hero_title has legacy text "Essência da Elegância" or empty
+    const rawTitle = content.hero_title
+    const title =
+      !rawTitle ||
+      rawTitle.toLowerCase().includes('essência') ||
+      rawTitle.toLowerCase().includes('elegância')
+        ? 'BEM-VINDA À MEYVE.'
+        : rawTitle
+
+    const rawButton = content.hero_button_text || content.hero_button
+    const buttonText =
+      !rawButton || rawButton.toLowerCase().includes('explorar') ? 'COMPRE AGORA' : rawButton
+
     return {
       bannerImage: bannerImg,
       eyebrow: content.hero_eyebrow || 'HEY, GIRL!',
-      title: content.hero_title || 'BEM-VINDA À MEYVE.',
-      buttonText: content.hero_button_text || 'COMPRE AGORA',
+      title,
+      buttonText,
       buttonLink: content.hero_button_link || '/produtos',
     }
   }, [content])
