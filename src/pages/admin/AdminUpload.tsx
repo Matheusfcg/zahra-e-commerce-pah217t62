@@ -121,10 +121,11 @@ export default function AdminUpload() {
     if (data) {
       const existingKeys = new Set(data.map((d) => d.section_key))
       const requiredKeys = [
-        { key: 'hero_banner_1', value: '' },
-        { key: 'hero_banner_2', value: '' },
-        { key: 'hero_banner_3', value: '' },
-        { key: 'hero_banner_4', value: '' },
+        { key: 'hero_banner_image', value: '' },
+        { key: 'hero_eyebrow', value: 'HEY, GIRL!' },
+        { key: 'hero_title', value: 'BEM-VINDA À MEYVE.' },
+        { key: 'hero_button_text', value: 'COMPRE AGORA' },
+        { key: 'hero_button_link', value: '/produtos' },
         { key: 'category_1_label', value: 'Blusas/Bodys' },
         { key: 'category_1_image', value: '' },
         { key: 'category_1_title', value: 'Blusas/Bodys' },
@@ -271,10 +272,15 @@ export default function AdminUpload() {
   }
 
   const labelMap: Record<string, string> = {
-    hero_banner_1: 'IMAGEM HERO 1',
-    hero_banner_2: 'IMAGEM HERO 2',
-    hero_banner_3: 'IMAGEM HERO 3',
-    hero_banner_4: 'IMAGEM HERO 4',
+    hero_banner_image: 'BANNER PRINCIPAL (IMAGEM)',
+    hero_eyebrow: 'TEXTO DESTAQUE LINHA 1 (HEY, GIRL!)',
+    hero_title: 'TEXTO DESTAQUE LINHA 2 (BEM-VINDA À MEYVE.)',
+    hero_button_text: 'TEXTO DO BOTÃO (COMPRE AGORA)',
+    hero_button_link: 'LINK DO BOTÃO (/produtos)',
+    hero_banner_1: 'IMAGEM HERO 1 (LEGADO)',
+    hero_banner_2: 'IMAGEM HERO 2 (LEGADO)',
+    hero_banner_3: 'IMAGEM HERO 3 (LEGADO)',
+    hero_banner_4: 'IMAGEM HERO 4 (LEGADO)',
     category_1_label: 'RÓTULO DA CATEGORIA (BLUSAS/BODYS)',
     category_1_image: 'IMAGEM DA CATEGORIA (BLUSAS/BODYS)',
     category_1_title: 'TÍTULO DA SEÇÃO (BLUSAS/BODYS)',
@@ -303,7 +309,17 @@ export default function AdminUpload() {
       .filter((item) => {
         const key = item.section_key
         if (category === 'main')
-          return ['hero_banner_1', 'hero_banner_2', 'hero_banner_3', 'hero_banner_4'].includes(key)
+          return [
+            'hero_banner_image',
+            'hero_eyebrow',
+            'hero_title',
+            'hero_button_text',
+            'hero_button_link',
+            'hero_banner_1',
+            'hero_banner_2',
+            'hero_banner_3',
+            'hero_banner_4',
+          ].includes(key)
         if (category === 'cat1') return key.startsWith('category_1_')
         if (category === 'cat2') return key.startsWith('category_2_')
         if (category === 'cat3') return key.startsWith('category_3_')

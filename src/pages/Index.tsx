@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { FeaturedProducts } from '@/components/FeaturedProducts'
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
+import { HeroBanner } from '@/components/HeroBanner'
 import {
   getSiteContentCached,
   getFeaturedCategoriesCached,
@@ -40,69 +41,31 @@ export default function Index() {
       })
   }, [])
 
-  const dynamicHeroBannerImages = useMemo(() => {
-    if (content.hero_images) {
+  const heroConfig = useMemo(() => {
+    // If a custom banner image or hero_banner_image is provided in site_content
+    let bannerImg: string | undefined = content.hero_banner_image || undefined
+    if (!bannerImg && content.hero_images) {
       try {
         const parsed = JSON.parse(content.hero_images)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]) {
+          bannerImg = parsed[0]
+        }
       } catch {
         /* ignore */
       }
     }
-    const legacy = [
-      content.hero_banner_1,
-      content.hero_banner_2,
-      content.hero_banner_3,
-      content.hero_banner_4,
-    ].filter(Boolean) as string[]
+    if (!bannerImg && content.hero_banner_1) {
+      bannerImg = content.hero_banner_1
+    }
 
-    if (legacy.length > 0) return legacy
-
-    return [
-      'https://img.usecurling.com/p/600/900?q=elegant%20fashion',
-      'https://img.usecurling.com/p/600/900?q=sophisticated%20clothing',
-    ]
+    return {
+      bannerImage: bannerImg,
+      eyebrow: content.hero_eyebrow || 'HEY, GIRL!',
+      title: content.hero_title || 'BEM-VINDA À MEYVE.',
+      buttonText: content.hero_button_text || 'COMPRE AGORA',
+      buttonLink: content.hero_button_link || '/produtos',
+    }
   }, [content])
-
-  // Inject preload link for LCP hero banner image
-  useEffect(() => {
-    const lcpImage = dynamicHeroBannerImages[0]
-    if (!lcpImage) return
-
-    const lcpUrl = optimizeImage(lcpImage, {
-      width: 800,
-      quality: 80,
-      format: 'webp',
-    })
-    const lcpSrcSet = getOptimizedSrcSet(lcpImage, [480, 800, 1200], {
-      quality: 80,
-      format: 'webp',
-    })
-
-    const linkId = 'lcp-hero-preload'
-    let link = document.getElementById(linkId) as HTMLLinkElement | null
-    if (!link) {
-      link = document.createElement('link')
-      link.id = linkId
-      link.rel = 'preload'
-      link.as = 'image'
-      link.setAttribute('fetchpriority', 'high')
-      if (lcpSrcSet) {
-        link.setAttribute('imagesrcset', lcpSrcSet)
-        link.setAttribute('imagesizes', '(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw')
-      }
-      document.head.appendChild(link)
-    }
-    link.href = lcpUrl
-    if (lcpSrcSet) {
-      link.setAttribute('imagesrcset', lcpSrcSet)
-      link.setAttribute('imagesizes', '(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw')
-    }
-
-    return () => {
-      // Keep preload during life of page
-    }
-  }, [dynamicHeroBannerImages])
 
   const dynamicCategoryNavItems = useMemo(() => {
     return featuredCategories.map((cat) => ({
@@ -145,66 +108,14 @@ export default function Index() {
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
-      <section className="relative w-full h-[75vh] md:h-[85vh] bg-[#f2eee9] overflow-hidden group/banner">
-        {isLoading ? (
-          <div className="flex overflow-hidden w-full h-full gap-1 md:gap-2">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton
-                key={i}
-                className="w-[85vw] sm:w-1/2 md:w-1/4 h-full rounded-none shrink-0"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full gap-1 md:gap-2 no-scrollbar">
-            {dynamicHeroBannerImages.map((imageUrl, index) => {
-              const isFirst = index === 0
-              const targetWidth = isFirst ? 800 : 500
-              const optimizedSrc = optimizeImage(imageUrl, {
-                width: targetWidth,
-                quality: 80,
-                format: 'webp',
-              })
-              const heroSrcSet = getOptimizedSrcSet(imageUrl, [360, 600, 900, 1200], {
-                quality: 80,
-                format: 'webp',
-              })
-
-              return (
-                <div
-                  key={index}
-                  className="w-[85vw] sm:w-1/2 md:w-1/4 shrink-0 h-full relative overflow-hidden block snap-center md:snap-align-none"
-                >
-                  <ProgressiveImage
-                    src={optimizedSrc}
-                    srcSet={heroSrcSet || undefined}
-                    alt={`Hero Image ${index + 1}`}
-                    priority={isFirst}
-                    loading={isFirst ? 'eager' : 'lazy'}
-                    decoding={isFirst ? 'sync' : 'async'}
-                    width={targetWidth}
-                    height={1200}
-                    sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
-                    blurColor="bg-[#e4dfdb]"
-                    containerClassName="w-full h-full"
-                    className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover/banner:scale-105"
-                  />
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Overlay Button */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <Link
-            to="/produtos"
-            className="pointer-events-auto bg-[#2D0B0B] text-white font-serif uppercase tracking-[0.15em] text-sm md:text-base py-4 px-10 border border-[#2D0B0B] hover:bg-white hover:text-[#2D0B0B] transition-colors duration-300 shadow-lg"
-          >
-            Compre agora
-          </Link>
-        </div>
-      </section>
+      <HeroBanner
+        bannerImage={heroConfig.bannerImage}
+        eyebrow={heroConfig.eyebrow}
+        title={heroConfig.title}
+        buttonText={heroConfig.buttonText}
+        buttonLink={heroConfig.buttonLink}
+        isLoading={isLoading}
+      />
 
       {/* Section 2: Categories Grid */}
       {dynamicCategoryNavItems.length > 0 && (
