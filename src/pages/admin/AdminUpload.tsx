@@ -40,6 +40,8 @@ import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
 import { AdminOrders } from '@/components/admin/AdminOrders'
 import { NewsletterManager } from '@/components/admin/NewsletterManager'
 import { EmailTemplatesManager } from '@/components/admin/EmailTemplatesManager'
+import { BrandSettingsCard } from '@/components/admin/BrandSettingsCard'
+import { invalidateSiteContentCache } from '@/services/siteContent'
 
 export default function AdminUpload() {
   const { user, signIn, loading: authLoading } = useAuth()
@@ -121,6 +123,8 @@ export default function AdminUpload() {
     if (data) {
       const existingKeys = new Set(data.map((d) => d.section_key))
       const requiredKeys = [
+        { key: 'brand_name', value: 'MEYVES' },
+        { key: 'brand_color', value: '#2D0B0B' },
         { key: 'hero_banner_image', value: '' },
         { key: 'hero_eyebrow', value: 'HEY, GIRL!' },
         { key: 'hero_title', value: 'BEM-VINDA À MEYVE.' },
@@ -233,6 +237,7 @@ export default function AdminUpload() {
             )
         }
       }
+      invalidateSiteContentCache()
       toast.success('Conteúdo atualizado com sucesso!')
       setTimeout(() => {
         window.location.reload()
@@ -272,6 +277,8 @@ export default function AdminUpload() {
   }
 
   const labelMap: Record<string, string> = {
+    brand_name: 'NOME DA MARCA / LOGOTIPO',
+    brand_color: 'COR DO LOGOTIPO (#HEX)',
     hero_banner_image: 'BANNER PRINCIPAL (IMAGEM)',
     hero_eyebrow: 'TEXTO DESTAQUE LINHA 1 (HEY, GIRL!)',
     hero_title: 'TEXTO DESTAQUE LINHA 2 (BEM-VINDA À MEYVE.)',
@@ -308,6 +315,7 @@ export default function AdminUpload() {
     return siteContent
       .filter((item) => {
         const key = item.section_key
+        if (category === 'brand') return ['brand_name', 'brand_color'].includes(key)
         if (category === 'main')
           return [
             'hero_banner_image',
@@ -460,6 +468,7 @@ export default function AdminUpload() {
       <Tabs defaultValue="products" className="w-full">
         <TabsList className="mb-8 flex-wrap h-auto gap-2">
           <TabsTrigger value="products">Produtos</TabsTrigger>
+          <TabsTrigger value="brand">Marca / Logotipo</TabsTrigger>
           <TabsTrigger value="product-categories">Categorias</TabsTrigger>
           <TabsTrigger value="orders">Pedidos</TabsTrigger>
           <TabsTrigger value="texts">Textos do Site</TabsTrigger>
@@ -467,6 +476,10 @@ export default function AdminUpload() {
           <TabsTrigger value="categories">Pix & Outros</TabsTrigger>
           <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="brand">
+          <BrandSettingsCard />
+        </TabsContent>
 
         <TabsContent value="orders">
           <Card>
@@ -692,6 +705,9 @@ export default function AdminUpload() {
               <form onSubmit={handleContentSave} className="space-y-6">
                 <Tabs defaultValue="main" className="w-full">
                   <TabsList className="mb-6 flex-wrap h-auto">
+                    <TabsTrigger value="brand" className="flex-1 sm:flex-none">
+                      Marca / Logo
+                    </TabsTrigger>
                     <TabsTrigger value="main" className="flex-1 sm:flex-none">
                       Banner Principal
                     </TabsTrigger>
@@ -715,6 +731,7 @@ export default function AdminUpload() {
                     </TabsTrigger>
                   </TabsList>
 
+                  <TabsContent value="brand">{renderContentGroup('brand')}</TabsContent>
                   <TabsContent value="main">{renderContentGroup('main')}</TabsContent>
                   <TabsContent value="cat1">{renderContentGroup('cat1')}</TabsContent>
                   <TabsContent value="cat2">{renderContentGroup('cat2')}</TabsContent>

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
 import { Loader2, Mail, Lock, User, Eye, EyeOff, Phone, Calendar } from 'lucide-react'
+import { getBrandInfoCached } from '@/services/siteContent'
 
 type AuthMode = 'login' | 'register' | 'reset'
 
@@ -23,6 +24,19 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [brandName, setBrandName] = useState('MEYVES')
+
+  useEffect(() => {
+    let mounted = true
+    getBrandInfoCached().then((info) => {
+      if (mounted && info?.brandName) {
+        setBrandName(info.brandName)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '')
@@ -162,7 +176,7 @@ export default function Auth() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <span className="font-serif text-3xl tracking-[0.15em] text-[#2D0B0B] uppercase">
-              MEYVES
+              {brandName || 'MEYVES'}
             </span>
           </Link>
         </div>

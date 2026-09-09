@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { optimizeImage } from '@/lib/image'
+import { getBrandInfoCached, BrandSettings } from '@/services/siteContent'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -76,6 +77,50 @@ export function Header() {
     return []
   })
 
+  const [brandInfo, setBrandInfo] = useState<BrandSettings>(() => {
+    try {
+      const raw = sessionStorage.getItem('brand_info_cache_v1')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.data?.brandName) return parsed.data
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      brandName: 'MEYVES',
+      brandColor: '#2D0B0B',
+      brandFontSize: '32px',
+    }
+  })
+
+  useEffect(() => {
+    let mounted = true
+    const loadBrand = () => {
+      getBrandInfoCached().then((info) => {
+        if (mounted && info?.brandName) {
+          setBrandInfo(info)
+        }
+      })
+    }
+
+    loadBrand()
+
+    const handleBrandChanged = () => {
+      getBrandInfoCached(true).then((info) => {
+        if (mounted && info?.brandName) {
+          setBrandInfo(info)
+        }
+      })
+    }
+
+    window.addEventListener('brand_name_changed', handleBrandChanged)
+    return () => {
+      mounted = false
+      window.removeEventListener('brand_name_changed', handleBrandChanged)
+    }
+  }, [])
+
   useEffect(() => {
     import('@/services/siteContent').then(({ getCategoriesCached }) => {
       getCategoriesCached().then((names) => {
@@ -121,10 +166,16 @@ export function Header() {
 
             <Link
               to="/"
-              className="inline-block shrink-0 flex items-center justify-center h-12 md:h-14"
+              className="inline-block shrink-0 flex items-center justify-center h-12 md:h-14 transition-opacity hover:opacity-90"
+              aria-label={`Página inicial da ${brandInfo.brandName}`}
             >
-              <span className="font-serif text-3xl md:text-[32px] tracking-[0.15em] text-[#2D0B0B] uppercase">
-                MEYVES
+              <span
+                className="font-serif text-3xl md:text-[32px] tracking-[0.15em] uppercase transition-colors"
+                style={{
+                  color: brandInfo.brandColor || '#2D0B0B',
+                }}
+              >
+                {brandInfo.brandName || 'MEYVES'}
               </span>
             </Link>
           </div>

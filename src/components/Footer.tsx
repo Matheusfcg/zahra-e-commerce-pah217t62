@@ -1,14 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Instagram, Facebook, Mail, Phone, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { getBrandInfoCached } from '@/services/siteContent'
 
 export function Footer() {
   const [email, setEmail] = useState('')
   const [subscribing, setSubscribing] = useState(false)
+  const [brandName, setBrandName] = useState('Meyves')
+
+  useEffect(() => {
+    let mounted = true
+    const updateBrand = () => {
+      getBrandInfoCached().then((info) => {
+        if (mounted && info?.brandName) {
+          setBrandName(info.brandName)
+        }
+      })
+    }
+    updateBrand()
+    const handleBrandChanged = () => updateBrand()
+    window.addEventListener('brand_name_changed', handleBrandChanged)
+    return () => {
+      mounted = false
+      window.removeEventListener('brand_name_changed', handleBrandChanged)
+    }
+  }, [])
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -161,7 +181,9 @@ export function Footer() {
 
         {/* Copyright */}
         <div className="w-full text-center mt-4 pt-8 border-t border-muted/50 text-[11px] tracking-wide text-muted-foreground/80">
-          <p>© 2026 Meyves. Todos os direitos reservados.</p>
+          <p>
+            © {new Date().getFullYear()} {brandName}. Todos os direitos reservados.
+          </p>
         </div>
       </div>
     </footer>

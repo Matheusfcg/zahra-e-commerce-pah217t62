@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FontSettings } from '@/components/admin/FontSettings'
+import { BrandSettingsCard } from '@/components/admin/BrandSettingsCard'
 
 export default function Appearance() {
   return (
@@ -14,9 +15,13 @@ export default function Appearance() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold font-serif text-primary tracking-tight">Aparência</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Personalize a identidade visual, tipografia e o logotipo da loja.
+          </p>
         </div>
       </div>
       <div className="grid gap-8">
+        <BrandSettingsCard />
         <FontSettings />
       </div>
     </div>

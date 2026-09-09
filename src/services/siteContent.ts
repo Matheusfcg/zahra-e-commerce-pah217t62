@@ -75,10 +75,11 @@ export const smartCache = {
 }
 
 const CACHE_KEYS = {
-  SITE_CONTENT: 'site_content_cache_v3',
+  SITE_CONTENT: 'site_content_cache_v4',
   FEATURED_CATEGORIES: 'featured_categories_cache_v3',
   ALL_CATEGORIES: 'all_categories_cache_v3',
   EXCHANGE_POLICY: 'exchange_policy_cache_v3',
+  BRAND_INFO: 'brand_info_cache_v1',
 }
 
 /**
@@ -200,4 +201,56 @@ export async function getExchangePolicyCached(forceRefresh = false): Promise<str
   }
 
   return smartCache.get<string>(CACHE_KEYS.EXCHANGE_POLICY) || null
+}
+
+export interface BrandSettings {
+  brandName: string
+  brandColor?: string
+  brandFontSize?: string
+}
+
+/**
+ * Invalidate all site_content and brand cache so edits reflect instantly
+ */
+export function invalidateSiteContentCache(): void {
+  smartCache.remove(CACHE_KEYS.SITE_CONTENT, 'session')
+  smartCache.remove(CACHE_KEYS.SITE_CONTENT, 'local')
+  smartCache.remove(CACHE_KEYS.BRAND_INFO, 'session')
+  smartCache.remove(CACHE_KEYS.BRAND_INFO, 'local')
+  // Notify any active listeners in the window
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('brand_name_changed'))
+  }
+}
+
+/**
+ * Fetch brand info with persistent caching and fallback to default "MEYVES"
+ */
+export async function getBrandInfoCached(forceRefresh = false): Promise<BrandSettings> {
+  const fallback: BrandSettings = {
+    brandName: 'MEYVES',
+    brandColor: '#2D0B0B',
+    brandFontSize: '32px',
+  }
+
+  if (!forceRefresh) {
+    const cached = smartCache.get<BrandSettings>(CACHE_KEYS.BRAND_INFO)
+    if (cached && cached.brandName) {
+      return cached
+    }
+  }
+
+  try {
+    const content = await getSiteContentCached(forceRefresh)
+    const result: BrandSettings = {
+      brandName: content.brand_name?.trim() || fallback.brandName,
+      brandColor: content.brand_color?.trim() || fallback.brandColor,
+      brandFontSize: content.brand_font_size?.trim() || fallback.brandFontSize,
+    }
+    smartCache.set(CACHE_KEYS.BRAND_INFO, result, 15 * 60 * 1000)
+    return result
+  } catch (e) {
+    console.warn('Failed to fetch brand info:', e)
+    return fallback
+  }
 }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from '@/hooks/use-toast'
 import { Trash2, Plus, ArrowUp, ArrowDown, UploadCloud } from 'lucide-react'
 import { MelhorEnvioSettings } from '@/components/admin/MelhorEnvioSettings'
+import { invalidateSiteContentCache } from '@/services/siteContent'
 
 export default function SiteContentTab() {
   const [heroImages, setHeroImages] = useState<string[]>([])
@@ -119,6 +120,7 @@ export default function SiteContentTab() {
     for (const item of updates) {
       await supabase.from('site_content').upsert(item, { onConflict: 'section_key' })
     }
+    invalidateSiteContentCache()
     toast({ title: 'Banner principal atualizado com sucesso' })
     setLoading(false)
   }
