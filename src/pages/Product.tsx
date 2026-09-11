@@ -42,14 +42,22 @@ const ProductPage = () => {
         .then((data) => {
           setProduct(data)
           if (data.product_colors?.length > 0) {
+            const totalQty = data.quantity || 0
             const hasVariants = Boolean(data.product_variants && data.product_variants.length > 0)
+            const hasSizes = Boolean(data.product_sizes && data.product_sizes.length > 0)
             const allVariantsZero =
               hasVariants && data.product_variants!.every((v) => v.quantity <= 0)
-            const useFallback = allVariantsZero && (data.quantity || 0) > 0
+            const allSizesZero = hasSizes && data.product_sizes!.every((s) => s.quantity <= 0)
+            const useFallback =
+              totalQty > 0 &&
+              ((hasVariants && allVariantsZero) ||
+                (hasSizes && allSizesZero) ||
+                (!hasVariants && !hasSizes))
 
             const availableColor =
               data.product_colors.find((c) => {
-                if (hasVariants && !useFallback) {
+                if (hasVariants) {
+                  if (useFallback) return true
                   return data.product_variants!.some(
                     (v) => v.color_name === c.name && v.quantity > 0,
                   )
@@ -84,15 +92,25 @@ const ProductPage = () => {
 
   const isFallbackStock = useMemo(() => {
     if (!product) return false
+    const totalQty = product.quantity || 0
+    if (totalQty <= 0) return false
+
     const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
     const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
     const allVariantsZero = hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
     const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
 
-    return (
-      (product.quantity || 0) > 0 &&
-      ((hasVariants && allVariantsZero) || (hasSizes && allSizesZero))
-    )
+    // Se possui variantes ou tamanhos e todas estão zeradas, ativa fallback
+    if ((hasVariants && allVariantsZero) || (hasSizes && allSizesZero)) {
+      return true
+    }
+
+    // Se não possui nem variantes nem tamanhos cadastrados, mas tem estoque total > 0
+    if (!hasVariants && !hasSizes) {
+      return true
+    }
+
+    return false
   }, [product])
 
   const isTotalOutOfStock = useMemo(() => {
@@ -358,12 +376,23 @@ const ProductPage = () => {
               </div>
               <div className="flex gap-3">
                 {product.product_colors.map((color) => {
-                  const isColorOutOfStock =
-                    product.product_variants?.length && !isFallbackStock
-                      ? !product.product_variants.some(
-                          (v) => v.color_name === color.name && v.quantity > 0,
-                        )
-                      : false
+                  const isColorOutOfStock = (() => {
+                    // Se o produto está totalmente esgotado (estoque total <= 0)
+                    if (isTotalOutOfStock) return true
+
+                    // Se está em modo fallback inteligente com saldo geral positivo, todas as cores ficam disponíveis
+                    if (isFallbackStock) return false
+
+                    // Se tem variantes com estoque normal, checar se a cor tem alguma variante com quantity > 0
+                    if (product.product_variants && product.product_variants.length > 0) {
+                      return !product.product_variants.some(
+                        (v) => v.color_name === color.name && v.quantity > 0,
+                      )
+                    }
+
+                    // Se não há variantes mas há tamanhos ou apenas estoque geral
+                    return (product.quantity || 0) <= 0
+                  })()
 
                   return (
                     <button
