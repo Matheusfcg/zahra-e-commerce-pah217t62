@@ -14,6 +14,7 @@ import {
   type EmailTemplateInput,
   type EmailLogEntry,
 } from '@/services/emailTemplates'
+import { getBrandInfoCached, BrandSettings } from '@/services/siteContent'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -82,6 +83,12 @@ const SUGGESTED_VARIABLES = [
 export function EmailTemplatesManager() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(true)
+  const [brandInfo, setBrandInfo] = useState<BrandSettings>({
+    brandName: 'MEYVES',
+    brandColor: '#2D0B0B',
+    brandFontSize: '32px',
+    emailHeaderTagline: '',
+  })
 
   // Edit / Create Modal State
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -122,11 +129,24 @@ export function EmailTemplatesManager() {
 
   const loadTemplates = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await fetchEmailTemplates()
-    if (error) {
-      toast.error('Erro ao carregar modelos de e-mail: ' + error.message)
+    const [templatesRes, brandRes] = await Promise.all([
+      fetchEmailTemplates(),
+      getBrandInfoCached(true).catch(() => ({
+        brandName: 'MEYVES',
+        brandColor: '#2D0B0B',
+        brandFontSize: '32px',
+        emailHeaderTagline: '',
+      })),
+    ])
+
+    if (templatesRes.error) {
+      toast.error('Erro ao carregar modelos de e-mail: ' + templatesRes.error.message)
     } else {
-      setTemplates(data || [])
+      setTemplates(templatesRes.data || [])
+    }
+
+    if (brandRes) {
+      setBrandInfo(brandRes)
     }
     setLoading(false)
   }, [])
@@ -355,6 +375,10 @@ export function EmailTemplatesManager() {
 
   // Render preview formatted with dummy sample values
   const renderPreviewHtml = (subject: string, rawBodyOrHtml: string) => {
+    const brandName = brandInfo.brandName?.trim() || 'MEYVES'
+    const brandColor = brandInfo.brandColor?.trim() || '#2D0B0B'
+    const emailTagline = (brandInfo.emailHeaderTagline ?? '').trim()
+
     const mockVars: Record<string, string> = {
       nome_cliente: 'Mariana Silva',
       email_cliente: 'mariana.silva@exemplo.com.br',
@@ -365,11 +389,9 @@ export function EmailTemplatesManager() {
       codigo_rastreio: 'BR984712049BR',
       transportadora: 'Melhor Envio (Jadlog Express)',
       link_nota_fiscal: '#',
-      nome_loja: 'Meyves',
-      bloco_data_estimada:
-        '<p style="font-size: 14px; background: #fdfbf7; padding: 10px 14px; border-left: 3px solid #2D0B0B; color: #2D0B0B; margin: 16px 0;"><strong>Previsão de entrega:</strong> 3 a 5 dias úteis</p>',
-      bloco_rastreamento:
-        '<div style="margin: 20px 0; padding: 16px; background-color: #f0f7f4; border: 1px solid #cce5d9; border-radius: 4px;"><h4 style="margin: 0 0 6px; color: #1b5e20; font-size: 13px; text-transform: uppercase;">Código de Rastreamento</h4><p style="margin: 0; font-family: monospace; font-size: 17px; font-weight: bold; color: #2D0B0B;">BR984712049BR</p><p style="margin: 4px 0 0; font-size: 12px; color: #555;">Transportadora: <strong>Jadlog Express</strong></p></div>',
+      nome_loja: brandName,
+      bloco_data_estimada: `<p style="font-size: 14px; background: #fdfbf7; padding: 10px 14px; border-left: 3px solid ${brandColor}; color: ${brandColor}; margin: 16px 0;"><strong>Previsão de entrega:</strong> 3 a 5 dias úteis</p>`,
+      bloco_rastreamento: `<div style="margin: 20px 0; padding: 16px; background-color: #f0f7f4; border: 1px solid #cce5d9; border-radius: 4px;"><h4 style="margin: 0 0 6px; color: #1b5e20; font-size: 13px; text-transform: uppercase;">Código de Rastreamento</h4><p style="margin: 0; font-family: monospace; font-size: 17px; font-weight: bold; color: ${brandColor};">BR984712049BR</p><p style="margin: 4px 0 0; font-size: 12px; color: #555;">Transportadora: <strong>Jadlog Express</strong></p></div>`,
       itens_pedido: `
         <tr>
           <td style="padding: 10px 8px; border-bottom: 1px solid #eee;">Vestido Midi Elegance Meyves (M)</td>
@@ -377,14 +399,11 @@ export function EmailTemplatesManager() {
           <td style="padding: 10px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">R$ 259,90</td>
         </tr>
       `,
-      endereco_entrega:
-        '<div style="margin-top: 18px; padding: 14px; background-color: #fdfbf7; border: 1px solid #f0ede8; border-radius: 4px;"><h3 style="font-size: 11px; font-weight: 700; margin: 0 0 6px; text-transform: uppercase; color: #2D0B0B;">Endereço de Entrega</h3><p style="font-size: 12px; color: #555; margin: 0;">Av. Paulista, 1000 - Apto 42<br/>São Paulo / SP - CEP: 01310-100</p></div>',
-      botao_nota_fiscal:
-        '<div style="margin-top: 18px; text-align: center;"><a href="#" style="display: inline-block; background-color: #2D0B0B; color: #ffffff; text-decoration: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">Visualizar Nota Fiscal</a></div>',
+      endereco_entrega: `<div style="margin-top: 18px; padding: 14px; background-color: #fdfbf7; border: 1px solid #f0ede8; border-radius: 4px;"><h3 style="font-size: 11px; font-weight: 700; margin: 0 0 6px; text-transform: uppercase; color: ${brandColor};">Endereço de Entrega</h3><p style="font-size: 12px; color: #555; margin: 0;">Av. Paulista, 1000 - Apto 42<br/>São Paulo / SP - CEP: 01310-100</p></div>`,
+      botao_nota_fiscal: `<div style="margin-top: 18px; text-align: center;"><a href="#" style="display: inline-block; background-color: ${brandColor}; color: #ffffff; text-decoration: none; padding: 10px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">Visualizar Nota Fiscal</a></div>`,
       info_frete: 'Frete Expresso — R$ 24,90 (3 dias úteis)',
-      conteudo_newsletter:
-        'Conheça os novos vestidos e conjuntos sofisticados da Coleção Outono Meyves!',
-      assunto_newsletter: 'Novidades Exclusivas Meyves',
+      conteudo_newsletter: `Conheça os novos vestidos e conjuntos sofisticados da Coleção Outono ${brandName}!`,
+      assunto_newsletter: `Novidades Exclusivas ${brandName}`,
     }
 
     let subj = subject || 'Assunto do E-mail'
@@ -399,13 +418,17 @@ export function EmailTemplatesManager() {
     }
 
     const currentYear = new Date().getFullYear()
+    const taglineHtml = emailTagline
+      ? `<p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${emailTagline}</p>`
+      : ''
+    const titleMargin = emailTagline ? 'margin: 0 0 6px;' : 'margin: 0;'
 
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 28px 22px; border: 1px solid #eae5df; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
         <!-- Header da Loja -->
-        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2D0B0B;">
-          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 6px; text-transform: uppercase; font-weight: 700;">MEYVES</h1>
-          <p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">Moda & Elegância</p>
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid ${brandColor};">
+          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandName}</h1>
+          ${taglineHtml}
         </div>
 
         <!-- Assunto Destacado -->
@@ -431,7 +454,7 @@ export function EmailTemplatesManager() {
             <span style="margin-left: 12px;">E-mail Reserva: contato@meyves.com.br</span>
           </p>
           <p style="margin: 10px 0 0; font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.1em;">
-            Meyves © ${currentYear} — Todos os direitos reservados.
+            ${brandName} © ${currentYear} — Todos os direitos reservados.
           </p>
         </div>
       </div>
@@ -577,23 +600,15 @@ export function EmailTemplatesManager() {
                               <Pencil className="mr-1.5 h-3.5 w-3.5" />
                               Editar
                             </Button>
-                            {![
-                              'welcome',
-                              'order_created',
-                              'order_paid',
-                              'order_shipped',
-                              'first_purchase',
-                            ].includes(tpl.slug) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setTemplateToDelete(tpl)}
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                title="Excluir modelo"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setTemplateToDelete(tpl)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title={`Excluir modelo "${tpl.name}"`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

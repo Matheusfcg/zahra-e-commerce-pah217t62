@@ -13,6 +13,7 @@ import {
   getStandardEmailHeaders,
   getResendApiKey,
   checkResendDomainStatus,
+  EmailHeaderBranding,
 } from '../_shared/email-templates.ts'
 
 interface EmailRequestBody {
@@ -176,33 +177,71 @@ function isValidEmail(email?: string | null): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)
 }
 
+// Helper to safely load brand & email header settings from site_content with robust fallbacks
+async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
+  const fallback: EmailHeaderBranding = {
+    brandName: 'MEYVES',
+    tagline: '',
+    brandColor: '#2D0B0B',
+  }
+
+  try {
+    const { data } = await supabase
+      .from('site_content')
+      .select('section_key, content_value')
+      .in('section_key', ['brand_name', 'email_header_tagline', 'brand_color'])
+
+    if (data && Array.isArray(data)) {
+      const map = data.reduce(
+        (acc: Record<string, string>, curr: any) => ({
+          ...acc,
+          [curr.section_key]: curr.content_value,
+        }),
+        {},
+      )
+
+      return {
+        brandName: map.brand_name?.trim() || fallback.brandName,
+        tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
+        brandColor: map.brand_color?.trim() || fallback.brandColor,
+      }
+    }
+  } catch (err) {
+    console.warn('[getEmailBranding] Erro ao consultar branding:', err)
+  }
+
+  return fallback
+}
+
 function buildTemplateHtml(
   templateSlug: string,
   dbTemplate: any,
   vars: Record<string, any>,
   headerTitle: string,
   subtitle?: string,
+  branding?: EmailHeaderBranding,
 ): { subject: string; html: string } {
   let rawSubject = dbTemplate?.subject
   let rawBody = dbTemplate?.body_html
+  const storeName = branding?.brandName?.trim() || 'Meyves'
 
   if (!rawSubject) {
-    if (templateSlug === 'welcome') rawSubject = 'Você acaba de se tornar uma MEYVE GIRL'
+    if (templateSlug === 'welcome') rawSubject = `Você acaba de se tornar uma MEYVE GIRL`
     else if (templateSlug === 'first_purchase')
-      rawSubject = 'Parabéns pela sua primeira compra! 🎉 - Meyves'
+      rawSubject = `Parabéns pela sua primeira compra! 🎉 - ${storeName}`
     else if (templateSlug === 'order_paid')
-      rawSubject = 'Pagamento Confirmado! Pedido #{{numero_pedido}} na Meyves'
+      rawSubject = `Pagamento Confirmado! Pedido #{{numero_pedido}} na ${storeName}`
     else if (templateSlug === 'order_shipped')
-      rawSubject = 'Seu Pedido #{{numero_pedido}} foi Enviado! - Meyves'
+      rawSubject = `Seu Pedido #{{numero_pedido}} foi Enviado! - ${storeName}`
     else if (templateSlug === 'order_delivered')
-      rawSubject = 'Seu Pedido #{{numero_pedido}} foi Entregue! - Meyves'
+      rawSubject = `Seu Pedido #{{numero_pedido}} foi Entregue! - ${storeName}`
     else if (templateSlug === 'order_canceled')
-      rawSubject = 'Cancelamento do Pedido #{{numero_pedido}} na Meyves'
+      rawSubject = `Cancelamento do Pedido #{{numero_pedido}} na ${storeName}`
     else if (templateSlug === 'invoice_available')
-      rawSubject = 'Nota Fiscal disponível - Pedido #{{numero_pedido}} na Meyves'
+      rawSubject = `Nota Fiscal disponível - Pedido #{{numero_pedido}} na ${storeName}`
     else if (templateSlug === 'newsletter_broadcast')
-      rawSubject = 'Novidades e Destaques Exclusivos Meyves'
-    else rawSubject = 'Obrigado por comprar na Meyves! Pedido #{{numero_pedido}}'
+      rawSubject = `Novidades e Destaques Exclusivos ${storeName}`
+    else rawSubject = `Obrigado por comprar na ${storeName}! Pedido #{{numero_pedido}}`
   }
 
   if (!rawBody) {
@@ -211,14 +250,14 @@ function buildTemplateHtml(
         Olá, <strong>{{nome_cliente}}</strong>!
       </p>
       <p style="font-size: 15px; line-height: 1.6; color: #555; margin: 0 0 16px;">
-        Esta é uma notificação do seu pedido <strong>#{{numero_pedido}}</strong> da Meyves.
+        Esta é uma notificação do seu pedido <strong>#{{numero_pedido}}</strong> da ${storeName}.
       </p>
     `
   }
 
   const finalSubject = replaceVariables(rawSubject, vars)
   const finalBody = replaceVariables(rawBody, vars)
-  const finalHtml = wrapInLayout(headerTitle, subtitle, finalBody)
+  const finalHtml = wrapInLayout(headerTitle, subtitle, finalBody, branding)
 
   return { subject: finalSubject, html: finalHtml }
 }
@@ -353,12 +392,14 @@ Deno.serve(async (req: Request) => {
           nome_loja: 'Meyves',
         }
 
+        const branding = await getEmailBranding(supabase)
         const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
           rowSlug,
           dbTemplate,
           dummyVars,
           row.subject || 'Notificação Meyves',
           `Modelo: ${rowSlug}`,
+          branding,
         )
 
         const sendResult = await sendEmailWithFallback(
@@ -440,17 +481,20 @@ Deno.serve(async (req: Request) => {
         .eq('slug', 'welcome')
         .maybeSingle()
 
+      const branding = await getEmailBranding(supabase)
       const vars = {
         nome_cliente: clientName,
         email_cliente: targetEmail!,
-        nome_loja: 'Meyves',
+        nome_loja: branding.brandName || 'Meyves',
       }
 
       const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
         'welcome',
         dbTemplate,
         vars,
-        'Boas-vindas à Meyves',
+        `Boas-vindas à ${branding.brandName || 'Meyves'}`,
+        undefined,
+        branding,
       )
 
       if (!resendKey) {
@@ -588,12 +632,14 @@ Deno.serve(async (req: Request) => {
         nome_loja: 'Meyves',
       }
 
+      const branding = await getEmailBranding(supabase)
       const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
         templateSlug,
         dbTemplate,
         dummyVars,
-        'Teste de Notificação Meyves',
+        `Teste de Notificação ${branding.brandName || 'Meyves'}`,
         `Modelo: ${templateSlug}`,
+        branding,
       )
 
       const sendersToTry = getSendersList()
@@ -879,12 +925,14 @@ Deno.serve(async (req: Request) => {
       nome_loja: 'Meyves',
     }
 
+    const branding = await getEmailBranding(supabase)
     const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
       templateSlug,
       dbTemplate,
       templateVariables,
       headerTitle,
       `Pedido #${shortId}`,
+      branding,
     )
 
     const sendersToTry = getSendersList()

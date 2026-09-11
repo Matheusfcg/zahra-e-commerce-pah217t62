@@ -11,6 +11,7 @@ import { invalidateSiteContentCache, getBrandInfoCached } from '@/services/siteC
 export function BrandSettingsCard() {
   const [brandName, setBrandName] = useState('MEYVES')
   const [brandColor, setBrandColor] = useState('#2D0B0B')
+  const [emailTagline, setEmailTagline] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -24,6 +25,7 @@ export function BrandSettingsCard() {
       const info = await getBrandInfoCached(true)
       setBrandName(info.brandName || 'MEYVES')
       setBrandColor(info.brandColor || '#2D0B0B')
+      setEmailTagline(info.emailHeaderTagline !== undefined ? info.emailHeaderTagline : '')
     } catch {
       // ignore
     } finally {
@@ -53,6 +55,11 @@ export function BrandSettingsCard() {
           content_value: brandColor.trim() || '#2D0B0B',
           updated_at: now,
         },
+        {
+          section_key: 'email_header_tagline',
+          content_value: emailTagline.trim(),
+          updated_at: now,
+        },
       ]
 
       for (const item of entries) {
@@ -65,8 +72,8 @@ export function BrandSettingsCard() {
       invalidateSiteContentCache()
 
       toast({
-        title: 'Logotipo atualizado!',
-        description: `O nome "${cleanName}" foi aplicado ao cabeçalho e rodapé do site.`,
+        title: 'Identidade visual atualizada!',
+        description: `O nome "${cleanName}" e as configurações do cabeçalho de e-mail foram salvos com sucesso.`,
       })
     } catch (err: any) {
       toast({
@@ -82,6 +89,7 @@ export function BrandSettingsCard() {
   const handleResetDefault = () => {
     setBrandName('MEYVES')
     setBrandColor('#2D0B0B')
+    setEmailTagline('')
   }
 
   if (loading) {
@@ -159,32 +167,99 @@ export function BrandSettingsCard() {
             </div>
           </div>
 
-          {/* Live Preview Header Simulation */}
-          <div className="rounded-lg border bg-muted/20 p-6 space-y-3">
+          {/* Subtítulo / Tagline dos E-mails */}
+          <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Pré-visualização do Cabeçalho
-              </p>
-              <span className="text-[11px] text-muted-foreground">
-                Fundo do cabeçalho (#FAFAFA)
-              </span>
-            </div>
-
-            <div className="bg-[#FAFAFA] border border-gray-100 rounded-md p-6 flex flex-col items-center justify-center text-center shadow-xs min-h-[90px]">
-              <span
-                className="font-serif text-3xl md:text-[32px] tracking-[0.15em] uppercase transition-all duration-200"
-                style={{
-                  color: brandColor || '#2D0B0B',
-                }}
+              <Label
+                htmlFor="email-tagline-input"
+                className="text-sm font-semibold flex items-center gap-1.5"
               >
-                {brandName.trim() || 'MEYVES'}
-              </span>
+                <span>Subtítulo do Cabeçalho dos E-mails (Tagline)</span>
+              </Label>
+              {emailTagline.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setEmailTagline('')}
+                  className="text-xs text-[#2D0B0B] hover:underline cursor-pointer"
+                >
+                  Deixar Vazio (remover subtítulo)
+                </button>
+              )}
+            </div>
+            <Input
+              id="email-tagline-input"
+              value={emailTagline}
+              onChange={(e) => setEmailTagline(e.target.value)}
+              placeholder="Deixe em branco para remover ou digite ex: MODA & ELEGÂNCIA"
+              className="h-11 text-sm tracking-wider uppercase"
+              maxLength={60}
+            />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Texto que aparece abaixo do nome da marca no topo de todos os e-mails transacionais
+              (boas-vindas, pedidos, rastreamento, nota fiscal, newsletter).
+              <strong> Deixe vazio caso deseje exibir apenas o nome da marca</strong>, sem nenhum
+              subtítulo ou espaçamento extra.
+            </p>
+          </div>
+
+          {/* Live Preview Dual: Site Header & Email Header */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 1. Preview Site Header */}
+            <div className="rounded-lg border bg-muted/20 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Cabeçalho da Loja (Site)
+                </p>
+                <span className="text-[10px] text-muted-foreground">Fundo #FAFAFA</span>
+              </div>
+              <div className="bg-[#FAFAFA] border border-gray-100 rounded-md p-6 flex flex-col items-center justify-center text-center shadow-xs min-h-[90px]">
+                <span
+                  className="font-serif text-2xl md:text-[28px] tracking-[0.15em] uppercase transition-all duration-200"
+                  style={{ color: brandColor || '#2D0B0B' }}
+                >
+                  {brandName.trim() || 'MEYVES'}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                Visualização do logotipo exibido no topo e rodapé da loja.
+              </p>
             </div>
 
-            <p className="text-[12px] text-muted-foreground text-center">
-              Assim que você salvar, o cabeçalho oficial do site e o rodapé serão atualizados
-              imediatamente.
-            </p>
+            {/* 2. Preview Email Header */}
+            <div className="rounded-lg border bg-muted/20 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Cabeçalho dos E-mails
+                </p>
+                <span className="text-[10px] text-muted-foreground">Todos os 9 templates</span>
+              </div>
+              <div className="bg-white border border-[#eae5df] rounded-md p-5 flex flex-col items-center justify-center text-center shadow-xs min-h-[90px]">
+                <div
+                  className="w-full text-center pb-3 border-b-2"
+                  style={{ borderColor: brandColor || '#2D0B0B' }}
+                >
+                  <h3
+                    className="font-serif text-xl tracking-[0.2em] uppercase font-bold transition-all duration-200"
+                    style={{
+                      color: brandColor || '#2D0B0B',
+                      margin: emailTagline.trim() ? '0 0 4px' : '0',
+                    }}
+                  >
+                    {brandName.trim() || 'MEYVES'}
+                  </h3>
+                  {emailTagline.trim() ? (
+                    <p className="text-[10px] tracking-[0.15em] text-[#7a6e65] uppercase m-0">
+                      {emailTagline.trim()}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                {emailTagline.trim()
+                  ? `Exibindo subtítulo: "${emailTagline.trim()}"`
+                  : 'Subtítulo ocultado: apenas o nome da marca será exibido nos e-mails.'}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t">

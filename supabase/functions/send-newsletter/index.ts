@@ -9,6 +9,7 @@ import {
   PRIMARY_CUSTOMER_EMAIL,
   getStandardEmailHeaders,
   getResendApiKey,
+  EmailHeaderBranding,
 } from '../_shared/email-templates.ts'
 
 Deno.serve(async (req) => {
@@ -74,10 +75,40 @@ Deno.serve(async (req) => {
       .from('email_templates')
       .select('*')
       .eq('slug', 'newsletter_broadcast')
-      .single()
+      .maybeSingle()
 
+    // Fetch branding dynamically with fallbacks
+    let branding: EmailHeaderBranding = {
+      brandName: 'MEYVES',
+      tagline: '',
+      brandColor: '#2D0B0B',
+    }
+    try {
+      const { data: contentData } = await supabase
+        .from('site_content')
+        .select('section_key, content_value')
+        .in('section_key', ['brand_name', 'email_header_tagline', 'brand_color'])
+      if (contentData && Array.isArray(contentData)) {
+        const map = contentData.reduce(
+          (acc: Record<string, string>, curr: any) => ({
+            ...acc,
+            [curr.section_key]: curr.content_value,
+          }),
+          {},
+        )
+        branding = {
+          brandName: map.brand_name?.trim() || 'MEYVES',
+          tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
+          brandColor: map.brand_color?.trim() || '#2D0B0B',
+        }
+      }
+    } catch (bErr) {
+      console.warn('Erro ao carregar branding em newsletter:', bErr)
+    }
+
+    const storeName = branding.brandName || 'Meyves'
     const baseSubject =
-      customSubject || dbTemplate?.subject || 'Novidades e Destaques Exclusivos Meyves'
+      customSubject || dbTemplate?.subject || `Novidades e Destaques Exclusivos ${storeName}`
     const baseBody =
       dbTemplate?.body_html ||
       `
@@ -94,12 +125,12 @@ Deno.serve(async (req) => {
     const vars = {
       conteudo_newsletter: content,
       assunto_newsletter: baseSubject,
-      nome_loja: 'Meyves',
+      nome_loja: storeName,
     }
 
     const finalSubject = replaceVariables(baseSubject, vars)
     const formattedContent = replaceVariables(baseBody, vars)
-    const finalHtml = wrapInLayout(finalSubject, undefined, formattedContent)
+    const finalHtml = wrapInLayout(finalSubject, undefined, formattedContent, branding)
 
     const emails = subscribers.map((s: { email: string }) => s.email).filter(Boolean)
     const sendersToTry = getSendersList()

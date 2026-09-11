@@ -207,6 +207,7 @@ export interface BrandSettings {
   brandName: string
   brandColor?: string
   brandFontSize?: string
+  emailHeaderTagline?: string
 }
 
 /**
@@ -231,6 +232,7 @@ export async function getBrandInfoCached(forceRefresh = false): Promise<BrandSet
     brandName: 'MEYVES',
     brandColor: '#2D0B0B',
     brandFontSize: '32px',
+    emailHeaderTagline: '',
   }
 
   if (!forceRefresh) {
@@ -246,6 +248,9 @@ export async function getBrandInfoCached(forceRefresh = false): Promise<BrandSet
       brandName: content.brand_name?.trim() || fallback.brandName,
       brandColor: content.brand_color?.trim() || fallback.brandColor,
       brandFontSize: content.brand_font_size?.trim() || fallback.brandFontSize,
+      // If undefined in database, fallback to '' (or content_value if saved)
+      emailHeaderTagline:
+        content.email_header_tagline !== undefined ? content.email_header_tagline : '',
     }
     smartCache.set(CACHE_KEYS.BRAND_INFO, result, 15 * 60 * 1000)
     return result

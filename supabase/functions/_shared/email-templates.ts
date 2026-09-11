@@ -20,17 +20,40 @@ export function getStatusLabel(status: string): string {
   return labels[status] || status
 }
 
-export const buildHeader = (title: string, subtitle?: string): string => `
+export interface EmailHeaderBranding {
+  brandName?: string | null
+  tagline?: string | null
+  brandColor?: string | null
+}
+
+export const buildHeader = (
+  title: string,
+  subtitle?: string,
+  branding?: EmailHeaderBranding,
+): string => {
+  const brandName = branding?.brandName?.trim() || 'MEYVES'
+  const brandColor = branding?.brandColor?.trim() || '#2D0B0B'
+  // Tagline can be empty string (explicitly disabled) or custom or fallback
+  const hasCustomTagline = branding?.tagline !== undefined
+  const tagline = hasCustomTagline ? (branding?.tagline || '').trim() : 'Moda & Elegância'
+
+  const titleMargin = tagline ? 'margin: 0 0 8px;' : 'margin: 0;'
+  const taglineHtml = tagline
+    ? `<p style="font-size: 11px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${tagline}</p>`
+    : ''
+
+  return `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 32px 24px; border: 1px solid #f0ede8;">
-    <div style="text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #2D0B0B;">
-      <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: #2D0B0B; margin: 0 0 8px; text-transform: uppercase; font-weight: 700;">MEYVES</h1>
-      <p style="font-size: 11px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">Moda & Elegância</p>
+    <div style="text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid ${brandColor};">
+      <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandName}</h1>
+      ${taglineHtml}
     </div>
     <div style="text-align: center; margin-bottom: 24px;">
       <h2 style="font-family: 'Playfair Display', Georgia, serif; color: #2D0B0B; font-weight: 600; margin: 0 0 6px; font-size: 22px;">${title}</h2>
       ${subtitle ? `<p style="color: #666; font-size: 14px; margin: 0;">${subtitle}</p>` : ''}
     </div>
 `
+}
 
 export const buildFooter = (): string => `
     <hr style="border: none; border-top: 1px solid #eae6e1; margin: 36px 0 20px;" />
@@ -76,13 +99,14 @@ export function wrapInLayout(
   title: string,
   subtitle: string | undefined,
   bodyContent: string,
+  branding?: EmailHeaderBranding,
 ): string {
   // If the body already contains the full document wrapper, return as is
-  if (bodyContent.includes('MEYVES') && bodyContent.includes('font-family')) {
+  if (bodyContent.includes('font-family') && bodyContent.includes('border: 1px solid #f0ede8')) {
     return bodyContent
   }
   return `
-    ${buildHeader(title, subtitle)}
+    ${buildHeader(title, subtitle, branding)}
     ${bodyContent}
     ${buildFooter()}
   `
