@@ -79,25 +79,36 @@ export function ProductCard({
         </button>
 
         {(() => {
+          const totalQty = product.quantity || 0
           const hasVariants = Boolean(
             product.product_variants && product.product_variants.length > 0,
           )
           const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
-          const allVariantsZero =
-            hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
-          const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
+          const hasColors = Boolean(product.product_colors && product.product_colors.length > 0)
 
-          // Fallback inteligente: se existirem variantes/tamanhos mas TODOS estiverem zerados E product.quantity > 0,
-          // o lojista cadastrou estoque simplificado no Estoque Total -> NÃO considerar esgotado.
-          if ((allVariantsZero || allSizesZero) && (product.quantity || 0) > 0) {
+          // Se o estoque total é positivo, o produto NUNCA está esgotado
+          if (totalQty > 0) {
             return false
           }
 
-          let isTotalOutOfStock = (product.quantity || 0) <= 0
+          // Se totalQty <= 0:
+          // Verificar se alguma variante ou tamanho ainda tem estoque positivo
+          const anyVariantPositive =
+            hasVariants && product.product_variants!.some((v) => (v.quantity || 0) > 0)
+          const anySizePositive =
+            hasSizes && product.product_sizes!.some((s) => (s.quantity || 0) > 0)
+
+          if (anyVariantPositive || anySizePositive) {
+            return false
+          }
+
+          let isTotalOutOfStock = totalQty <= 0
           if (hasVariants) {
-            isTotalOutOfStock = allVariantsZero && (product.quantity || 0) <= 0
+            const allVariantsZero = product.product_variants!.every((v) => (v.quantity || 0) <= 0)
+            isTotalOutOfStock = allVariantsZero && totalQty <= 0
           } else if (hasSizes) {
-            isTotalOutOfStock = allSizesZero && (product.quantity || 0) <= 0
+            const allSizesZero = product.product_sizes!.every((s) => (s.quantity || 0) <= 0)
+            isTotalOutOfStock = allSizesZero && totalQty <= 0
           }
           return isTotalOutOfStock
         })() && (

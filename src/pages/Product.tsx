@@ -44,27 +44,31 @@ const ProductPage = () => {
           if (data.product_colors?.length > 0) {
             const totalQty = data.quantity || 0
             const hasVariants = Boolean(data.product_variants && data.product_variants.length > 0)
-            const hasSizes = Boolean(data.product_sizes && data.product_sizes.length > 0)
-            const allVariantsZero =
-              hasVariants && data.product_variants!.every((v) => v.quantity <= 0)
-            const allSizesZero = hasSizes && data.product_sizes!.every((s) => s.quantity <= 0)
-            const useFallback =
-              totalQty > 0 &&
-              ((hasVariants && allVariantsZero) ||
-                (hasSizes && allSizesZero) ||
-                (!hasVariants && !hasSizes))
+            const variantsTotalStock = (data.product_variants || []).reduce(
+              (sum, v) => sum + (v.quantity || 0),
+              0,
+            )
 
-            const availableColor =
-              data.product_colors.find((c) => {
-                if (hasVariants) {
-                  if (useFallback) return true
-                  return data.product_variants!.some(
-                    (v) => v.color_name === c.name && v.quantity > 0,
-                  )
-                }
-                return true
-              }) || data.product_colors[0]
-            setSelectedColor(availableColor)
+            // Se o estoque geral é positivo mas as variantes não cobrem as cores ou estão todas zeradas,
+            // selecionar a primeira cor cadastrada
+            let availableColor: ProductColor | undefined
+
+            if (totalQty > 0 && (!hasVariants || variantsTotalStock === 0)) {
+              availableColor = data.product_colors[0]
+            } else if (hasVariants) {
+              // Tenta achar cor com variantes com estoque > 0
+              availableColor = data.product_colors.find((c) =>
+                data.product_variants!.some(
+                  (v) => v.color_name === c.name && (v.quantity || 0) > 0,
+                ),
+              )
+              // Se nenhuma cor tiver estoque nas variantes mas totalQty > 0
+              if (!availableColor && totalQty > 0) {
+                availableColor = data.product_colors[0]
+              }
+            }
+
+            setSelectedColor(availableColor || data.product_colors[0])
           }
         })
         .catch(console.error)
@@ -90,95 +94,172 @@ const ProductPage = () => {
     })
   }, [product])
 
-  const isFallbackStock = useMemo(() => {
+  const isTotalOutOfStock = useMemo(() => {
+    if (!product) return true
+    const totalQty = product.quantity || 0
+    // Se o estoque geral for positivo, NUNCA é esgotado
+    if (totalQty > 0) return false
+
+    // Se totalQty <= 0, verificar se há variantes ou tamanhos com saldo positivo
+    const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
+    const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
+
+    const anyVariantPositive =
+      hasVariants && product.product_variants!.some((v) => (v.quantity || 0) > 0)
+    const anySizePositive = hasSizes && product.product_sizes!.some((s) => (s.quantity || 0) > 0)
+
+    if (anyVariantPositive || anySizePositive) {
+      return false
+    }
+
+    return true
+  }, [product])
+
+  // Identifica se o produto como um todo opera no fallback simplificado (sem variantes/tamanhos com estoque)
+  const isGlobalFallbackStock = useMemo(() => {
     if (!product) return false
     const totalQty = product.quantity || 0
     if (totalQty <= 0) return false
 
     const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
     const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
-    const allVariantsZero = hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
-    const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
 
-    // Se possui variantes ou tamanhos e todas estão zeradas, ativa fallback
-    if ((hasVariants && allVariantsZero) || (hasSizes && allSizesZero)) {
-      return true
-    }
+    const allVariantsZero =
+      !hasVariants || product.product_variants!.every((v) => (v.quantity || 0) <= 0)
+    const allSizesZero = !hasSizes || product.product_sizes!.every((s) => (s.quantity || 0) <= 0)
 
-    // Se não possui nem variantes nem tamanhos cadastrados, mas tem estoque total > 0
-    if (!hasVariants && !hasSizes) {
-      return true
-    }
-
-    return false
+    // Se todas as variantes e tamanhos estão zerados (ou não existem), mas totalQty > 0 -> fallback global
+    return allVariantsZero && allSizesZero
   }, [product])
 
-  const isTotalOutOfStock = useMemo(() => {
-    if (!product) return true
-    const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
-    const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
-    const allVariantsZero = hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
-    const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
+  // Função auxiliar para verificar disponibilidade de uma cor
+  const checkIsColorOutOfStock = useMemo(() => {
+    return (color: ProductColor): boolean => {
+      if (!product) return true
+      const totalQty = product.quantity || 0
+      if (isTotalOutOfStock) return true
 
-    // Se temos fallback inteligente (estoque total > 0, mesmo com variantes zeradas), não é esgotado
-    if ((product.quantity || 0) > 0 && (allVariantsZero || allSizesZero)) {
-      return false
-    }
+      // Se está em fallback global com estoque positivo, TODAS as cores estão disponíveis
+      if (isGlobalFallbackStock) return false
 
-    if (hasVariants) {
-      return allVariantsZero && (product.quantity || 0) <= 0
+      const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
+
+      if (hasVariants) {
+        const variantsForThisColor = product.product_variants!.filter(
+          (v) => v.color_name === color.name,
+        )
+
+        // Se há variantes cadastradas especificamente para esta cor:
+        if (variantsForThisColor.length > 0) {
+          const hasVariantInStock = variantsForThisColor.some((v) => (v.quantity || 0) > 0)
+          if (hasVariantInStock) return false
+
+          // Se as variantes desta cor estão zeradas:
+          // Se o produto como um todo possui estoque geral positivo E as variantes das outras cores
+          // não cobrem totalmente ou a grade está descompassada, permitir fallback para a cor se totalQty > 0
+          const otherVariantsStock = product
+            .product_variants!.filter((v) => v.color_name !== color.name)
+            .reduce((sum, v) => sum + Math.max(0, v.quantity || 0), 0)
+
+          if (totalQty > otherVariantsStock) {
+            return false // Ainda sobra saldo no totalQty não alocado
+          }
+
+          return !hasVariantInStock
+        }
+
+        // Se NÃO há nenhuma variante cadastrada para essa cor mas a cor existe em product_colors:
+        // Se há saldo geral positivo > 0, liberar cor!
+        if (totalQty > 0) {
+          return false
+        }
+
+        return true
+      }
+
+      // Se não há product_variants
+      return totalQty <= 0
     }
-    if (hasSizes) {
-      return allSizesZero && (product.quantity || 0) <= 0
-    }
-    return (product.quantity || 0) <= 0
-  }, [product])
+  }, [product, isTotalOutOfStock, isGlobalFallbackStock])
 
   const availableSizes = useMemo(() => {
     if (!product) return []
+    const totalQty = product.quantity || 0
 
+    // Se temos product_variants
     if (product.product_variants?.length) {
       const variantsForColor = selectedColor
         ? product.product_variants.filter((v) => v.color_name === selectedColor.name)
         : product.product_variants
 
       const sizeMap = new Map<string, number>()
-      for (const v of variantsForColor) {
-        const current = sizeMap.get(v.size_name) ?? 0
-        // Se fallback ativo, o estoque disponível por tamanho é o estoque total do produto
-        const variantQty = isFallbackStock ? product.quantity || 0 : v.quantity
-        sizeMap.set(v.size_name, current + variantQty)
-      }
 
-      // Se a cor selecionada não tiver variantes vinculadas mas o produto tem fallback,
-      // listar tamanhos de outras variantes ou tamanho único
-      if (sizeMap.size === 0 && isFallbackStock) {
+      if (variantsForColor.length > 0) {
+        for (const v of variantsForColor) {
+          const current = sizeMap.get(v.size_name) ?? 0
+          // Se fallback global, usa totalQty
+          let variantQty = isGlobalFallbackStock ? totalQty : v.quantity || 0
+          // Se a variante está zerada mas totalQty > 0 e todas as variantes dessa cor estão zeradas,
+          // permitir fallback para o tamanho
+          if (variantQty <= 0 && totalQty > 0) {
+            const allVariantsOfColorZero = variantsForColor.every(
+              (item) => (item.quantity || 0) <= 0,
+            )
+            if (allVariantsOfColorZero) {
+              variantQty = totalQty
+            }
+          }
+          sizeMap.set(v.size_name, current + variantQty)
+        }
+      } else {
+        // Se a cor selecionada NÃO tem variantes cadastradas para ela (ex: grade criada só para outra cor),
+        // mas o produto tem variantes para outras cores ou product_sizes:
+        // Herdar todos os tamanhos existentes no produto e atribuir totalQty
         for (const v of product.product_variants) {
-          sizeMap.set(v.size_name, product.quantity || 0)
+          if (!sizeMap.has(v.size_name)) {
+            sizeMap.set(v.size_name, totalQty > 0 ? totalQty : 0)
+          }
         }
       }
 
-      const list = Array.from(sizeMap.entries())
-        .map(([sizeName, qty]) => ({
-          id: sizeName,
-          size_name: sizeName,
-          quantity: qty,
-        }))
-        .sort((a, b) => {
-          if (a.size_name === 'Tamanho Único') return -1
-          if (b.size_name === 'Tamanho Único') return 1
-          return a.size_name.localeCompare(b.size_name)
-        })
+      // Se ainda não temos tamanhos a partir das variantes, checar product_sizes
+      if (sizeMap.size === 0 && product.product_sizes?.length) {
+        for (const s of product.product_sizes) {
+          sizeMap.set(
+            s.size_name,
+            isGlobalFallbackStock || totalQty > 0 ? totalQty : s.quantity || 0,
+          )
+        }
+      }
 
-      if (list.length > 0) return list
+      if (sizeMap.size > 0) {
+        return Array.from(sizeMap.entries())
+          .map(([sizeName, qty]) => ({
+            id: sizeName,
+            size_name: sizeName,
+            quantity: qty,
+          }))
+          .sort((a, b) => {
+            if (a.size_name === 'Tamanho Único') return -1
+            if (b.size_name === 'Tamanho Único') return 1
+            return a.size_name.localeCompare(b.size_name)
+          })
+      }
     }
 
+    // Se temos product_sizes
     if (product.product_sizes?.length) {
       return product.product_sizes
-        .map((s) => ({
-          ...s,
-          quantity: isFallbackStock ? product.quantity || 0 : s.quantity,
-        }))
+        .map((s) => {
+          let qty = s.quantity || 0
+          if (isGlobalFallbackStock || (qty <= 0 && totalQty > 0)) {
+            qty = totalQty
+          }
+          return {
+            ...s,
+            quantity: qty,
+          }
+        })
         .sort((a, b) => {
           if (a.size_name === 'Tamanho Único') return -1
           if (b.size_name === 'Tamanho Único') return 1
@@ -191,10 +272,10 @@ const ProductPage = () => {
       {
         id: 'unique',
         size_name: 'Tamanho Único',
-        quantity: product.quantity || 0,
+        quantity: totalQty,
       },
     ]
-  }, [product, selectedColor, isFallbackStock])
+  }, [product, selectedColor, isGlobalFallbackStock])
 
   // Auto-selecionar tamanho único se houver apenas um disponível
   useEffect(() => {
@@ -205,21 +286,47 @@ const ProductPage = () => {
 
   const effectiveStock = useMemo(() => {
     if (!product) return 0
-    if (isFallbackStock) {
-      return product.quantity || 0
+    const totalQty = product.quantity || 0
+    if (isGlobalFallbackStock) {
+      return totalQty
     }
+
     if (selectedColor && selectedSize && product.product_variants?.length) {
       const variant = product.product_variants.find(
         (v) => v.color_name === selectedColor.name && v.size_name === selectedSize,
       )
-      if (variant) return variant.quantity
+      if (variant) {
+        // Se a variante tem quantidade > 0, respeitar
+        if ((variant.quantity || 0) > 0) {
+          return variant.quantity
+        }
+        // Se a variante está zerada, mas o totalQty > 0 e a cor ou o tamanho estão usando fallback:
+        if (totalQty > 0) {
+          return totalQty
+        }
+        return 0
+      }
+      // Se não achou a variante (ex: cor sem combinação cadastrada no banco)
+      if (totalQty > 0) {
+        return totalQty
+      }
     }
-    if (selectedSize && !product.product_variants?.length && product.product_sizes?.length) {
+
+    if (selectedSize && product.product_sizes?.length) {
       const size = product.product_sizes.find((s) => s.size_name === selectedSize)
-      if (size) return size.quantity
+      if (size) {
+        if ((size.quantity || 0) > 0) {
+          return size.quantity
+        }
+        if (totalQty > 0) {
+          return totalQty
+        }
+        return 0
+      }
     }
-    return product.quantity || 0
-  }, [product, selectedColor, selectedSize, isFallbackStock])
+
+    return totalQty
+  }, [product, selectedColor, selectedSize, isGlobalFallbackStock])
 
   if (isLoading) {
     return (
@@ -376,23 +483,7 @@ const ProductPage = () => {
               </div>
               <div className="flex gap-3">
                 {product.product_colors.map((color) => {
-                  const isColorOutOfStock = (() => {
-                    // Se o produto está totalmente esgotado (estoque total <= 0)
-                    if (isTotalOutOfStock) return true
-
-                    // Se está em modo fallback inteligente com saldo geral positivo, todas as cores ficam disponíveis
-                    if (isFallbackStock) return false
-
-                    // Se tem variantes com estoque normal, checar se a cor tem alguma variante com quantity > 0
-                    if (product.product_variants && product.product_variants.length > 0) {
-                      return !product.product_variants.some(
-                        (v) => v.color_name === color.name && v.quantity > 0,
-                      )
-                    }
-
-                    // Se não há variantes mas há tamanhos ou apenas estoque geral
-                    return (product.quantity || 0) <= 0
-                  })()
+                  const isColorOutOfStock = checkIsColorOutOfStock(color)
 
                   return (
                     <button
