@@ -42,10 +42,15 @@ const ProductPage = () => {
         .then((data) => {
           setProduct(data)
           if (data.product_colors?.length > 0) {
+            const hasVariants = Boolean(data.product_variants && data.product_variants.length > 0)
+            const allVariantsZero =
+              hasVariants && data.product_variants!.every((v) => v.quantity <= 0)
+            const useFallback = allVariantsZero && (data.quantity || 0) > 0
+
             const availableColor =
               data.product_colors.find((c) => {
-                if (data.product_variants?.length) {
-                  return data.product_variants.some(
+                if (hasVariants && !useFallback) {
+                  return data.product_variants!.some(
                     (v) => v.color_name === c.name && v.quantity > 0,
                   )
                 }
@@ -77,6 +82,40 @@ const ProductPage = () => {
     })
   }, [product])
 
+  const isFallbackStock = useMemo(() => {
+    if (!product) return false
+    const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
+    const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
+    const allVariantsZero = hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
+    const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
+
+    return (
+      (product.quantity || 0) > 0 &&
+      ((hasVariants && allVariantsZero) || (hasSizes && allSizesZero))
+    )
+  }, [product])
+
+  const isTotalOutOfStock = useMemo(() => {
+    if (!product) return true
+    const hasVariants = Boolean(product.product_variants && product.product_variants.length > 0)
+    const hasSizes = Boolean(product.product_sizes && product.product_sizes.length > 0)
+    const allVariantsZero = hasVariants && product.product_variants!.every((v) => v.quantity <= 0)
+    const allSizesZero = hasSizes && product.product_sizes!.every((s) => s.quantity <= 0)
+
+    // Se temos fallback inteligente (estoque total > 0, mesmo com variantes zeradas), não é esgotado
+    if ((product.quantity || 0) > 0 && (allVariantsZero || allSizesZero)) {
+      return false
+    }
+
+    if (hasVariants) {
+      return allVariantsZero && (product.quantity || 0) <= 0
+    }
+    if (hasSizes) {
+      return allSizesZero && (product.quantity || 0) <= 0
+    }
+    return (product.quantity || 0) <= 0
+  }, [product])
+
   const availableSizes = useMemo(() => {
     if (!product) return []
 
@@ -88,10 +127,20 @@ const ProductPage = () => {
       const sizeMap = new Map<string, number>()
       for (const v of variantsForColor) {
         const current = sizeMap.get(v.size_name) ?? 0
-        sizeMap.set(v.size_name, current + v.quantity)
+        // Se fallback ativo, o estoque disponível por tamanho é o estoque total do produto
+        const variantQty = isFallbackStock ? product.quantity || 0 : v.quantity
+        sizeMap.set(v.size_name, current + variantQty)
       }
 
-      return Array.from(sizeMap.entries())
+      // Se a cor selecionada não tiver variantes vinculadas mas o produto tem fallback,
+      // listar tamanhos de outras variantes ou tamanho único
+      if (sizeMap.size === 0 && isFallbackStock) {
+        for (const v of product.product_variants) {
+          sizeMap.set(v.size_name, product.quantity || 0)
+        }
+      }
+
+      const list = Array.from(sizeMap.entries())
         .map(([sizeName, qty]) => ({
           id: sizeName,
           size_name: sizeName,
@@ -102,17 +151,45 @@ const ProductPage = () => {
           if (b.size_name === 'Tamanho Único') return 1
           return a.size_name.localeCompare(b.size_name)
         })
+
+      if (list.length > 0) return list
     }
 
-    return (product.product_sizes || []).sort((a, b) => {
-      if (a.size_name === 'Tamanho Único') return -1
-      if (b.size_name === 'Tamanho Único') return 1
-      return a.size_name.localeCompare(b.size_name)
-    })
-  }, [product, selectedColor])
+    if (product.product_sizes?.length) {
+      return product.product_sizes
+        .map((s) => ({
+          ...s,
+          quantity: isFallbackStock ? product.quantity || 0 : s.quantity,
+        }))
+        .sort((a, b) => {
+          if (a.size_name === 'Tamanho Único') return -1
+          if (b.size_name === 'Tamanho Único') return 1
+          return a.size_name.localeCompare(b.size_name)
+        })
+    }
+
+    // Se o produto não tem tamanhos cadastrados, cria "Tamanho Único" automaticamente
+    return [
+      {
+        id: 'unique',
+        size_name: 'Tamanho Único',
+        quantity: product.quantity || 0,
+      },
+    ]
+  }, [product, selectedColor, isFallbackStock])
+
+  // Auto-selecionar tamanho único se houver apenas um disponível
+  useEffect(() => {
+    if (availableSizes.length === 1 && !selectedSize) {
+      setSelectedSize(availableSizes[0].size_name)
+    }
+  }, [availableSizes, selectedSize])
 
   const effectiveStock = useMemo(() => {
     if (!product) return 0
+    if (isFallbackStock) {
+      return product.quantity || 0
+    }
     if (selectedColor && selectedSize && product.product_variants?.length) {
       const variant = product.product_variants.find(
         (v) => v.color_name === selectedColor.name && v.size_name === selectedSize,
@@ -123,19 +200,8 @@ const ProductPage = () => {
       const size = product.product_sizes.find((s) => s.size_name === selectedSize)
       if (size) return size.quantity
     }
-    return product.quantity
-  }, [product, selectedColor, selectedSize])
-
-  const isTotalOutOfStock = useMemo(() => {
-    if (!product) return true
-    if (product.product_variants && product.product_variants.length > 0) {
-      return product.product_variants.every((v) => v.quantity <= 0)
-    }
-    if (product.product_sizes && product.product_sizes.length > 0) {
-      return product.product_sizes.every((s) => s.quantity <= 0)
-    }
-    return product.quantity <= 0
-  }, [product])
+    return product.quantity || 0
+  }, [product, selectedColor, selectedSize, isFallbackStock])
 
   if (isLoading) {
     return (
@@ -186,12 +252,14 @@ const ProductPage = () => {
     !isAdding &&
     !isTotalOutOfStock &&
     (!product.product_colors?.length || !!selectedColor) &&
-    !!selectedSize &&
+    (availableSizes.length === 0 || !!selectedSize) &&
     !isVariantOutOfStock
 
   const handleAddToCart = () => {
     if (!canAddToCart) return
     setIsAdding(true)
+    const chosenSize =
+      selectedSize || (availableSizes.length > 0 ? availableSizes[0].size_name : 'Tamanho Único')
     setTimeout(() => {
       addToCart(
         {
@@ -202,7 +270,7 @@ const ProductPage = () => {
             ? getImageUrl(selectedColor.image_url)
             : getImageUrl(sortedImages[0]?.url),
           color: selectedColor?.name || 'Padrão',
-          size: selectedSize || 'Único',
+          size: chosenSize,
           maxQuantity: effectiveStock,
         },
         quantity,
@@ -290,11 +358,12 @@ const ProductPage = () => {
               </div>
               <div className="flex gap-3">
                 {product.product_colors.map((color) => {
-                  const isColorOutOfStock = product.product_variants?.length
-                    ? !product.product_variants.some(
-                        (v) => v.color_name === color.name && v.quantity > 0,
-                      )
-                    : false
+                  const isColorOutOfStock =
+                    product.product_variants?.length && !isFallbackStock
+                      ? !product.product_variants.some(
+                          (v) => v.color_name === color.name && v.quantity > 0,
+                        )
+                      : false
 
                   return (
                     <button
