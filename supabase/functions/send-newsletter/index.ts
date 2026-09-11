@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
     // Fetch branding dynamically with fallbacks
     let branding: EmailHeaderBranding = {
       brandName: 'MEYVES',
+      emailHeaderBrandName: 'MEYVES',
       tagline: '',
       brandColor: '#2D0B0B',
     }
@@ -87,7 +88,12 @@ Deno.serve(async (req) => {
       const { data: contentData } = await supabase
         .from('site_content')
         .select('section_key, content_value')
-        .in('section_key', ['brand_name', 'email_header_tagline', 'brand_color'])
+        .in('section_key', [
+          'brand_name',
+          'email_header_brand_name',
+          'email_header_tagline',
+          'brand_color',
+        ])
       if (contentData && Array.isArray(contentData)) {
         const map = contentData.reduce(
           (acc: Record<string, string>, curr: any) => ({
@@ -96,8 +102,16 @@ Deno.serve(async (req) => {
           }),
           {},
         )
+        const headerBrandVal =
+          map.email_header_brand_name !== undefined
+            ? map.email_header_brand_name
+            : map.brand_name !== undefined
+              ? map.brand_name
+              : 'MEYVES'
+
         branding = {
           brandName: map.brand_name?.trim() || 'MEYVES',
+          emailHeaderBrandName: headerBrandVal,
           tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
           brandColor: map.brand_color?.trim() || '#2D0B0B',
         }

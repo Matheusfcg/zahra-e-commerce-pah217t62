@@ -14,7 +14,12 @@ import {
   type EmailTemplateInput,
   type EmailLogEntry,
 } from '@/services/emailTemplates'
-import { getBrandInfoCached, BrandSettings } from '@/services/siteContent'
+import {
+  getBrandInfoCached,
+  BrandSettings,
+  invalidateSiteContentCache,
+} from '@/services/siteContent'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -87,6 +92,7 @@ export function EmailTemplatesManager() {
     brandName: 'MEYVES',
     brandColor: '#2D0B0B',
     brandFontSize: '32px',
+    emailHeaderBrandName: 'MEYVES',
     emailHeaderTagline: '',
   })
 
@@ -94,10 +100,12 @@ export function EmailTemplatesManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
 
-  // Super simplified form data: Only Subject, Plain Text Body, and Friendly Name
+  // Super simplified form data: Subject, Plain Text Body, Friendly Name, and Header Brand Name
   const [formSubject, setFormSubject] = useState('')
   const [formBodyText, setFormBodyText] = useState('')
   const [formName, setFormName] = useState('')
+  const [formHeaderBrandName, setFormHeaderBrandName] = useState('MEYVES')
+  const [formHeaderTagline, setFormHeaderTagline] = useState('')
   const [saving, setSaving] = useState(false)
 
   // Textarea ref for placing dynamic variable tags at cursor position
@@ -135,6 +143,7 @@ export function EmailTemplatesManager() {
         brandName: 'MEYVES',
         brandColor: '#2D0B0B',
         brandFontSize: '32px',
+        emailHeaderBrandName: 'MEYVES',
         emailHeaderTagline: '',
       })),
     ])
@@ -147,6 +156,12 @@ export function EmailTemplatesManager() {
 
     if (brandRes) {
       setBrandInfo(brandRes)
+      setFormHeaderBrandName(
+        brandRes.emailHeaderBrandName !== undefined
+          ? brandRes.emailHeaderBrandName
+          : brandRes.brandName || 'MEYVES',
+      )
+      setFormHeaderTagline(brandRes.emailHeaderTagline ?? '')
     }
     setLoading(false)
   }, [])
@@ -247,6 +262,12 @@ export function EmailTemplatesManager() {
     setEditingTemplate(null)
     setFormName('')
     setFormSubject('')
+    setFormHeaderBrandName(
+      brandInfo.emailHeaderBrandName !== undefined
+        ? brandInfo.emailHeaderBrandName
+        : brandInfo.brandName || 'MEYVES',
+    )
+    setFormHeaderTagline(brandInfo.emailHeaderTagline ?? '')
     setFormBodyText(
       `Olá, {{nome_cliente}}!\n\nEscreva aqui a mensagem com todo o carinho para a sua cliente.\n\nQualquer dúvida, estamos à disposição!\nEquipe {{nome_loja}}`,
     )
@@ -257,6 +278,12 @@ export function EmailTemplatesManager() {
     setEditingTemplate(template)
     setFormName(template.name)
     setFormSubject(template.subject)
+    setFormHeaderBrandName(
+      brandInfo.emailHeaderBrandName !== undefined
+        ? brandInfo.emailHeaderBrandName
+        : brandInfo.brandName || 'MEYVES',
+    )
+    setFormHeaderTagline(brandInfo.emailHeaderTagline ?? '')
 
     // Extract pure, human-friendly text without HTML code
     const plain = htmlToPlainText(template.body_html)
@@ -312,6 +339,45 @@ export function EmailTemplatesManager() {
 
     setSaving(true)
 
+    // Check if the user changed the header brand text or tagline in the dialog
+    const currentHeaderBrand =
+      brandInfo.emailHeaderBrandName !== undefined
+        ? brandInfo.emailHeaderBrandName
+        : brandInfo.brandName || 'MEYVES'
+    const currentHeaderTagline = brandInfo.emailHeaderTagline ?? ''
+
+    const headerBrandChanged = formHeaderBrandName !== currentHeaderBrand
+    const headerTaglineChanged = formHeaderTagline !== currentHeaderTagline
+
+    if (headerBrandChanged || headerTaglineChanged) {
+      try {
+        const now = new Date().toISOString()
+        const updates: { section_key: string; content_value: string; updated_at: string }[] = []
+
+        if (headerBrandChanged) {
+          updates.push({
+            section_key: 'email_header_brand_name',
+            content_value: formHeaderBrandName.trim(),
+            updated_at: now,
+          })
+        }
+        if (headerTaglineChanged) {
+          updates.push({
+            section_key: 'email_header_tagline',
+            content_value: formHeaderTagline.trim(),
+            updated_at: now,
+          })
+        }
+
+        for (const item of updates) {
+          await supabase.from('site_content').upsert(item, { onConflict: 'section_key' })
+        }
+        invalidateSiteContentCache()
+      } catch (err: any) {
+        console.warn('Erro ao atualizar cabeçalho do e-mail em site_content:', err)
+      }
+    }
+
     if (editingTemplate) {
       const { error } = await updateEmailTemplate(editingTemplate.id, {
         name: formName.trim() || editingTemplate.name,
@@ -322,7 +388,7 @@ export function EmailTemplatesManager() {
       if (error) {
         toast.error('Erro ao atualizar modelo: ' + error.message)
       } else {
-        toast.success('Modelo de e-mail atualizado com sucesso!')
+        toast.success('Modelo de e-mail e cabeçalho atualizados com sucesso!')
         setIsDialogOpen(false)
         loadTemplates()
       }
@@ -373,11 +439,28 @@ export function EmailTemplatesManager() {
     }
   }
 
-  // Render preview formatted with dummy sample values
-  const renderPreviewHtml = (subject: string, rawBodyOrHtml: string) => {
+  // Render preview formatted with dummy sample values and optional dynamic header override
+  const renderPreviewHtml = (
+    subject: string,
+    rawBodyOrHtml: string,
+    overrideHeaderName?: string,
+    overrideTagline?: string,
+  ) => {
+    // Determine header brand text: use dialog override if provided, otherwise brandInfo.emailHeaderBrandName
+    const headerBrandText =
+      overrideHeaderName !== undefined
+        ? overrideHeaderName.trim()
+        : brandInfo.emailHeaderBrandName !== undefined
+          ? brandInfo.emailHeaderBrandName.trim()
+          : brandInfo.brandName?.trim() || 'MEYVES'
+
+    const headerTaglineText =
+      overrideTagline !== undefined
+        ? overrideTagline.trim()
+        : (brandInfo.emailHeaderTagline ?? '').trim()
+
     const brandName = brandInfo.brandName?.trim() || 'MEYVES'
     const brandColor = brandInfo.brandColor?.trim() || '#2D0B0B'
-    const emailTagline = (brandInfo.emailHeaderTagline ?? '').trim()
 
     const mockVars: Record<string, string> = {
       nome_cliente: 'Mariana Silva',
@@ -418,17 +501,23 @@ export function EmailTemplatesManager() {
     }
 
     const currentYear = new Date().getFullYear()
-    const taglineHtml = emailTagline
-      ? `<p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${emailTagline}</p>`
+
+    const titleMargin = headerTaglineText ? 'margin: 0 0 6px;' : 'margin: 0;'
+    const brandTitleHtml = headerBrandText
+      ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${headerBrandText}</h1>`
       : ''
-    const titleMargin = emailTagline ? 'margin: 0 0 6px;' : 'margin: 0;'
+    const taglineHtml = headerTaglineText
+      ? `<p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${headerTaglineText}</p>`
+      : ''
+
+    const headerContent = brandTitleHtml || taglineHtml ? `${brandTitleHtml}${taglineHtml}` : ''
+    const headerPadding = headerContent ? 'padding-bottom: 16px;' : 'padding-bottom: 6px;'
 
     return `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 28px 22px; border: 1px solid #eae5df; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
         <!-- Header da Loja -->
-        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid ${brandColor};">
-          <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandName}</h1>
-          ${taglineHtml}
+        <div style="text-align: center; margin-bottom: 24px; ${headerPadding} border-bottom: 2px solid ${brandColor};">
+          ${headerContent}
         </div>
 
         <!-- Assunto Destacado -->
@@ -690,6 +779,93 @@ export function EmailTemplatesManager() {
               />
             </div>
 
+            {/* Cabeçalho do E-mail (Texto e Subtítulo editáveis com remoção facilitada) */}
+            <div className="bg-[#fcfaf8] border border-[#f0ede8] rounded-md p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[#2D0B0B] flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-[#8B4513]" /> Cabeçalho do E-mail (Topo)
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Reflete em tempo real na prévia abaixo
+                </span>
+              </div>
+
+              {/* Nome do Cabeçalho */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="template_header_name"
+                    className="text-[11px] font-semibold text-foreground"
+                  >
+                    Nome da Marca no Topo do E-mail
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {formHeaderBrandName.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setFormHeaderBrandName('')}
+                        className="text-[11px] text-[#2D0B0B] hover:underline cursor-pointer font-medium"
+                      >
+                        Deixar Vazio (remover nome)
+                      </button>
+                    )}
+                    {formHeaderBrandName.trim() !== (brandInfo.brandName?.trim() || 'MEYVES') && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormHeaderBrandName(brandInfo.brandName?.trim() || 'MEYVES')
+                        }
+                        className="text-[11px] text-muted-foreground hover:underline cursor-pointer"
+                      >
+                        Restaurar ({brandInfo.brandName?.trim() || 'MEYVES'})
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <Input
+                  id="template_header_name"
+                  value={formHeaderBrandName}
+                  onChange={(e) => setFormHeaderBrandName(e.target.value)}
+                  placeholder="Deixe em branco para remover o nome do topo ou digite ex: MEYVES"
+                  className="text-xs font-medium uppercase tracking-wider bg-white h-9"
+                  maxLength={40}
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Se deixado vazio, o e-mail não exibirá nenhum nome no topo (apenas o subtítulo ou
+                  a linha divisória).
+                </p>
+              </div>
+
+              {/* Subtítulo / Tagline */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="template_header_tagline"
+                    className="text-[11px] font-semibold text-foreground"
+                  >
+                    Subtítulo (Tagline)
+                  </Label>
+                  {formHeaderTagline.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setFormHeaderTagline('')}
+                      className="text-[11px] text-[#2D0B0B] hover:underline cursor-pointer font-medium"
+                    >
+                      Deixar Vazio (remover subtítulo)
+                    </button>
+                  )}
+                </div>
+                <Input
+                  id="template_header_tagline"
+                  value={formHeaderTagline}
+                  onChange={(e) => setFormHeaderTagline(e.target.value)}
+                  placeholder="Ex: MODA & ELEGÂNCIA ou deixe em branco"
+                  className="text-xs uppercase tracking-wider bg-white h-9"
+                  maxLength={60}
+                />
+              </div>
+            </div>
+
             {/* 1. Assunto */}
             <div className="space-y-1.5">
               <Label
@@ -766,13 +942,18 @@ export function EmailTemplatesManager() {
                   <Eye className="h-3.5 w-3.5" /> Como o e-mail vai ficar:
                 </span>
                 <span className="text-[11px] text-muted-foreground">
-                  (Demonstração visual em tempo real)
+                  (Demonstração visual em tempo real — cabeçalho e corpo)
                 </span>
               </div>
-              <div className="border rounded bg-white p-2 max-h-60 overflow-y-auto">
+              <div className="border rounded bg-white p-2 max-h-64 overflow-y-auto">
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: renderPreviewHtml(formSubject, formBodyText),
+                    __html: renderPreviewHtml(
+                      formSubject,
+                      formBodyText,
+                      formHeaderBrandName,
+                      formHeaderTagline,
+                    ),
                   }}
                 />
               </div>

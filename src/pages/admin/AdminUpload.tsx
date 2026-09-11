@@ -279,6 +279,8 @@ export default function AdminUpload() {
   const labelMap: Record<string, string> = {
     brand_name: 'NOME DA MARCA / LOGOTIPO',
     brand_color: 'COR DO LOGOTIPO (#HEX)',
+    email_header_brand_name: 'NOME NO CABEÇALHO DOS E-MAILS',
+    email_header_tagline: 'SUBTÍTULO NO CABEÇALHO DOS E-MAILS',
     hero_banner_image: 'BANNER PRINCIPAL (IMAGEM)',
     hero_eyebrow: 'TEXTO DESTAQUE LINHA 1 (HEY, GIRL!)',
     hero_title: 'TEXTO DESTAQUE LINHA 2 (BEM-VINDA À MEYVE.)',
@@ -315,7 +317,13 @@ export default function AdminUpload() {
     return siteContent
       .filter((item) => {
         const key = item.section_key
-        if (category === 'brand') return ['brand_name', 'brand_color'].includes(key)
+        if (category === 'brand')
+          return [
+            'brand_name',
+            'brand_color',
+            'email_header_brand_name',
+            'email_header_tagline',
+          ].includes(key)
         if (category === 'main')
           return [
             'hero_banner_image',

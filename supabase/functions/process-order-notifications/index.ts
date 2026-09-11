@@ -181,6 +181,7 @@ function isValidEmail(email?: string | null): boolean {
 async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
   const fallback: EmailHeaderBranding = {
     brandName: 'MEYVES',
+    emailHeaderBrandName: 'MEYVES',
     tagline: '',
     brandColor: '#2D0B0B',
   }
@@ -189,7 +190,12 @@ async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
     const { data } = await supabase
       .from('site_content')
       .select('section_key, content_value')
-      .in('section_key', ['brand_name', 'email_header_tagline', 'brand_color'])
+      .in('section_key', [
+        'brand_name',
+        'email_header_brand_name',
+        'email_header_tagline',
+        'brand_color',
+      ])
 
     if (data && Array.isArray(data)) {
       const map = data.reduce(
@@ -200,8 +206,17 @@ async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
         {},
       )
 
+      // Distinguish explicitly empty email header from undefined
+      const headerBrandVal =
+        map.email_header_brand_name !== undefined
+          ? map.email_header_brand_name
+          : map.brand_name !== undefined
+            ? map.brand_name
+            : fallback.brandName
+
       return {
         brandName: map.brand_name?.trim() || fallback.brandName,
+        emailHeaderBrandName: headerBrandVal,
         tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
         brandColor: map.brand_color?.trim() || fallback.brandColor,
       }

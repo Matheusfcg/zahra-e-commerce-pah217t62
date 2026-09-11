@@ -207,6 +207,7 @@ export interface BrandSettings {
   brandName: string
   brandColor?: string
   brandFontSize?: string
+  emailHeaderBrandName?: string
   emailHeaderTagline?: string
 }
 
@@ -244,10 +245,19 @@ export async function getBrandInfoCached(forceRefresh = false): Promise<BrandSet
 
   try {
     const content = await getSiteContentCached(forceRefresh)
+    // Distinguish between undefined (fallback to brandName) and explicitly set (even empty '')
+    const emailHeaderBrandName =
+      content.email_header_brand_name !== undefined
+        ? content.email_header_brand_name
+        : content.brand_name !== undefined
+          ? content.brand_name
+          : fallback.brandName
+
     const result: BrandSettings = {
       brandName: content.brand_name?.trim() || fallback.brandName,
       brandColor: content.brand_color?.trim() || fallback.brandColor,
       brandFontSize: content.brand_font_size?.trim() || fallback.brandFontSize,
+      emailHeaderBrandName,
       // If undefined in database, fallback to '' (or content_value if saved)
       emailHeaderTagline:
         content.email_header_tagline !== undefined ? content.email_header_tagline : '',

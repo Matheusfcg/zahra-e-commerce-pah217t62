@@ -22,6 +22,7 @@ export function getStatusLabel(status: string): string {
 
 export interface EmailHeaderBranding {
   brandName?: string | null
+  emailHeaderBrandName?: string | null
   tagline?: string | null
   brandColor?: string | null
 }
@@ -31,22 +32,39 @@ export const buildHeader = (
   subtitle?: string,
   branding?: EmailHeaderBranding,
 ): string => {
-  const brandName = branding?.brandName?.trim() || 'MEYVES'
+  // If emailHeaderBrandName is explicitly defined (even as empty string), respect it.
+  // Otherwise fallback to brandName (or 'MEYVES' if brandName is also empty/undefined).
+  const rawBrandHeader =
+    branding?.emailHeaderBrandName !== undefined
+      ? branding.emailHeaderBrandName
+      : branding?.brandName !== undefined
+        ? branding.brandName
+        : 'MEYVES'
+
+  const brandHeaderText = (rawBrandHeader ?? '').trim()
   const brandColor = branding?.brandColor?.trim() || '#2D0B0B'
   // Tagline can be empty string (explicitly disabled) or custom or fallback
   const hasCustomTagline = branding?.tagline !== undefined
   const tagline = hasCustomTagline ? (branding?.tagline || '').trim() : 'Moda & Elegância'
 
   const titleMargin = tagline ? 'margin: 0 0 8px;' : 'margin: 0;'
+  const brandTitleHtml = brandHeaderText
+    ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandHeaderText}</h1>`
+    : ''
+
   const taglineHtml = tagline
     ? `<p style="font-size: 11px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${tagline}</p>`
     : ''
 
+  // If both brand header and tagline are empty, render a minimal subtle divider line so header is clean and not broken
+  const headerContent = brandTitleHtml || taglineHtml ? `${brandTitleHtml}${taglineHtml}` : ''
+
+  const headerPaddingBottom = headerContent ? 'padding-bottom: 20px;' : 'padding-bottom: 8px;'
+
   return `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #2D0B0B; background-color: #ffffff; padding: 32px 24px; border: 1px solid #f0ede8;">
-    <div style="text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid ${brandColor};">
-      <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandName}</h1>
-      ${taglineHtml}
+    <div style="text-align: center; margin-bottom: 28px; ${headerPaddingBottom} border-bottom: 2px solid ${brandColor};">
+      ${headerContent}
     </div>
     <div style="text-align: center; margin-bottom: 24px;">
       <h2 style="font-family: 'Playfair Display', Georgia, serif; color: #2D0B0B; font-weight: 600; margin: 0 0 6px; font-size: 22px;">${title}</h2>

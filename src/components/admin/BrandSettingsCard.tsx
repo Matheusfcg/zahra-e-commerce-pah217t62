@@ -11,6 +11,7 @@ import { invalidateSiteContentCache, getBrandInfoCached } from '@/services/siteC
 export function BrandSettingsCard() {
   const [brandName, setBrandName] = useState('MEYVES')
   const [brandColor, setBrandColor] = useState('#2D0B0B')
+  const [emailHeaderBrandName, setEmailHeaderBrandName] = useState('MEYVES')
   const [emailTagline, setEmailTagline] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,6 +26,11 @@ export function BrandSettingsCard() {
       const info = await getBrandInfoCached(true)
       setBrandName(info.brandName || 'MEYVES')
       setBrandColor(info.brandColor || '#2D0B0B')
+      setEmailHeaderBrandName(
+        info.emailHeaderBrandName !== undefined
+          ? info.emailHeaderBrandName
+          : info.brandName || 'MEYVES',
+      )
       setEmailTagline(info.emailHeaderTagline !== undefined ? info.emailHeaderTagline : '')
     } catch {
       // ignore
@@ -53,6 +59,11 @@ export function BrandSettingsCard() {
         {
           section_key: 'brand_color',
           content_value: brandColor.trim() || '#2D0B0B',
+          updated_at: now,
+        },
+        {
+          section_key: 'email_header_brand_name',
+          content_value: emailHeaderBrandName.trim(),
           updated_at: now,
         },
         {
@@ -89,6 +100,7 @@ export function BrandSettingsCard() {
   const handleResetDefault = () => {
     setBrandName('MEYVES')
     setBrandColor('#2D0B0B')
+    setEmailHeaderBrandName('MEYVES')
     setEmailTagline('')
   }
 
@@ -167,39 +179,88 @@ export function BrandSettingsCard() {
             </div>
           </div>
 
-          {/* Subtítulo / Tagline dos E-mails */}
-          <div className="space-y-2 pt-2 border-t">
-            <div className="flex items-center justify-between">
-              <Label
-                htmlFor="email-tagline-input"
-                className="text-sm font-semibold flex items-center gap-1.5"
-              >
-                <span>Subtítulo do Cabeçalho dos E-mails (Tagline)</span>
-              </Label>
-              {emailTagline.trim() && (
-                <button
-                  type="button"
-                  onClick={() => setEmailTagline('')}
-                  className="text-xs text-[#2D0B0B] hover:underline cursor-pointer"
+          {/* Configuração do Cabeçalho dos E-mails: Nome da Marca & Subtítulo */}
+          <div className="space-y-4 pt-2 border-t">
+            {/* 1. Nome no Cabeçalho dos E-mails (Editável e Removível) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="email-header-name-input"
+                  className="text-sm font-semibold flex items-center gap-1.5"
                 >
-                  Deixar Vazio (remover subtítulo)
-                </button>
-              )}
+                  <span>Texto do Cabeçalho dos E-mails (Nome da Marca nos E-mails)</span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  {emailHeaderBrandName.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setEmailHeaderBrandName('')}
+                      className="text-xs text-[#2D0B0B] hover:underline cursor-pointer font-medium"
+                    >
+                      Deixar Vazio (remover nome do cabeçalho)
+                    </button>
+                  )}
+                  {emailHeaderBrandName.trim() !== (brandName.trim() || 'MEYVES') && (
+                    <button
+                      type="button"
+                      onClick={() => setEmailHeaderBrandName(brandName.trim() || 'MEYVES')}
+                      className="text-xs text-muted-foreground hover:underline cursor-pointer"
+                    >
+                      Usar Nome do Site ({brandName.trim() || 'MEYVES'})
+                    </button>
+                  )}
+                </div>
+              </div>
+              <Input
+                id="email-header-name-input"
+                value={emailHeaderBrandName}
+                onChange={(e) => setEmailHeaderBrandName(e.target.value)}
+                placeholder="Deixe em branco para remover ou digite ex: MEYVES"
+                className="h-11 text-sm tracking-wider uppercase font-medium"
+                maxLength={40}
+              />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Texto que aparece com destaque serifado no topo de todos os e-mails da loja.
+                <strong>
+                  {' '}
+                  Deixe vazio caso queira remover o nome do cabeçalho por completo
+                </strong>{' '}
+                (o e-mail exibirá apenas o subtítulo ou uma linha divisória elegante).
+              </p>
             </div>
-            <Input
-              id="email-tagline-input"
-              value={emailTagline}
-              onChange={(e) => setEmailTagline(e.target.value)}
-              placeholder="Deixe em branco para remover ou digite ex: MODA & ELEGÂNCIA"
-              className="h-11 text-sm tracking-wider uppercase"
-              maxLength={60}
-            />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Texto que aparece abaixo do nome da marca no topo de todos os e-mails transacionais
-              (boas-vindas, pedidos, rastreamento, nota fiscal, newsletter).
-              <strong> Deixe vazio caso deseje exibir apenas o nome da marca</strong>, sem nenhum
-              subtítulo ou espaçamento extra.
-            </p>
+
+            {/* 2. Subtítulo / Tagline dos E-mails */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="email-tagline-input"
+                  className="text-sm font-semibold flex items-center gap-1.5"
+                >
+                  <span>Subtítulo do Cabeçalho dos E-mails (Tagline)</span>
+                </Label>
+                {emailTagline.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setEmailTagline('')}
+                    className="text-xs text-[#2D0B0B] hover:underline cursor-pointer font-medium"
+                  >
+                    Deixar Vazio (remover subtítulo)
+                  </button>
+                )}
+              </div>
+              <Input
+                id="email-tagline-input"
+                value={emailTagline}
+                onChange={(e) => setEmailTagline(e.target.value)}
+                placeholder="Deixe em branco para remover ou digite ex: MODA & ELEGÂNCIA"
+                className="h-11 text-sm tracking-wider uppercase"
+                maxLength={60}
+              />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Texto que aparece abaixo do nome da marca no topo de todos os e-mails transacionais
+                (boas-vindas, pedidos, rastreamento, nota fiscal, newsletter).
+              </p>
+            </div>
           </div>
 
           {/* Live Preview Dual: Site Header & Email Header */}
@@ -235,18 +296,24 @@ export function BrandSettingsCard() {
               </div>
               <div className="bg-white border border-[#eae5df] rounded-md p-5 flex flex-col items-center justify-center text-center shadow-xs min-h-[90px]">
                 <div
-                  className="w-full text-center pb-3 border-b-2"
-                  style={{ borderColor: brandColor || '#2D0B0B' }}
+                  className="w-full text-center border-b-2"
+                  style={{
+                    borderColor: brandColor || '#2D0B0B',
+                    paddingBottom:
+                      emailHeaderBrandName.trim() || emailTagline.trim() ? '12px' : '6px',
+                  }}
                 >
-                  <h3
-                    className="font-serif text-xl tracking-[0.2em] uppercase font-bold transition-all duration-200"
-                    style={{
-                      color: brandColor || '#2D0B0B',
-                      margin: emailTagline.trim() ? '0 0 4px' : '0',
-                    }}
-                  >
-                    {brandName.trim() || 'MEYVES'}
-                  </h3>
+                  {emailHeaderBrandName.trim() ? (
+                    <h3
+                      className="font-serif text-xl tracking-[0.2em] uppercase font-bold transition-all duration-200"
+                      style={{
+                        color: brandColor || '#2D0B0B',
+                        margin: emailTagline.trim() ? '0 0 4px' : '0',
+                      }}
+                    >
+                      {emailHeaderBrandName.trim()}
+                    </h3>
+                  ) : null}
                   {emailTagline.trim() ? (
                     <p className="text-[10px] tracking-[0.15em] text-[#7a6e65] uppercase m-0">
                       {emailTagline.trim()}
@@ -255,9 +322,13 @@ export function BrandSettingsCard() {
                 </div>
               </div>
               <p className="text-[11px] text-muted-foreground text-center">
-                {emailTagline.trim()
-                  ? `Exibindo subtítulo: "${emailTagline.trim()}"`
-                  : 'Subtítulo ocultado: apenas o nome da marca será exibido nos e-mails.'}
+                {!emailHeaderBrandName.trim() && !emailTagline.trim()
+                  ? 'Nome e subtítulo removidos: apenas a linha divisória elegante será exibida.'
+                  : !emailHeaderBrandName.trim()
+                    ? `Nome removido. Exibindo apenas o subtítulo: "${emailTagline.trim()}"`
+                    : emailTagline.trim()
+                      ? `Exibindo "${emailHeaderBrandName.trim()}" e subtítulo: "${emailTagline.trim()}"`
+                      : `Apenas o nome "${emailHeaderBrandName.trim()}" será exibido.`}
               </p>
             </div>
           </div>
