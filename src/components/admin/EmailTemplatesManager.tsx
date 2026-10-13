@@ -89,10 +89,10 @@ export function EmailTemplatesManager() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [brandInfo, setBrandInfo] = useState<BrandSettings>({
-    brandName: 'MEYVES',
+    brandName: 'Meyve',
     brandColor: '#2D0B0B',
     brandFontSize: '32px',
-    emailHeaderBrandName: 'MEYVES',
+    emailHeaderBrandName: 'Meyve',
     emailHeaderTagline: '',
   })
 
@@ -104,7 +104,7 @@ export function EmailTemplatesManager() {
   const [formSubject, setFormSubject] = useState('')
   const [formBodyText, setFormBodyText] = useState('')
   const [formName, setFormName] = useState('')
-  const [formHeaderBrandName, setFormHeaderBrandName] = useState('MEYVES')
+  const [formHeaderBrandName, setFormHeaderBrandName] = useState('Meyve')
   const [formHeaderTagline, setFormHeaderTagline] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -140,10 +140,10 @@ export function EmailTemplatesManager() {
     const [templatesRes, brandRes] = await Promise.all([
       fetchEmailTemplates(),
       getBrandInfoCached(true).catch(() => ({
-        brandName: 'MEYVES',
+        brandName: 'Meyve',
         brandColor: '#2D0B0B',
         brandFontSize: '32px',
-        emailHeaderBrandName: 'MEYVES',
+        emailHeaderBrandName: 'Meyve',
         emailHeaderTagline: '',
       })),
     ])
@@ -159,7 +159,7 @@ export function EmailTemplatesManager() {
       setFormHeaderBrandName(
         brandRes.emailHeaderBrandName !== undefined
           ? brandRes.emailHeaderBrandName
-          : brandRes.brandName || 'MEYVES',
+          : brandRes.brandName || 'Meyve',
       )
       setFormHeaderTagline(brandRes.emailHeaderTagline ?? '')
     }
@@ -265,7 +265,7 @@ export function EmailTemplatesManager() {
     setFormHeaderBrandName(
       brandInfo.emailHeaderBrandName !== undefined
         ? brandInfo.emailHeaderBrandName
-        : brandInfo.brandName || 'MEYVES',
+        : brandInfo.brandName || 'Meyve',
     )
     setFormHeaderTagline(brandInfo.emailHeaderTagline ?? '')
     setFormBodyText(
@@ -281,7 +281,7 @@ export function EmailTemplatesManager() {
     setFormHeaderBrandName(
       brandInfo.emailHeaderBrandName !== undefined
         ? brandInfo.emailHeaderBrandName
-        : brandInfo.brandName || 'MEYVES',
+        : brandInfo.brandName || 'Meyve',
     )
     setFormHeaderTagline(brandInfo.emailHeaderTagline ?? '')
 
@@ -343,7 +343,7 @@ export function EmailTemplatesManager() {
     const currentHeaderBrand =
       brandInfo.emailHeaderBrandName !== undefined
         ? brandInfo.emailHeaderBrandName
-        : brandInfo.brandName || 'MEYVES'
+        : brandInfo.brandName || 'Meyve'
     const currentHeaderTagline = brandInfo.emailHeaderTagline ?? ''
 
     const headerBrandChanged = formHeaderBrandName !== currentHeaderBrand
@@ -452,14 +452,14 @@ export function EmailTemplatesManager() {
         ? overrideHeaderName.trim()
         : brandInfo.emailHeaderBrandName !== undefined
           ? brandInfo.emailHeaderBrandName.trim()
-          : brandInfo.brandName?.trim() || 'MEYVES'
+          : brandInfo.brandName?.trim() || 'Meyve'
 
     const headerTaglineText =
       overrideTagline !== undefined
         ? overrideTagline.trim()
         : (brandInfo.emailHeaderTagline ?? '').trim()
 
-    const brandName = brandInfo.brandName?.trim() || 'MEYVES'
+    const brandName = brandInfo.brandName?.trim() || 'Meyve'
     const brandColor = brandInfo.brandColor?.trim() || '#2D0B0B'
 
     const mockVars: Record<string, string> = {
@@ -504,10 +504,10 @@ export function EmailTemplatesManager() {
 
     const titleMargin = headerTaglineText ? 'margin: 0 0 6px;' : 'margin: 0;'
     const brandTitleHtml = headerBrandText
-      ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${headerBrandText}</h1>`
+      ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 26px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} font-weight: 700;">${headerBrandText}</h1>`
       : ''
     const taglineHtml = headerTaglineText
-      ? `<p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; text-transform: uppercase; margin: 0;">${headerTaglineText}</p>`
+      ? `<p style="font-size: 10px; letter-spacing: 0.15em; color: #7a6e65; margin: 0;">${headerTaglineText}</p>`
       : ''
 
     const headerContent = brandTitleHtml || taglineHtml ? `${brandTitleHtml}${taglineHtml}` : ''
@@ -809,15 +809,15 @@ export function EmailTemplatesManager() {
                         Deixar Vazio (remover nome)
                       </button>
                     )}
-                    {formHeaderBrandName.trim() !== (brandInfo.brandName?.trim() || 'MEYVES') && (
+                    {formHeaderBrandName.trim() !== (brandInfo.brandName?.trim() || 'Meyve') && (
                       <button
                         type="button"
                         onClick={() =>
-                          setFormHeaderBrandName(brandInfo.brandName?.trim() || 'MEYVES')
+                          setFormHeaderBrandName(brandInfo.brandName?.trim() || 'Meyve')
                         }
                         className="text-[11px] text-muted-foreground hover:underline cursor-pointer"
                       >
-                        Restaurar ({brandInfo.brandName?.trim() || 'MEYVES'})
+                        Restaurar ({brandInfo.brandName?.trim() || 'Meyve'})
                       </button>
                     )}
                   </div>
@@ -826,8 +826,8 @@ export function EmailTemplatesManager() {
                   id="template_header_name"
                   value={formHeaderBrandName}
                   onChange={(e) => setFormHeaderBrandName(e.target.value)}
-                  placeholder="Deixe em branco para remover o nome do topo ou digite ex: MEYVES"
-                  className="text-xs font-medium uppercase tracking-wider bg-white h-9"
+                  placeholder="Deixe em branco para remover o nome do topo ou digite ex: Meyve"
+                  className="text-xs font-medium tracking-wider bg-white h-9"
                   maxLength={40}
                 />
                 <p className="text-[10px] text-muted-foreground">
@@ -859,8 +859,8 @@ export function EmailTemplatesManager() {
                   id="template_header_tagline"
                   value={formHeaderTagline}
                   onChange={(e) => setFormHeaderTagline(e.target.value)}
-                  placeholder="Ex: MODA & ELEGÂNCIA ou deixe em branco"
-                  className="text-xs uppercase tracking-wider bg-white h-9"
+                  placeholder="Ex: Moda & Elegância ou deixe em branco"
+                  className="text-xs tracking-wider bg-white h-9"
                   maxLength={60}
                 />
               </div>

@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
 
     // Fetch branding dynamically with fallbacks
     let branding: EmailHeaderBranding = {
-      brandName: 'MEYVES',
-      emailHeaderBrandName: 'MEYVES',
+      brandName: 'Meyve',
+      emailHeaderBrandName: 'Meyve',
       tagline: '',
       brandColor: '#2D0B0B',
     }
@@ -103,16 +103,22 @@ Deno.serve(async (req) => {
           {},
         )
         const headerBrandVal =
-          map.email_header_brand_name !== undefined
+          map.email_header_brand_name !== undefined && map.email_header_brand_name !== null
             ? map.email_header_brand_name
-            : map.brand_name !== undefined
+            : map.brand_name !== undefined && map.brand_name !== null
               ? map.brand_name
-              : 'MEYVES'
+              : 'Meyve'
 
         branding = {
-          brandName: map.brand_name?.trim() || 'MEYVES',
+          brandName:
+            map.brand_name !== undefined && map.brand_name !== null
+              ? map.brand_name.trim()
+              : 'Meyve',
           emailHeaderBrandName: headerBrandVal,
-          tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
+          tagline:
+            map.email_header_tagline !== undefined && map.email_header_tagline !== null
+              ? map.email_header_tagline
+              : '',
           brandColor: map.brand_color?.trim() || '#2D0B0B',
         }
       }
@@ -120,7 +126,7 @@ Deno.serve(async (req) => {
       console.warn('Erro ao carregar branding em newsletter:', bErr)
     }
 
-    const storeName = branding.brandName || 'Meyves'
+    const storeName = branding.emailHeaderBrandName?.trim() || branding.brandName?.trim() || 'Meyve'
     const baseSubject =
       customSubject || dbTemplate?.subject || `Novidades e Destaques Exclusivos ${storeName}`
     const baseBody =

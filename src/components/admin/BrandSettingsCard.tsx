@@ -9,9 +9,9 @@ import { Loader2, Save, Sparkles, RefreshCw } from 'lucide-react'
 import { invalidateSiteContentCache, getBrandInfoCached } from '@/services/siteContent'
 
 export function BrandSettingsCard() {
-  const [brandName, setBrandName] = useState('MEYVES')
+  const [brandName, setBrandName] = useState('Meyve')
   const [brandColor, setBrandColor] = useState('#2D0B0B')
-  const [emailHeaderBrandName, setEmailHeaderBrandName] = useState('MEYVES')
+  const [emailHeaderBrandName, setEmailHeaderBrandName] = useState('Meyve')
   const [emailTagline, setEmailTagline] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -24,12 +24,12 @@ export function BrandSettingsCard() {
     setLoading(true)
     try {
       const info = await getBrandInfoCached(true)
-      setBrandName(info.brandName || 'MEYVES')
+      setBrandName(info.brandName || 'Meyve')
       setBrandColor(info.brandColor || '#2D0B0B')
       setEmailHeaderBrandName(
         info.emailHeaderBrandName !== undefined
           ? info.emailHeaderBrandName
-          : info.brandName || 'MEYVES',
+          : info.brandName || 'Meyve',
       )
       setEmailTagline(info.emailHeaderTagline !== undefined ? info.emailHeaderTagline : '')
     } catch {
@@ -98,9 +98,9 @@ export function BrandSettingsCard() {
   }
 
   const handleResetDefault = () => {
-    setBrandName('MEYVES')
+    setBrandName('Meyve')
     setBrandColor('#2D0B0B')
-    setEmailHeaderBrandName('MEYVES')
+    setEmailHeaderBrandName('Meyve')
     setEmailTagline('')
   }
 
@@ -140,8 +140,8 @@ export function BrandSettingsCard() {
                 id="brand-name-input"
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
-                placeholder="Ex: MEYVES"
-                className="font-medium tracking-wider h-11 text-base uppercase"
+                placeholder="Ex: Meyve"
+                className="font-medium tracking-wider h-11 text-base"
                 maxLength={40}
                 required
               />
@@ -200,13 +200,13 @@ export function BrandSettingsCard() {
                       Deixar Vazio (remover nome do cabeçalho)
                     </button>
                   )}
-                  {emailHeaderBrandName.trim() !== (brandName.trim() || 'MEYVES') && (
+                  {emailHeaderBrandName.trim() !== (brandName.trim() || 'Meyve') && (
                     <button
                       type="button"
-                      onClick={() => setEmailHeaderBrandName(brandName.trim() || 'MEYVES')}
+                      onClick={() => setEmailHeaderBrandName(brandName.trim() || 'Meyve')}
                       className="text-xs text-muted-foreground hover:underline cursor-pointer"
                     >
-                      Usar Nome do Site ({brandName.trim() || 'MEYVES'})
+                      Usar Nome do Site ({brandName.trim() || 'Meyve'})
                     </button>
                   )}
                 </div>
@@ -215,8 +215,8 @@ export function BrandSettingsCard() {
                 id="email-header-name-input"
                 value={emailHeaderBrandName}
                 onChange={(e) => setEmailHeaderBrandName(e.target.value)}
-                placeholder="Deixe em branco para remover ou digite ex: MEYVES"
-                className="h-11 text-sm tracking-wider uppercase font-medium"
+                placeholder="Deixe em branco para remover ou digite ex: Meyve"
+                className="h-11 text-sm tracking-wider font-medium"
                 maxLength={40}
               />
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -252,8 +252,8 @@ export function BrandSettingsCard() {
                 id="email-tagline-input"
                 value={emailTagline}
                 onChange={(e) => setEmailTagline(e.target.value)}
-                placeholder="Deixe em branco para remover ou digite ex: MODA & ELEGÂNCIA"
-                className="h-11 text-sm tracking-wider uppercase"
+                placeholder="Deixe em branco para remover ou digite ex: Moda & Elegância"
+                className="h-11 text-sm tracking-wider"
                 maxLength={60}
               />
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -275,10 +275,10 @@ export function BrandSettingsCard() {
               </div>
               <div className="bg-[#FAFAFA] border border-gray-100 rounded-md p-6 flex flex-col items-center justify-center text-center shadow-xs min-h-[90px]">
                 <span
-                  className="font-serif text-2xl md:text-[28px] tracking-[0.15em] uppercase transition-all duration-200"
+                  className="font-serif text-2xl md:text-[28px] tracking-[0.15em] transition-all duration-200"
                   style={{ color: brandColor || '#2D0B0B' }}
                 >
-                  {brandName.trim() || 'MEYVES'}
+                  {brandName.trim() || 'Meyve'}
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground text-center">
@@ -305,7 +305,7 @@ export function BrandSettingsCard() {
                 >
                   {emailHeaderBrandName.trim() ? (
                     <h3
-                      className="font-serif text-xl tracking-[0.2em] uppercase font-bold transition-all duration-200"
+                      className="font-serif text-xl tracking-[0.2em] font-bold transition-all duration-200"
                       style={{
                         color: brandColor || '#2D0B0B',
                         margin: emailTagline.trim() ? '0 0 4px' : '0',
@@ -315,7 +315,7 @@ export function BrandSettingsCard() {
                     </h3>
                   ) : null}
                   {emailTagline.trim() ? (
-                    <p className="text-[10px] tracking-[0.15em] text-[#7a6e65] uppercase m-0">
+                    <p className="text-[10px] tracking-[0.15em] text-[#7a6e65] m-0">
                       {emailTagline.trim()}
                     </p>
                   ) : null}
@@ -343,7 +343,7 @@ export function BrandSettingsCard() {
               className="w-full sm:w-auto"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-2" />
-              Restaurar Padrão (MEYVES)
+              Restaurar Padrão (Meyve)
             </Button>
 
             <Button

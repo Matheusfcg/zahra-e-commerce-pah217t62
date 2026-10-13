@@ -44,12 +44,14 @@ export const buildHeader = (
   const brandHeaderText = (rawBrandHeader ?? '').trim()
   const brandColor = branding?.brandColor?.trim() || '#2D0B0B'
   // Tagline can be empty string (explicitly disabled) or custom or fallback
-  const hasCustomTagline = branding?.tagline !== undefined
-  const tagline = hasCustomTagline ? (branding?.tagline || '').trim() : 'Moda & Elegância'
+  // When tagline is provided (including empty string ""), respect it; otherwise fallback to 'Moda & Elegância'
+  const hasCustomTagline = branding?.tagline !== undefined && branding?.tagline !== null
+  const tagline = hasCustomTagline ? branding.tagline.trim() : 'Moda & Elegância'
 
   const titleMargin = tagline ? 'margin: 0 0 8px;' : 'margin: 0;'
+  // Remove text-transform: uppercase so the merchant's exact casing (e.g. "Meyve") is preserved
   const brandTitleHtml = brandHeaderText
-    ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} text-transform: uppercase; font-weight: 700;">${brandHeaderText}</h1>`
+    ? `<h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: 28px; letter-spacing: 0.2em; color: ${brandColor}; ${titleMargin} font-weight: 700;">${brandHeaderText}</h1>`
     : ''
 
   const taglineHtml = tagline
@@ -119,14 +121,20 @@ export function wrapInLayout(
   bodyContent: string,
   branding?: EmailHeaderBranding,
 ): string {
-  // If the body already contains the full document wrapper, return as is
-  if (bodyContent.includes('font-family') && bodyContent.includes('border: 1px solid #f0ede8')) {
+  // Only skip building header/footer if the body already explicitly contains the full layout wrapper id/marker
+  // (Prevents nested inner tables/divs that happened to use inline styles from suppressing dynamic header rendering)
+  if (
+    bodyContent.includes('data-email-full-wrapper="true"') ||
+    (bodyContent.includes('id="email-outer-layout"') && bodyContent.includes('buildFooter'))
+  ) {
     return bodyContent
   }
   return `
-    ${buildHeader(title, subtitle, branding)}
-    ${bodyContent}
-    ${buildFooter()}
+    <div data-email-full-wrapper="true">
+      ${buildHeader(title, subtitle, branding)}
+      ${bodyContent}
+      ${buildFooter()}
+    </div>
   `
 }
 

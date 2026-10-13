@@ -180,8 +180,8 @@ function isValidEmail(email?: string | null): boolean {
 // Helper to safely load brand & email header settings from site_content with robust fallbacks
 async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
   const fallback: EmailHeaderBranding = {
-    brandName: 'MEYVES',
-    emailHeaderBrandName: 'MEYVES',
+    brandName: 'Meyve',
+    emailHeaderBrandName: 'Meyve',
     tagline: '',
     brandColor: '#2D0B0B',
   }
@@ -206,18 +206,24 @@ async function getEmailBranding(supabase: any): Promise<EmailHeaderBranding> {
         {},
       )
 
-      // Distinguish explicitly empty email header from undefined
+      // Distinguish explicitly set email header (including empty string "") from undefined
       const headerBrandVal =
-        map.email_header_brand_name !== undefined
+        map.email_header_brand_name !== undefined && map.email_header_brand_name !== null
           ? map.email_header_brand_name
-          : map.brand_name !== undefined
+          : map.brand_name !== undefined && map.brand_name !== null
             ? map.brand_name
             : fallback.brandName
 
       return {
-        brandName: map.brand_name?.trim() || fallback.brandName,
+        brandName:
+          map.brand_name !== undefined && map.brand_name !== null
+            ? map.brand_name.trim()
+            : fallback.brandName,
         emailHeaderBrandName: headerBrandVal,
-        tagline: map.email_header_tagline !== undefined ? map.email_header_tagline : '',
+        tagline:
+          map.email_header_tagline !== undefined && map.email_header_tagline !== null
+            ? map.email_header_tagline
+            : '',
         brandColor: map.brand_color?.trim() || fallback.brandColor,
       }
     }
@@ -238,7 +244,7 @@ function buildTemplateHtml(
 ): { subject: string; html: string } {
   let rawSubject = dbTemplate?.subject
   let rawBody = dbTemplate?.body_html
-  const storeName = branding?.brandName?.trim() || 'Meyves'
+  const storeName = branding?.emailHeaderBrandName?.trim() || branding?.brandName?.trim() || 'Meyve'
 
   if (!rawSubject) {
     if (templateSlug === 'welcome') rawSubject = `Você acaba de se tornar uma MEYVE GIRL`
@@ -381,6 +387,10 @@ Deno.serve(async (req: Request) => {
           .eq('slug', rowSlug)
           .maybeSingle()
 
+        const branding = await getEmailBranding(supabase)
+        const effectiveBrandName =
+          branding.emailHeaderBrandName?.trim() || branding.brandName?.trim() || 'Meyve'
+
         const dummyVars: Record<string, any> = {
           nome_cliente: clientName,
           numero_pedido: 'TESTE-101',
@@ -393,7 +403,7 @@ Deno.serve(async (req: Request) => {
           codigo_rastreio: 'BR123456789MEY',
           transportadora: 'Correios',
           link_nota_fiscal: 'https://www.meyves.com.br',
-          itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
+          itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance ${effectiveBrandName}</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
           endereco_entrega:
             'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
           bloco_data_estimada:
@@ -402,17 +412,16 @@ Deno.serve(async (req: Request) => {
             '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
           botao_nota_fiscal:
             '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
-          conteudo_newsletter: 'Novidades exclusivas na coleção Meyves.',
-          assunto_newsletter: 'Destaques Exclusivos Meyves',
-          nome_loja: 'Meyves',
+          conteudo_newsletter: `Novidades exclusivas na coleção ${effectiveBrandName}.`,
+          assunto_newsletter: `Destaques Exclusivos ${effectiveBrandName}`,
+          nome_loja: effectiveBrandName,
         }
 
-        const branding = await getEmailBranding(supabase)
         const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
           rowSlug,
           dbTemplate,
           dummyVars,
-          row.subject || 'Notificação Meyves',
+          row.subject || `Notificação ${effectiveBrandName}`,
           `Modelo: ${rowSlug}`,
           branding,
         )
@@ -497,17 +506,19 @@ Deno.serve(async (req: Request) => {
         .maybeSingle()
 
       const branding = await getEmailBranding(supabase)
+      const effectiveBrandName =
+        branding.emailHeaderBrandName?.trim() || branding.brandName?.trim() || 'Meyve'
       const vars = {
         nome_cliente: clientName,
         email_cliente: targetEmail!,
-        nome_loja: branding.brandName || 'Meyves',
+        nome_loja: effectiveBrandName,
       }
 
       const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
         'welcome',
         dbTemplate,
         vars,
-        `Boas-vindas à ${branding.brandName || 'Meyves'}`,
+        `Boas-vindas à ${effectiveBrandName}`,
         undefined,
         branding,
       )
@@ -620,6 +631,10 @@ Deno.serve(async (req: Request) => {
         )
       }
 
+      const branding = await getEmailBranding(supabase)
+      const effectiveBrandName =
+        branding.emailHeaderBrandName?.trim() || branding.brandName?.trim() || 'Meyve'
+
       const dummyVars: Record<string, any> = {
         nome_cliente: clientName,
         numero_pedido: 'TESTE-101',
@@ -632,7 +647,7 @@ Deno.serve(async (req: Request) => {
         codigo_rastreio: 'BR123456789MEY',
         transportadora: 'Correios',
         link_nota_fiscal: 'https://www.meyves.com.br',
-        itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance Meyves</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
+        itens_pedido: `<tr><td style="padding: 10px; border-bottom: 1px solid #eee;">Vestido Elegance ${effectiveBrandName}</td><td style="text-align: center;">1</td><td style="text-align: right;">R$ 189,90</td></tr>`,
         endereco_entrega:
           'Rua Oscar Freire, 1000 - Cerqueira César, São Paulo - SP, CEP: 01426-001',
         bloco_data_estimada:
@@ -641,18 +656,16 @@ Deno.serve(async (req: Request) => {
           '<div style="padding: 14px; background: #f0f7f4;">Código: BR123456789MEY</div>',
         botao_nota_fiscal:
           '<div style="text-align: center; margin-top: 20px;"><a href="https://www.meyves.com.br" style="background: #2D0B0B; color: #fff; padding: 10px 20px; text-decoration: none;">Ver Pedido</a></div>',
-        conteudo_newsletter:
-          'Esta é uma prévia de demonstração do conteúdo de newsletter da Meyves.',
-        assunto_newsletter: 'Novidades Exclusivas Meyves',
-        nome_loja: 'Meyves',
+        conteudo_newsletter: `Esta é uma prévia de demonstração do conteúdo de newsletter da ${effectiveBrandName}.`,
+        assunto_newsletter: `Novidades Exclusivas ${effectiveBrandName}`,
+        nome_loja: effectiveBrandName,
       }
 
-      const branding = await getEmailBranding(supabase)
       const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
         templateSlug,
         dbTemplate,
         dummyVars,
-        `Teste de Notificação ${branding.brandName || 'Meyves'}`,
+        `Teste de Notificação ${effectiveBrandName}`,
         `Modelo: ${templateSlug}`,
         branding,
       )
@@ -880,8 +893,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    const branding = await getEmailBranding(supabase)
+    const effectiveBrandName =
+      branding.emailHeaderBrandName?.trim() || branding.brandName?.trim() || 'Meyve'
+
     let templateSlug = 'order_created'
-    let headerTitle = 'Obrigado por comprar na Meyves!'
+    let headerTitle = `Obrigado por comprar na ${effectiveBrandName}!`
     const currentStatus = new_status || order.status
 
     if (event_type === 'status_changed') {
@@ -910,7 +927,7 @@ Deno.serve(async (req: Request) => {
         headerTitle = 'Parabéns pela sua primeira compra!'
       } else {
         templateSlug = 'order_created'
-        headerTitle = 'Obrigado por comprar na Meyves!'
+        headerTitle = `Obrigado por comprar na ${effectiveBrandName}!`
       }
     }
 
@@ -937,10 +954,9 @@ Deno.serve(async (req: Request) => {
       bloco_data_estimada: estimatedDateBlock,
       bloco_rastreamento: trackingBlock,
       botao_nota_fiscal: invoiceBtn,
-      nome_loja: 'Meyves',
+      nome_loja: effectiveBrandName,
     }
 
-    const branding = await getEmailBranding(supabase)
     const { subject: finalSubject, html: finalHtml } = buildTemplateHtml(
       templateSlug,
       dbTemplate,
