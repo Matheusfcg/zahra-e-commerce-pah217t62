@@ -1,7 +1,13 @@
 /* Main entry point for the application - renders the root React component */
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { cleanLegacyAuthStorage } from './lib/cleanLegacyAuthStorage'
 import './main.css'
+
+// Remove chaves de auth legadas do projeto Supabase morto (sb-onfkaptmtujiihiunsnu-*)
+// antes de qualquer código instanciar o cliente Supabase e tentar processá-las.
+// Deve rodar antes do import do App para não haver janela de corrida.
+cleanLegacyAuthStorage()
 
 // Versão da limpeza de caches: bump a cada build que muda assets/imagem para
 // forçar o descarte de caches antigos mesmo nos navegadores dos visitantes.
