@@ -12,9 +12,9 @@ const rawKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefin
 
 const SUPABASE_PROJECT_REF = 'onfkaptmtujiihiunsnu'
 const SUPABASE_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co`
-// Placeholder mantido só para o app não quebrar no boot quando a env não existe;
-// com ele as chamadas retornam "Invalid API key" até a chave real ser configurada.
-const FALLBACK_KEY = '<redacted>'
+// Publishable key "default" do projeto onfkaptmtujiihiunsnu (chave pública, segura
+// para o navegador). Embutida como fallback para que o site funcione mesmo sem a env.
+const FALLBACK_KEY = 'sb_publishable_krxgyxMeIpivXVt2uhswkQ_WqXZg-R7'
 
 function resolveKey(): string {
   const candidate = rawKey?.trim()

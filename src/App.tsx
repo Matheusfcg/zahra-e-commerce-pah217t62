@@ -29,7 +29,7 @@ const AdminUpload = lazy(() => import('./pages/admin/AdminUpload'))
 const Appearance = lazy(() => import('./pages/admin/Appearance'))
 const ShippingCallback = lazy(() => import('./pages/admin/ShippingCallback'))
 
-const APP_CACHE_VERSION = '1.0.3'
+const APP_CACHE_VERSION = '1.0.4'
 
 if (typeof window !== 'undefined') {
   ;(window as any).SiteContentTabComponent = SiteContentTab
