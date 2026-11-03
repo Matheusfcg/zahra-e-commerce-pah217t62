@@ -113,8 +113,9 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
             onLoad?.(e)
           }}
           onError={(e) => {
-            // Graceful fallback: If a transformed Supabase URL fails (e.g. 403 FeatureNotEnabled on render endpoint),
-            // automatically fall back to the un-transformed object/public URL so images never break!
+            // Graceful fallback:
+            // 1. If a transformed Supabase URL fails (e.g. 403 FeatureNotEnabled on render endpoint),
+            // automatically fall back to un-transformed object/public URL
             if (currentSrc && currentSrc.includes('/storage/v1/render/image/public/')) {
               const fallbackUrl = currentSrc
                 .split('?')[0]
@@ -125,6 +126,16 @@ export const ProgressiveImage = forwardRef<HTMLImageElement, ProgressiveImagePro
                 return
               }
             }
+
+            // 2. If an asset URL failed (e.g. local 404 / 403 or bad remote URL), fallback to Curling CDN
+            const defaultFallback =
+              'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=white'
+            if (currentSrc !== defaultFallback) {
+              setCurrentSrc(defaultFallback)
+              setCurrentSrcSet(undefined)
+              return
+            }
+
             setHasError(true)
             onError?.(e)
           }}

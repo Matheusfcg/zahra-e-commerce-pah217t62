@@ -22,7 +22,11 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage'
 import { optimizeImage, getOptimizedSrcSet } from '@/lib/image'
 
 function getImageUrl(url?: string) {
-  if (!url) return 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing'
+  const fallback = 'https://img.usecurling.com/p/800/1000?q=fashion%20clothing'
+  if (!url) return fallback
+  if (url.startsWith('/assets/image-5e348') || url === '/assets/image-5e348.png') {
+    return fallback
+  }
   return optimizeImage(url, { width: 800, quality: 80, format: 'webp' })
 }
 const ProductPage = () => {

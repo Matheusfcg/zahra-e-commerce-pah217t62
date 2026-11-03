@@ -14,14 +14,14 @@ import {
 
 export default function Index() {
   const [content, setContent] = useState<Record<string, string>>(() => {
-    return smartCache.get<Record<string, string>>('site_content_cache_v3') || {}
+    return smartCache.get<Record<string, string>>('site_content_cache_v5') || {}
   })
   const [featuredCategories, setFeaturedCategories] = useState<any[]>(() => {
-    return smartCache.get<any[]>('featured_categories_cache_v3') || []
+    return smartCache.get<any[]>('featured_categories_cache_v4') || []
   })
   const [isLoading, setIsLoading] = useState(() => {
-    const cachedContent = smartCache.get<Record<string, string>>('site_content_cache_v3')
-    const cachedCats = smartCache.get<any[]>('featured_categories_cache_v3')
+    const cachedContent = smartCache.get<Record<string, string>>('site_content_cache_v5')
+    const cachedCats = smartCache.get<any[]>('featured_categories_cache_v4')
     return !cachedContent || !cachedCats
   })
 

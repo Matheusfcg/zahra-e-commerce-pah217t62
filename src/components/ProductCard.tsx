@@ -19,13 +19,20 @@ export function ProductCard({
   onToggleFavorite,
   priority = false,
 }: ProductCardProps) {
+  const safeFallback =
+    'https://img.usecurling.com/p/400/500?q=high%20fashion%20minimalist%20clothing'
   const rawImageUrl =
     product.product_images?.find((img) => img.is_cover)?.url ||
     product.product_images?.[0]?.url ||
-    'https://img.usecurling.com/p/400/500?q=high%20fashion%20minimalist%20clothing'
+    safeFallback
 
-  const optimizedImageUrl = optimizeImage(rawImageUrl, { width: 500, quality: 80, format: 'webp' })
-  const responsiveSrcSet = getOptimizedSrcSet(rawImageUrl, [280, 400, 600, 800], {
+  const resolvedUrl =
+    rawImageUrl.startsWith('/assets/image-5e348') || rawImageUrl === '/assets/image-5e348.png'
+      ? safeFallback
+      : rawImageUrl
+
+  const optimizedImageUrl = optimizeImage(resolvedUrl, { width: 500, quality: 80, format: 'webp' })
+  const responsiveSrcSet = getOptimizedSrcSet(resolvedUrl, [280, 400, 600, 800], {
     quality: 80,
     format: 'webp',
   })

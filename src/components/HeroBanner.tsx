@@ -22,7 +22,13 @@ export function HeroBanner({
   isLoading = false,
 }: HeroBannerProps) {
   // Use the official reference asset image-20eb3.png provided by user
-  const activeBannerImage = bannerImage || heroBannerAsset
+  const rawBanner = bannerImage?.trim()
+  const activeBannerImage =
+    !rawBanner ||
+    rawBanner.startsWith('/assets/image-5e348') ||
+    rawBanner === '/assets/image-5e348.png'
+      ? heroBannerAsset
+      : rawBanner
   const hasCustomText =
     (eyebrow && eyebrow !== 'HEY, GIRL!') || (title && title !== 'BEM-VINDA À MEYVE.')
 

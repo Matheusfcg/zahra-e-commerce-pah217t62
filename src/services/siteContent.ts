@@ -75,11 +75,11 @@ export const smartCache = {
 }
 
 const CACHE_KEYS = {
-  SITE_CONTENT: 'site_content_cache_v4',
-  FEATURED_CATEGORIES: 'featured_categories_cache_v3',
-  ALL_CATEGORIES: 'all_categories_cache_v3',
-  EXCHANGE_POLICY: 'exchange_policy_cache_v3',
-  BRAND_INFO: 'brand_info_cache_v1',
+  SITE_CONTENT: 'site_content_cache_v5',
+  FEATURED_CATEGORIES: 'featured_categories_cache_v4',
+  ALL_CATEGORIES: 'all_categories_cache_v4',
+  EXCHANGE_POLICY: 'exchange_policy_cache_v4',
+  BRAND_INFO: 'brand_info_cache_v2',
 }
 
 /**
@@ -230,7 +230,7 @@ export function invalidateSiteContentCache(): void {
  */
 export async function getBrandInfoCached(forceRefresh = false): Promise<BrandSettings> {
   const fallback: BrandSettings = {
-    brandName: 'MEYVES',
+    brandName: 'Meyve',
     brandColor: '#2D0B0B',
     brandFontSize: '32px',
     emailHeaderTagline: '',

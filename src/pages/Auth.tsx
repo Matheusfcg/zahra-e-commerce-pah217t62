@@ -24,7 +24,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [brandName, setBrandName] = useState('MEYVES')
+  const [brandName, setBrandName] = useState('MEYVE')
 
   useEffect(() => {
     let mounted = true

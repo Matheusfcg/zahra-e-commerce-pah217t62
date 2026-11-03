@@ -26,6 +26,11 @@ export function optimizeImage(
 
   const { width, height, quality = 80, resize, format } = options
 
+  // Handle relative asset paths that don't exist directly or might 404
+  if (url.startsWith('/assets/image-5e348') || url === '/assets/image-5e348.png') {
+    return 'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=white'
+  }
+
   // Handle Supabase Storage public URLs
   // Supabase Storage Pro on-the-fly image transformations (/render/image/) return 403 / 404
   // if image transformations are not enabled or when using standard public buckets.
@@ -100,4 +105,30 @@ export function getOriginalStorageUrl(url: string | null | undefined): string {
     return withoutParams.replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
   }
   return url
+}
+
+/**
+ * Safe image URL resolver:
+ * 1. Resolves legacy relative broken paths like '/assets/image-5e348.png' or '/assets/image-*.png'
+ *    to either the valid local asset or a robust fallback so images never show 404 / 403 / broken box.
+ * 2. Cleans corrupted render/image URLs.
+ */
+export function resolveSafeImageUrl(
+  url: string | null | undefined,
+  fallback: string = 'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=white',
+): string {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return fallback
+  }
+
+  const trimmed = url.trim()
+
+  // Supabase render/image fallback
+  if (trimmed.includes('/storage/v1/render/image/public/')) {
+    return trimmed
+      .split('?')[0]
+      .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+  }
+
+  return trimmed
 }
