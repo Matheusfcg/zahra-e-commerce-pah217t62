@@ -11,6 +11,16 @@
 // Roda no bootstrap, ANTES do App montar, e é idempotente: nos navegadores que
 // nunca viram o projeto antigo, não faz nada.
 const DEAD_PROJECT_REF = 'onfkaptmtujiihiunsnu'
+const CURRENT_PROJECT_REF = 'dagtlwojkqyivnjgveda'
+
+// Chaves de auth do supabase-js têm o formato sb-<ref>-auth-token[...]. Qualquer
+// uma que não seja do projeto atual (morto ou de outro projeto) é descartada,
+// para que uma sessão emitida com URL/key antiga não fique presa no navegador.
+function isStaleAuthKey(key: string): boolean {
+  if (key.includes(DEAD_PROJECT_REF)) return true
+  const match = /^sb-([a-z0-9]+)-auth-token/.exec(key)
+  return !!match && match[1] !== CURRENT_PROJECT_REF
+}
 
 export function cleanLegacyAuthStorage(): void {
   if (typeof window === 'undefined') return
@@ -20,7 +30,7 @@ export function cleanLegacyAuthStorage(): void {
       const keysToRemove: string[] = []
       for (let i = 0; i < store.length; i++) {
         const key = store.key(i)
-        if (key && key.includes(DEAD_PROJECT_REF)) keysToRemove.push(key)
+        if (key && isStaleAuthKey(key)) keysToRemove.push(key)
       }
       for (const key of keysToRemove) store.removeItem(key)
     }
