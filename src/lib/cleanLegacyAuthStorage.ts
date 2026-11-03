@@ -1,23 +1,20 @@
 // Limpeza de estado de autenticação legado em localStorage.
 //
-// Histórico: builds antigos instanciavam o cliente Supabase apontando para o
-// projeto morto onfkaptmtujiihiunsnu.supabase.co. Isso deixou no localStorage do
-// navegador do usuário chaves como `sb-onfkaptmtujiihiunsnu-auth-token` e
-// `sb-onfkaptmtujiihiunsnu-auth-token-code-verifier`. Se qualquer código (ou um
-// cliente legado em cache de bundle antigo) tentar processar essas chaves, surge
-// o erro de runtime "Lock "lock:sb-onfkaptmtujiihiunsnu-auth-token" was released
-// because another request stole it" na página "/".
+// Histórico: o app já esteve apontado para dois projetos Supabase. Sessões
+// emitidas com a URL/key de um projeto ficam no localStorage com chaves
+// `sb-<ref>-auth-token` (e `-code-verifier`). Se essas chaves forem processadas
+// pelo cliente do projeto atual, surge o erro de navigator lock
+// "lock:sb-<ref>-auth-token was released because another request stole it".
 //
-// Roda no bootstrap, ANTES do App montar, e é idempotente: nos navegadores que
-// nunca viram o projeto antigo, não faz nada.
-const DEAD_PROJECT_REF = 'onfkaptmtujiihiunsnu'
-const CURRENT_PROJECT_REF = 'dagtlwojkqyivnjgveda'
+// Projeto ativo: onfkaptmtujiihiunsnu. Qualquer outra ref (ex.: dagtlwojkqyivnjgveda,
+// usado como fallback antes) é considerada legada e removida.
+//
+// Roda no bootstrap, ANTES do App montar, e é idempotente.
+const CURRENT_PROJECT_REF = 'onfkaptmtujiihiunsnu'
 
 // Chaves de auth do supabase-js têm o formato sb-<ref>-auth-token[...]. Qualquer
-// uma que não seja do projeto atual (morto ou de outro projeto) é descartada,
-// para que uma sessão emitida com URL/key antiga não fique presa no navegador.
+// uma que não seja do projeto atual é descartada.
 function isStaleAuthKey(key: string): boolean {
-  if (key.includes(DEAD_PROJECT_REF)) return true
   const match = /^sb-([a-z0-9]+)-auth-token/.exec(key)
   return !!match && match[1] !== CURRENT_PROJECT_REF
 }

@@ -4,14 +4,14 @@ import App from './App.tsx'
 import { cleanLegacyAuthStorage } from './lib/cleanLegacyAuthStorage'
 import './main.css'
 
-// Remove chaves de auth legadas do projeto Supabase morto (sb-onfkaptmtujiihiunsnu-*)
+// Remove chaves de auth de projetos Supabase legados (ex.: sb-dagtlwojkqyivnjgveda-*)
 // antes de qualquer código instanciar o cliente Supabase e tentar processá-las.
 // Deve rodar antes do import do App para não haver janela de corrida.
 cleanLegacyAuthStorage()
 
 // Versão da limpeza de caches: bump a cada build que muda assets/imagem para
 // forçar o descarte de caches antigos mesmo nos navegadores dos visitantes.
-const SW_CLEANUP_VERSION = 'v7-2026-11-03'
+const SW_CLEANUP_VERSION = 'v8-2026-11-03'
 
 // Cleanup legacy Service Workers and stale CacheStorage from older builds.
 // Roda em TODA inicialização: garante que nenhum service worker antigo
