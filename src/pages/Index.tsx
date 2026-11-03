@@ -102,33 +102,6 @@ export default function Index() {
     }))
   }, [featuredCategories])
 
-  // Preload category images eagerly as soon as category data is available
-  useEffect(() => {
-    if (!dynamicCategoryNavItems || dynamicCategoryNavItems.length === 0) return
-
-    dynamicCategoryNavItems.forEach((item, index) => {
-      if (!item.image) return
-
-      // Preload via standard Image object for instant in-memory cache
-      const img = new Image()
-      img.src = item.image
-
-      // Also inject <link rel="preload"> tags for early browser network pipeline discovery
-      const linkId = `cat-img-preload-${index}`
-      let link = document.getElementById(linkId) as HTMLLinkElement | null
-      if (!link) {
-        link = document.createElement('link')
-        link.id = linkId
-        link.rel = 'preload'
-        link.as = 'image'
-        link.href = item.image
-        document.head.appendChild(link)
-      } else {
-        link.href = item.image
-      }
-    })
-  }, [dynamicCategoryNavItems])
-
   return (
     <div className="w-full pt-[80px] md:pt-[96px] pb-0 bg-white">
       {/* Section 1: Hero Banner */}
@@ -172,8 +145,8 @@ export default function Index() {
                             }) || undefined
                           }
                           alt={item.label}
-                          priority
-                          loading="eager"
+                          priority={false}
+                          loading="lazy"
                           decoding="async"
                           width={170}
                           height={170}

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase/client'
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/lib/supabase/client'
 
 interface AuthContextType {
   user: User | null
@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error }
   }
   const signIn = async (email: string, password: string) => {
+    const cleanEmail = email.trim()
     try {
       // Payload cleaning: Remove extraneous metadata that the GoTrue client might append
       if (typeof window !== 'undefined') {
@@ -62,15 +63,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       })
 
       if (error) {
+        // If error is network/fetch failure, attempt direct fallback authentication
+        const isNetworkFailure =
+          error.message?.toLowerCase().includes('failed to fetch') ||
+          error.message?.toLowerCase().includes('network') ||
+          error.status === 0
+
+        if (isNetworkFailure) {
+          try {
+            const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+              method: 'POST',
+              headers: {
+                apikey: SUPABASE_PUBLISHABLE_KEY,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: cleanEmail,
+                password,
+              }),
+            })
+
+            const tokenData = await tokenRes.json()
+
+            if (tokenRes.ok && tokenData.access_token) {
+              const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
+                access_token: tokenData.access_token,
+                refresh_token: tokenData.refresh_token,
+              })
+              if (!sessionErr && sessionData) {
+                return { data: sessionData, error: null }
+              }
+            } else if (tokenRes.status === 400 || tokenData.error === 'invalid_grant') {
+              return {
+                data: null,
+                error: {
+                  message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
+                  code: 'invalid_credentials',
+                  status: 400,
+                },
+              }
+            }
+          } catch {
+            // direct fetch fallback also failed
+          }
+        }
+
         const isInvalidCredentials =
           error.status === 400 ||
           error.message?.toLowerCase().includes('invalid login credentials') ||
           error.message?.toLowerCase().includes('invalid login') ||
+          error.message?.toLowerCase().includes('invalid_grant') ||
           error.name === 'AuthApiError'
 
         if (isInvalidCredentials) {
@@ -83,15 +130,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             },
           }
         }
-        return { data: null, error: { message: error.message, status: error.status || 500 } }
+
+        const friendlyMessage =
+          error.message === 'Failed to fetch'
+            ? 'Erro de conexão com o servidor. Verifique sua conexão e tente novamente.'
+            : error.message
+
+        return { data: null, error: { message: friendlyMessage, status: error.status || 500 } }
       }
 
       return { data, error: null }
     } catch (err: any) {
+      // Direct fallback if GoTrue client threw an unhandled TypeError: Failed to fetch
+      try {
+        const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: cleanEmail,
+            password,
+          }),
+        })
+
+        const tokenData = await tokenRes.json()
+
+        if (tokenRes.ok && tokenData.access_token) {
+          const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+          })
+          if (!sessionErr && sessionData) {
+            return { data: sessionData, error: null }
+          }
+        } else if (tokenRes.status === 400 || tokenData.error === 'invalid_grant') {
+          return {
+            data: null,
+            error: {
+              message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
+              code: 'invalid_credentials',
+              status: 400,
+            },
+          }
+        }
+      } catch {
+        // Direct fetch fallback also failed
+      }
+
+      const friendlyMsg =
+        err?.message === 'Failed to fetch'
+          ? 'Erro de conexão com o servidor. Verifique sua conexão e tente novamente.'
+          : err?.message || 'Erro inesperado ao fazer login. Verifique sua conexão.'
+
       return {
         data: null,
         error: {
-          message: err?.message || 'Erro inesperado ao fazer login. Verifique sua conexão.',
+          message: friendlyMsg,
           code: 'unknown_error',
           status: 500,
         },

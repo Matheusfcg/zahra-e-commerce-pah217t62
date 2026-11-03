@@ -27,34 +27,26 @@ export function optimizeImage(
   const { width, height, quality = 80, resize, format } = options
 
   // Handle Supabase Storage public URLs
-  if (url.includes('/storage/v1/object/public/')) {
+  // Supabase Storage Pro on-the-fly image transformations (/render/image/) return 403 / 404
+  // if image transformations are not enabled or when using standard public buckets.
+  // Serving clean `/storage/v1/object/public/` URLs ensures maximum speed, reliable browser
+  // HTTP caching (Cache-Control), no 403 errors, and instant visual load without freezing.
+  if (url.includes('/storage/v1/render/image/public/')) {
     try {
-      const renderBase = url.replace(
-        '/storage/v1/object/public/',
-        '/storage/v1/render/image/public/',
-      )
-      const parsed = new URL(renderBase)
-      if (width) parsed.searchParams.set('width', width.toString())
-      if (height) parsed.searchParams.set('height', height.toString())
-      if (quality) parsed.searchParams.set('quality', quality.toString())
-      if (resize) parsed.searchParams.set('resize', resize)
-      if (format) parsed.searchParams.set('format', format)
-      return parsed.toString()
+      const cleanUrl = url
+        .split('?')[0]
+        .replace('/storage/v1/render/image/public/', '/storage/v1/object/public/')
+      return cleanUrl
     } catch {
       return url
     }
   }
 
-  // If already a render URL, update query parameters
-  if (url.includes('/storage/v1/render/image/public/')) {
+  if (url.includes('/storage/v1/object/public/')) {
+    // Keep clean storage URL without broken transform endpoints or bust parameters
     try {
-      const parsed = new URL(url)
-      if (width) parsed.searchParams.set('width', width.toString())
-      if (height) parsed.searchParams.set('height', height.toString())
-      if (quality) parsed.searchParams.set('quality', quality.toString())
-      if (resize) parsed.searchParams.set('resize', resize)
-      if (format) parsed.searchParams.set('format', format)
-      return parsed.toString()
+      const cleanUrl = url.split('?')[0]
+      return cleanUrl
     } catch {
       return url
     }
@@ -90,14 +82,12 @@ export function getOptimizedSrcSet(
   options: Omit<OptimizeImageOptions, 'width'> = {},
 ): string {
   if (!url) return ''
-  const isOptimizable =
-    url.includes('/storage/v1/object/public/') ||
-    url.includes('/storage/v1/render/image/public/') ||
-    url.includes('img.usecurling.com/p/')
+  // Curling CDN supports dynamic /p/{w}/{h} dimensions
+  if (url.includes('img.usecurling.com/p/')) {
+    return widths.map((w) => `${optimizeImage(url, { ...options, width: w })} ${w}w`).join(', ')
+  }
 
-  if (!isOptimizable) return ''
-
-  return widths.map((w) => `${optimizeImage(url, { ...options, width: w })} ${w}w`).join(', ')
+  return ''
 }
 
 /**

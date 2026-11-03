@@ -83,6 +83,8 @@ const App = () => {
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/login" element={<Auth />} />
+                <Route path="/entrar" element={<Auth />} />
                 <Route path="/" element={<Index />} />
                 <Route path="/produtos" element={<ProductsPage />} />
                 <Route path="/product/:id" element={<Product />} />

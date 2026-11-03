@@ -18,6 +18,8 @@ const pageLoaders: Record<string, () => Promise<any>> = {
   '/favoritos': () => import('@/pages/Favorites'),
   '/checkout': () => import('@/pages/Checkout'),
   '/auth': () => import('@/pages/Auth'),
+  '/login': () => import('@/pages/Auth'),
+  '/entrar': () => import('@/pages/Auth'),
   '/perfil': () => import('@/pages/Profile'),
   '/orders': () => import('@/pages/Orders'),
   '/meus-pedidos': () => import('@/pages/Orders'),
@@ -143,24 +145,7 @@ export function setupGlobalPrefetchListener() {
     // 2. Critical Data
     getSiteContentCached().catch(() => {})
     getCategoriesCached().catch(() => {})
-    getFeaturedCategoriesCached()
-      .then((cats) => {
-        if (Array.isArray(cats)) {
-          cats.forEach((cat) => {
-            if (cat?.image_url) {
-              const optimized = optimizeImage(cat.image_url, {
-                width: 200,
-                height: 200,
-                quality: 80,
-                format: 'webp',
-              })
-              const img = new Image()
-              img.src = optimized
-            }
-          })
-        }
-      })
-      .catch(() => {})
+    getFeaturedCategoriesCached().catch(() => {})
     getHighlightedProducts().catch(() => {})
     getProducts(undefined, false).catch(() => {})
   }
