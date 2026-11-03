@@ -11,7 +11,7 @@ cleanLegacyAuthStorage()
 
 // Versão da limpeza de caches: bump a cada build que muda assets/imagem para
 // forçar o descarte de caches antigos mesmo nos navegadores dos visitantes.
-const SW_CLEANUP_VERSION = 'v6-2026-11-03'
+const SW_CLEANUP_VERSION = 'v7-2026-11-03'
 
 // Cleanup legacy Service Workers and stale CacheStorage from older builds.
 // Roda em TODA inicialização: garante que nenhum service worker antigo
