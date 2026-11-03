@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client'
 
 interface AuthContextType {
   user: User | null
@@ -19,6 +19,50 @@ export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used within an AuthProvider')
   return context
+}
+
+// Mapeia o erro cru do Supabase para uma mensagem amigável e sem ambiguidade.
+function toFriendlyError(error: { message?: string; status?: number; code?: string } | null) {
+  if (!error) return null
+  const msg = error.message || ''
+  const lower = msg.toLowerCase()
+
+  if (
+    error.status === 400 &&
+    (lower.includes('invalid login credentials') || lower.includes('invalid_grant'))
+  ) {
+    return {
+      message: 'E-mail ou senha incorretos. Verifique e tente novamente.',
+      code: 'invalid_credentials',
+      status: 400,
+    }
+  }
+  if (lower.includes('email not confirmed') || lower.includes('not confirmed')) {
+    return {
+      message: 'E-mail ainda não confirmado. Verifique sua caixa de entrada.',
+      code: 'email_not_confirmed',
+      status: 400,
+    }
+  }
+  if (lower.includes('too many requests') || error.status === 429) {
+    return {
+      message: 'Muitas tentativas seguidas. Aguarde um minuto e tente novamente.',
+      code: 'rate_limited',
+      status: 429,
+    }
+  }
+  if (
+    lower.includes('failed to fetch') ||
+    lower.includes('network') ||
+    lower.includes('load failed')
+  ) {
+    return {
+      message: 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.',
+      code: 'network_error',
+      status: 0,
+    }
+  }
+  return { message: msg || 'Erro inesperado ao fazer login.', status: error.status || 500 }
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -52,179 +96,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: metadata,
       },
     })
-    return { error }
+    return { error: toFriendlyError(error) }
   }
-  const signIn = async (email: string, password: string) => {
-    const cleanEmail = email.trim()
-    try {
-      // Payload cleaning: Remove extraneous metadata that the GoTrue client might append
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('gotrue_meta_security')
-      }
 
+  // Fluxo único e direto: signInWithPassword no cliente Supabase.
+  // Sem fallbacks paralelos, sem manipulação de localStorage, sem segunda
+  // chamada — o cliente já resolve rede/refresh/parse e devolve o erro real.
+  const signIn = async (email: string, password: string) => {
+    const cleanEmail = email.trim().toLowerCase()
+    try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
       })
 
       if (error) {
-        // If error is network/fetch failure, attempt direct fallback authentication
-        const isNetworkFailure =
-          error.message?.toLowerCase().includes('failed to fetch') ||
-          error.message?.toLowerCase().includes('network') ||
-          error.message?.toLowerCase().includes('load failed') ||
-          error.status === 0
-
-        if (isNetworkFailure) {
-          console.warn('[Supabase Auth] Tentando fallback direto para endpoint /auth/v1/token...')
-          try {
-            const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-              method: 'POST',
-              headers: {
-                apikey: SUPABASE_PUBLISHABLE_KEY,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                email: cleanEmail,
-                password,
-              }),
-            })
-
-            const tokenData = await tokenRes.json()
-            console.log('[Supabase Auth] Resposta do fallback direto:', tokenRes.status, tokenData)
-
-            if (tokenRes.ok && tokenData.access_token) {
-              const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
-                access_token: tokenData.access_token,
-                refresh_token: tokenData.refresh_token,
-              })
-              if (!sessionErr && sessionData) {
-                return { data: sessionData, error: null }
-              }
-            } else if (tokenRes.status === 400 || tokenData.error === 'invalid_grant') {
-              return {
-                data: null,
-                error: {
-                  message:
-                    tokenData.error_description ||
-                    'Credenciais inválidas. Verifique seu e-mail e senha.',
-                  code: 'invalid_credentials',
-                  status: 400,
-                },
-              }
-            }
-          } catch (directErr) {
-            console.error('[Supabase Auth] Direct fetch fallback failed:', directErr)
-          }
-        }
-
-        console.warn('[Supabase Auth] Erro retornado pelo signInWithPassword:', {
+        console.warn('[Supabase Auth] signInWithPassword falhou:', {
           message: error.message,
           status: error.status,
-          name: error.name,
-          error,
+          code: error.code,
         })
-
-        const isInvalidCredentials =
-          error.status === 400 ||
-          error.message?.toLowerCase().includes('invalid login credentials') ||
-          error.message?.toLowerCase().includes('invalid login') ||
-          error.message?.toLowerCase().includes('invalid_grant') ||
-          (error.name === 'AuthApiError' && (error.status === 400 || !isNetworkFailure))
-
-        if (isInvalidCredentials) {
-          return {
-            data: null,
-            error: {
-              message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
-              code: 'invalid_credentials',
-              status: 400,
-            },
-          }
-        }
-
-        const isEmailNotConfirmed =
-          error.message?.toLowerCase().includes('email not confirmed') ||
-          error.message?.toLowerCase().includes('not confirmed')
-
-        if (isEmailNotConfirmed) {
-          return {
-            data: null,
-            error: {
-              message: 'E-mail ainda não confirmado. Verifique sua caixa de entrada.',
-              code: 'email_not_confirmed',
-              status: 400,
-            },
-          }
-        }
-
-        const friendlyMessage =
-          error.message === 'Failed to fetch'
-            ? 'Erro de conexão com o servidor. Verifique sua conexão e tente novamente.'
-            : error.message
-
-        return { data: null, error: { message: friendlyMessage, status: error.status || 500 } }
+        return { data: null, error: toFriendlyError(error) }
       }
 
       return { data, error: null }
     } catch (err: any) {
-      console.error('[Supabase Auth] Exceção no signIn block:', err)
-      // Direct fallback if GoTrue client threw an unhandled TypeError: Failed to fetch
-      try {
-        const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-          method: 'POST',
-          headers: {
-            apikey: SUPABASE_PUBLISHABLE_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: cleanEmail,
-            password,
-          }),
-        })
-
-        const tokenData = await tokenRes.json()
-        console.log('[Supabase Auth] Direct fetch resposta:', tokenRes.status, tokenData)
-
-        if (tokenRes.ok && tokenData.access_token) {
-          const { data: sessionData, error: sessionErr } = await supabase.auth.setSession({
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
-          })
-          if (!sessionErr && sessionData) {
-            return { data: sessionData, error: null }
-          }
-        } else if (tokenRes.status === 400 || tokenData.error === 'invalid_grant') {
-          return {
-            data: null,
-            error: {
-              message:
-                tokenData.error_description ||
-                'Credenciais inválidas. Verifique seu e-mail e senha.',
-              code: 'invalid_credentials',
-              status: 400,
-            },
-          }
-        }
-      } catch (fallbackErr) {
-        console.error('[Supabase Auth] Fallback fetch também falhou:', fallbackErr)
-      }
-
-      const friendlyMsg =
-        err?.message === 'Failed to fetch'
-          ? 'Erro de conexão com o servidor. Verifique sua conexão e tente novamente.'
-          : err?.message || 'Erro inesperado ao fazer login. Verifique sua conexão.'
-
+      console.error('[Supabase Auth] Exceção no signIn:', err)
       return {
         data: null,
-        error: {
-          message: friendlyMsg,
-          code: err?.code || 'unknown_error',
-          status: 500,
-        },
+        error: toFriendlyError({
+          message: err?.message || 'Erro inesperado ao fazer login.',
+          status: err?.status,
+        }),
       }
     }
   }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     return { error }
@@ -235,12 +142,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectOrigin ? `${redirectOrigin}/` : undefined,
     })
-    return { error }
+    return { error: toFriendlyError(error) }
   }
 
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password })
-    return { error }
+    return { error: toFriendlyError(error) }
   }
 
   return (

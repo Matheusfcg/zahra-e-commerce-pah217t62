@@ -1,6 +1,13 @@
 /**
  * Image optimization helper utility for Meyves E-commerce
- * Handles Supabase Storage dynamic transformations & Curling CDN resizing / WebP conversion
+ *
+ * Estratégia de carregamento:
+ * - Supabase Storage: SEMPRE URLs públicas diretas (/storage/v1/object/public/),
+ *   sem transformações /render/image (retornam 403 quando o Image Resizing não
+ *   está habilitado no projeto) e sem query params que quebram o cache do CDN.
+ * - Curling CDN: mantém resize dinâmico via /p/{w}/{h}.
+ * - Lazy loading real fica no componente ProgressiveImage (loading="lazy" +
+ *   decoding="async" + fade-in), com priority/eager apenas no hero.
  */
 
 export interface OptimizeImageOptions {
@@ -27,7 +34,7 @@ export function optimizeImage(
   const { width, height, quality = 80, resize, format } = options
 
   // Handle relative asset paths that don't exist directly or might 404
-  if (url.startsWith('/assets/image-5e348') || url === '/assets/image-5e348.png') {
+  if (url.startsWith('/assets/')) {
     return 'https://img.usecurling.com/p/800/1000?q=high%20fashion%20clothing&color=white'
   }
 
@@ -80,6 +87,12 @@ export function optimizeImage(
 /**
  * Generates an HTML srcset string for responsive images across device pixel ratios and viewports.
  * Returns empty string if the URL is not optimizable (e.g. data URI or unrecognized external URL).
+ *
+ * Para URLs do Supabase Storage o srcset é propositalmente vazio: a mesma URL
+ * pública direta é servida em todos os tamanhos (o resize client-side é feito
+ * pelo navegador e o CDN do Supabase já entrega a versão em cache). Criar N
+ * variantes de URL com query strings apenas multiplicaria downloads e atrasaria
+ * a exibição das fotos.
  */
 export function getOptimizedSrcSet(
   url: string | null | undefined,
@@ -90,6 +103,11 @@ export function getOptimizedSrcSet(
   // Curling CDN supports dynamic /p/{w}/{h} dimensions
   if (url.includes('img.usecurling.com/p/')) {
     return widths.map((w) => `${optimizeImage(url, { ...options, width: w })} ${w}w`).join(', ')
+  }
+
+  // Supabase Storage (URL direta): sem srcset — uma única URL limpa para todo mundo.
+  if (url.includes('/storage/v1/')) {
+    return ''
   }
 
   return ''

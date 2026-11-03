@@ -3,7 +3,13 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './main.css'
 
-// Cleanup legacy Service Workers and stale CacheStorage from older builds
+// Versão da limpeza de caches: bump a cada build que muda assets/imagem para
+// forçar o descarte de caches antigos mesmo nos navegadores dos visitantes.
+const SW_CLEANUP_VERSION = 'v6-2026-11-03'
+
+// Cleanup legacy Service Workers and stale CacheStorage from older builds.
+// Roda em TODA inicialização: garante que nenhum service worker antigo
+// (workbox/registrado manualmente) siga servindo assets velhos do cache.
 if (typeof window !== 'undefined') {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
@@ -34,6 +40,26 @@ if (typeof window !== 'undefined') {
       .catch(() => {
         /* ignore */
       })
+  }
+
+  // Invalida o cache interno de dados do site para não servir hero/categorias velhos
+  try {
+    const key = `sw_cleanup_done_${SW_CLEANUP_VERSION}`
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1')
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          // Revalida o cache do siteContent também (versão v5 usada na home)
+          keys.forEach((k) => {
+            if (k.includes('site_content') || k.includes('product')) {
+              caches.delete(k).catch(() => {})
+            }
+          })
+        })
+      }
+    }
+  } catch {
+    /* ignore */
   }
 }
 
